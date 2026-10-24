@@ -1,0 +1,134 @@
+/* Sleep Tracker: variabili generate da docs/design/tokens.json. Non modificare a mano. */
+:root,[data-theme="chiaro"]{
+  --ground:#eef2f6;
+  --surface:#ffffff;
+  --surface-sunken:#e3e9ef;
+  --line:#d7dee6;
+  --line-strong:#6b7a8c;
+  --ink:#27303b;
+  --ink-muted:#5a6675;
+  --blue:#b9c9e6;
+  --sage:#b4c7ae;
+  --peach:#f0c1a4;
+  --yellow:#f4e3a1;
+  --on-fill:#1f2a3a;
+  --blue-soft:#dfe7f5;
+  --blue-ink:#2a3f66;
+  --blue-edge:#6d89bb;
+  --sage-soft:#e1ebdd;
+  --sage-ink:#2f4a2b;
+  --sage-edge:#728f67;
+  --peach-soft:#fbe6da;
+  --peach-ink:#7a3d17;
+  --peach-edge:#b87245;
+  --yellow-soft:#fbf3cf;
+  --yellow-ink:#5e4a00;
+  --yellow-edge:#9a7e15;
+  --shadow-card:0 1px 2px #27303b0f, 0 8px 24px -12px #27303b26;
+  --shadow-float:0 1px 2px #27303b14, 0 10px 28px #27303b29;
+  --shadow-focus:0 0 0 2px #eef2f6, 0 0 0 4px #2a3f66;
+  color-scheme:light;}
+[data-theme="scuro"]{
+  --ground:#161a22;
+  --surface:#202633;
+  --surface-sunken:#10141b;
+  --line:#2b3242;
+  --line-strong:#7d8aa0;
+  --ink:#e8ecf3;
+  --ink-muted:#a4aebd;
+  --blue:#aebfe0;
+  --sage:#a9c0a3;
+  --peach:#eab898;
+  --yellow:var(--sage);
+  --on-fill:#16202e;
+  --blue-soft:#232d44;
+  --blue-ink:#aebfe0;
+  --blue-edge:var(--blue);
+  --sage-soft:#223026;
+  --sage-ink:#a9c0a3;
+  --sage-edge:var(--sage);
+  --peach-soft:#3a2a22;
+  --peach-ink:#eab898;
+  --peach-edge:var(--peach);
+  --yellow-soft:var(--sage-soft);
+  --yellow-ink:var(--sage-ink);
+  --yellow-edge:var(--sage);
+  --shadow-card:inset 0 1px 0 #ffffff0d, 0 8px 24px -12px #00000080;
+  --shadow-float:inset 0 1px 0 #ffffff12, 0 10px 28px #00000080;
+  --shadow-focus:0 0 0 2px #161a22, 0 0 0 4px #aebfe0;
+  color-scheme:dark;}
+@media (prefers-color-scheme:dark){
+ :root:not([data-theme]){
+  --ground:#161a22;
+  --surface:#202633;
+  --surface-sunken:#10141b;
+  --line:#2b3242;
+  --line-strong:#7d8aa0;
+  --ink:#e8ecf3;
+  --ink-muted:#a4aebd;
+  --blue:#aebfe0;
+  --sage:#a9c0a3;
+  --peach:#eab898;
+  --yellow:var(--sage);
+  --on-fill:#16202e;
+  --blue-soft:#232d44;
+  --blue-ink:#aebfe0;
+  --blue-edge:var(--blue);
+  --sage-soft:#223026;
+  --sage-ink:#a9c0a3;
+  --sage-edge:var(--sage);
+  --peach-soft:#3a2a22;
+  --peach-ink:#eab898;
+  --peach-edge:var(--peach);
+  --yellow-soft:var(--sage-soft);
+  --yellow-ink:var(--sage-ink);
+  --yellow-edge:var(--sage);
+  --shadow-card:inset 0 1px 0 #ffffff0d, 0 8px 24px -12px #00000080;
+  --shadow-float:inset 0 1px 0 #ffffff12, 0 10px 28px #00000080;
+  --shadow-focus:0 0 0 2px #161a22, 0 0 0 4px #aebfe0;
+  color-scheme:dark;}
+}
+:root{
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:20px;
+  --space-6:24px;
+  --space-7:32px;
+  --space-8:40px;
+  --space-9:48px;
+  --space-10:64px;
+  --radius-xs:6px;
+  --radius-sm:10px;
+  --radius-md:14px;
+  --radius-lg:20px;
+  --radius-xl:28px;
+  --radius-phone:36px;
+  --radius-pill:999px;
+  --tap:48px;
+  --tap-min:44px;
+  --nav-pill:68px;
+  --nav-inset:14px;
+  --icon:24px;
+  --hairline:1px;
+  --phone-w:390px;
+  --phone-h:844px;
+  --sidebar:240px;
+  --content-max:1480px;
+  --reading-max:640px;
+  --font-display:Newsreader, Georgia, "Times New Roman", serif;
+  --font-sans:"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.display-xl{font-family:var(--font-display);font-size:84px;line-height:84px;font-weight:300;letter-spacing:-0.01em;font-variation-settings:'opsz' 72;}
+.display-lg{font-family:var(--font-display);font-size:64px;line-height:64px;font-weight:300;letter-spacing:-0.01em;font-variation-settings:'opsz' 72;}
+.display-md{font-family:var(--font-display);font-size:46px;line-height:48px;font-weight:300;letter-spacing:-0.005em;font-variation-settings:'opsz' 48;}
+.heading-lg{font-family:var(--font-display);font-size:38px;line-height:42px;font-weight:300;font-variation-settings:'opsz' 36;}
+.heading-md{font-family:var(--font-display);font-size:28px;line-height:34px;font-weight:400;font-variation-settings:'opsz' 28;}
+.title{font-family:var(--font-display);font-size:22px;line-height:28px;font-weight:400;font-variation-settings:'opsz' 22;}
+.body-lg{font-family:var(--font-sans);font-size:17px;line-height:26px;font-weight:400;}
+.body{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:400;}
+.body-strong{font-family:var(--font-sans);font-size:15px;line-height:22px;font-weight:600;}
+.body-sm{font-family:var(--font-sans);font-size:14px;line-height:21px;font-weight:400;}
+.caption{font-family:var(--font-sans);font-size:12px;line-height:18px;font-weight:400;}
+.label{font-family:var(--font-sans);font-size:12px;line-height:16px;font-weight:600;letter-spacing:0.08em;}

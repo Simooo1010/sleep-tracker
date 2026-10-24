@@ -1,0 +1,24 @@
+<!-- @dsCard group="Voto" height=360 subtitle="Cinque fasi lunari per energia e stanchezza" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Energia di questa mattina</div>
+<div class="moons">
+<button class="moon" aria-label="Energia 1 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/></svg></button>
+<button class="moon" aria-label="Energia 2 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22A5 10 0 0 0 12 2Z"/></svg></button>
+<button class="moon" aria-label="Energia 3 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22Z"/></svg></button>
+<button class="moon is-on-energy" aria-label="Energia 4 di 5" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22A5 10 0 0 1 12 2Z"/></svg></button>
+<button class="moon" aria-label="Energia 5 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2a10 10 0 1 1 0 20a10 10 0 1 1 0-20"/></svg></button>
+</div>
+<div class="cap">Stanchezza di stasera</div>
+<div class="moons">
+<button class="moon" aria-label="Stanchezza 1 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/></svg></button>
+<button class="moon" aria-label="Stanchezza 2 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22A5 10 0 0 0 12 2Z"/></svg></button>
+<button class="moon" aria-label="Stanchezza 3 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22Z"/></svg></button>
+<button class="moon is-on-tired" aria-label="Stanchezza 4 di 5" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2A10 10 0 0 1 12 22A5 10 0 0 1 12 2Z"/></svg></button>
+<button class="moon" aria-label="Stanchezza 5 di 5" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path class="lit" d="M12 2a10 10 0 1 1 0 20a10 10 0 1 1 0-20"/></svg></button>
+</div>
+<div class="moon-scale"><span>Per niente</span><span>Esausto</span></div></div>
+</div>
+<script>var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);</script>
+</body></html>

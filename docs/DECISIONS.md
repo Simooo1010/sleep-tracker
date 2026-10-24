@@ -18,7 +18,7 @@
 | 2026-10-24 | Check serale (stanchezza/mood) subito prima di posare il telefono | confermata |
 | 2026-10-24 | Tag NFC: da acquistare (spesa minima), previsti in v1 | superata |
 | 2026-10-24 | Build autonoma end-to-end: costruzione → test (anche UI/E2E) → fix fino a funzionamento reale | confermata |
-| 2026-10-24 | Design system: definito in una chat dedicata | rinviata |
+| 2026-10-24 | Design system: definito in una chat dedicata | confermata (fatto) |
 | 2026-10-24 | Analisi regolarità orari letto/risveglio e confronto tra giornate | confermata |
 | 2026-10-24 | Regolarità: riferimento = media mobile recente, weekend uguale ai feriali, tolleranza ±30 min | confermata |
 | 2026-10-24 | NFC escluso dalla v1 (si alza subito, sveglia = risveglio; niente caffeina) | confermata |
@@ -26,6 +26,14 @@
 | 2026-10-24 | Media mobile a 14 giorni + indicatore di deriva della media | superata (→ mediana) |
 | 2026-10-24 | Sonnellini pomeridiani nelle statistiche; cattura via comando rapido + recupero nel check serale | confermata |
 | 2026-10-24 | Dopo il completamento: routine settimanale di controllo del progetto (da ricordare all'utente) | rinviata |
+| 2026-10-24 | Direzione visiva: calma, pastello, Newsreader Light + Instrument Sans; azzurro, salvia, pesca; giallo pastello per energia e sonno diurno | confermata |
+| 2026-10-24 | Giallo solo nel tema chiaro; nel tema scuro alias della salvia | confermata |
+| 2026-10-24 | Una sola app adattabile PC/telefono, temi chiaro e scuro, alta risoluzione e 4K | confermata |
+| 2026-10-24 | Telefono: un dato per volta, check serale una domanda per schermata; viste larghe solo su PC | confermata |
+| 2026-10-24 | Barra di navigazione del telefono: pillola flottante staccata dai bordi | confermata |
+| 2026-10-24 | Voto 1–5 con le fasi lunari; provenienza dei dati sempre con parola (automatico, confermato, stimato, mancante) | confermata |
+| 2026-10-24 | Icona dell'app: nuvola con luna a falce, azzurro pastello non lineare, su bianco (PWA iPhone) | confermata |
+| 2026-10-24 | Design system versionato nel repository in `docs/design/` e in `docs/DESIGN.md` | confermata |
 | 2026-10-24 | Riferimento regolarità = mediana 14 giorni + indicatore di deriva | confermata |
 | 2026-10-24 | Principio gestione imprevedibilità (PROJECT §3c) | confermata |
 | 2026-10-24 | Fino a 2–3 domande rapide al giorno; recupero solo ultimi 2–3 giorni | confermata |

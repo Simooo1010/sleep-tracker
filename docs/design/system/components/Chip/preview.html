@@ -1,0 +1,13 @@
+<!-- @dsCard group="Azioni" height=360 subtitle="Umore, fattori e sonnellino" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Umore</div>
+<div class="row"><button class="chip chip-mood" aria-pressed="false">Pesante</button><button class="chip chip-mood" aria-pressed="false">Così così</button><button class="chip chip-mood" aria-pressed="false">Neutro</button><button class="chip chip-mood is-on" aria-pressed="true">Leggero</button><button class="chip chip-mood" aria-pressed="false">Sereno</button></div>
+<div class="cap">Cosa è successo oggi</div>
+<div class="row"><button class="chip is-on" aria-pressed="true">Schermo a letto</button><button class="chip" aria-pressed="false">Sport</button><button class="chip is-on" aria-pressed="true">Giornata stressante</button><button class="chip" aria-pressed="false">Cena tardi</button></div>
+<div class="cap">Sonnellino oggi</div>
+<div class="row"><button class="chip chip-nap" aria-pressed="false">Nessuno</button><button class="chip chip-nap" aria-pressed="false">15 min</button><button class="chip chip-nap is-on" aria-pressed="true">30 min</button><button class="chip chip-nap" aria-pressed="false">1 ora</button></div></div>
+</div>
+<script>var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);</script>
+</body></html>

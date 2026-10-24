@@ -1,0 +1,11 @@
+<!-- @dsCard group="Notte" height=300 subtitle="Correzione a passi di 5 minuti" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Correggi orari</div>
+<div class="stack" style="background:var(--surface-sunken);border-radius:var(--radius-lg);padding:12px">
+<div class="row" style="flex-wrap:nowrap"><span style="flex:1;font-size:14px">Sono andato a letto</span><button class="btn btn-round" aria-label="Anticipa di 5 minuti">−</button><span style="width:52px;text-align:center">23:48</span><button class="btn btn-round" aria-label="Posticipa di 5 minuti">+</button></div>
+<div class="row" style="flex-wrap:nowrap"><span style="flex:1;font-size:14px">Mi sono svegliato</span><button class="btn btn-round" aria-label="Anticipa di 5 minuti">−</button><span style="width:52px;text-align:center">07:20</span><button class="btn btn-round" aria-label="Posticipa di 5 minuti">+</button></div></div></div>
+</div>
+<script>var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);</script>
+</body></html>

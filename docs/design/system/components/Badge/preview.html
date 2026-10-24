@@ -1,0 +1,13 @@
+<!-- @dsCard group="Stato" height=300 subtitle="Provenienza e origine di un dato" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Provenienza di un valore</div>
+<div class="row"><span class="badge badge-auto">Automatico</span><span class="badge badge-confirmed">Confermato</span><span class="badge badge-estimated">Stimato</span><span class="badge badge-missing">Mancante</span></div>
+<div class="cap">Tolleranza ± 30 min</div>
+<div class="row"><span class="badge badge-ok">OK</span><span class="badge badge-out">Fuori</span><span class="badge badge-out">Deriva +42 min in 5 settimane</span></div>
+<div class="cap">Origine di un insight</div>
+<div class="row"><span class="badge badge-ai">AI</span><span class="badge badge-rules">Regole</span></div></div>
+</div>
+<script>var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);</script>
+</body></html>

@@ -1,0 +1,19 @@
+<!-- @dsCard group="Grafici" height=470 subtitle="Regolarità: barre sovrapposte e tolleranza ± 30 min" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Confronto tra notti</div>
+<div class="card" style="padding:20px">
+<div class="row" style="flex-wrap:nowrap;gap:8px"><div style="flex:0 0 34px"></div><div style="position:relative;flex:1;height:18px;font-size:11px;color:var(--ink-muted)"><span style="position:absolute;left:0">21</span><span style="position:absolute;left:21.4%;transform:translateX(-50%)">00</span><span style="position:absolute;left:42.9%;transform:translateX(-50%)">03</span><span style="position:absolute;left:64.3%;transform:translateX(-50%)">06</span><span style="position:absolute;left:85.7%;transform:translateX(-50%)">09</span></div><div style="flex:0 0 84px"></div></div>
+<div style="position:relative;display:flex;flex-direction:column;gap:6px;margin-top:6px" id="rows"></div>
+<div style="font-size:12px;color:var(--ink-muted);margin-top:12px;line-height:18px">Fascia verde = mediana ± 30 min · tratteggio = mediana · pieno = confermata · tratteggiato = stimata · punti = mancante</div></div></div>
+</div>
+<script>
+var R=[['V 23',16.7,53.6,'c','+8 / −4','OK'],['G 22',26.2,53,'c','+37 / +11','Fuori'],['M 21',20.2,51.2,'e','+3 / +2','OK'],['M 20',0,100,'m','—','—'],['Oggi',20,53.8,'e','+2 / 0','OK']];
+var h='';R.forEach(function(r){var cls=r[3]=='e'?' is-estimated':(r[3]=='m'?' is-missing':'');var st=r[3]=='m'?'':'left:'+r[1]+'%;width:'+r[2]+'%';var b=r[5]=='OK'?'badge-ok':(r[5]=='Fuori'?'badge-out':'badge-missing');
+h+='<div class="row" style="flex-wrap:nowrap;gap:8px"><div style="flex:0 0 34px;font-size:11px;color:var(--ink-muted)">'+r[0]+'</div><div class="track" style="height:14px"><div class="hbar'+cls+'" style="'+st+'"></div></div><div style="flex:0 0 84px;display:flex;justify-content:flex-end;gap:6px;align-items:center;font-size:11px"><span class="muted">'+r[4]+'</span><span class="badge '+b+'" style="height:18px;padding:0 6px">'+r[5]+'</span></div></div>';});
+h+='<div style="position:absolute;top:0;bottom:0;left:42px;right:92px;pointer-events:none"><div class="band" style="left:16.2%;width:7.1%"></div><div class="band" style="left:70.2%;width:7.1%"></div><div class="avg" style="left:19.8%"></div><div class="avg" style="left:73.8%"></div></div>';
+document.getElementById('rows').innerHTML=h;
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>
