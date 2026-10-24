@@ -69,6 +69,43 @@ function schemaInstruction(spec: StructuredSpec): string {
   ].join('\n');
 }
 
+const STRICT_UNSUPPORTED = new Set([
+  '$schema',
+  'minLength',
+  'maxLength',
+  'pattern',
+  'format',
+  'minItems',
+  'maxItems',
+  'minimum',
+  'maximum',
+  'exclusiveMinimum',
+  'exclusiveMaximum',
+  'multipleOf',
+]);
+
+/**
+ * Removes keywords that some providers reject in strict json_schema mode.
+ * The full schema is still enforced by local validation.
+ */
+export function sanitizeForStrict(schema: unknown): unknown {
+  if (Array.isArray(schema)) return schema.map(sanitizeForStrict);
+  if (schema && typeof schema === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(schema)) {
+      if (STRICT_UNSUPPORTED.has(k)) continue;
+      // Do not touch property NAMES inside "properties".
+      if (k === 'properties' && v && typeof v === 'object') {
+        out[k] = Object.fromEntries(Object.entries(v).map(([pk, pv]) => [pk, sanitizeForStrict(pv)]));
+      } else {
+        out[k] = sanitizeForStrict(v);
+      }
+    }
+    return out;
+  }
+  return schema;
+}
+
 /** Builds messages + response_format for the provider's structured output capability. */
 export function buildStructuredRequest(
   mode: StructuredOutputMode,
@@ -87,7 +124,11 @@ export function buildStructuredRequest(
       messages,
       responseFormat: {
         type: 'json_schema',
-        json_schema: { name: spec.name, schema: spec.jsonSchema, strict: spec.strict },
+        json_schema: {
+          name: spec.name,
+          schema: (spec.strict ? sanitizeForStrict(spec.jsonSchema) : spec.jsonSchema) as Record<string, unknown>,
+          strict: spec.strict,
+        },
       },
     };
   }
