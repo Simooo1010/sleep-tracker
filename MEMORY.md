@@ -30,3 +30,6 @@ Il design system deve prevedere componenti per:
 - Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.
 - Non consuma caffeina. Si alza subito dopo la sveglia → NFC non necessario.
 - Vuole molti grafici e insight.
+
+## 🔔 Promemoria per l'utente
+- **A fine costruzione dell'app (dopo il deploy funzionante)**: ricordare all'utente di creare una routine settimanale (scheduled task) in cui Claude controlla lo stato del progetto (deploy Vercel, errori runtime, advisor Supabase, dati in arrivo, AI gateway, dipendenze). Proporla e configurarla solo con il suo ok.
