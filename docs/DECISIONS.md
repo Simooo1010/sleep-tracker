@@ -25,3 +25,4 @@
 | 2026-10-24 | Ampio set di grafici: regolarità, durata/debito, correlazioni, pattern/previsioni | confermata |
 | 2026-10-24 | Media mobile a 14 giorni + indicatore di deriva della media | confermata |
 | 2026-10-24 | Sonnellini pomeridiani nelle statistiche; cattura via comando rapido + recupero nel check serale | confermata |
+| 2026-10-24 | Dopo il completamento: routine settimanale di controllo del progetto (da ricordare all'utente) | rinviata |
