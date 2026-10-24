@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Variabili colore</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap">
+<style>body{margin:0}</style>
+</helmet>
+<div style="width: 1100px; height: 1320px; box-sizing: border-box; padding: 32px; background: #eef2f6; color: #27303b; font-family: 'Instrument Sans', system-ui, sans-serif; display: flex; flex-direction: column; gap: 20px">
+<div>
+<h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 40px; line-height: 1.1">Variabili colore · chiaro e scuro</h1>
+<div style="font-size: 14px; color: #5a6675; margin-top: 4px">Ogni variabile ha un valore per tema. Il tema scuro non è un'inversione: sfondi blu-notte, accenti più chiari, testi mai bianco puro.</div>
+</div>
+<div style="display: grid; grid-template-columns: 170px 1fr 1fr 1.6fr; column-gap: 16px; row-gap: 0; font-size: 13px">
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6675; padding-bottom: 8px">Variabile</div>
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6675; padding-bottom: 8px">Chiaro</div>
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6675; padding-bottom: 8px">Scuro</div>
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #5a6675; padding-bottom: 8px">Dove si usa</div>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="16">
+<div style="padding: 9px 0; border-top: 1px solid #d7dee6; font-weight: 600">{{r.name}}</div>
+<div style="padding: 6px 0; border-top: 1px solid #d7dee6; display: flex; align-items: center; gap: 10px"><span style="flex: 0 0 34px; height: 34px; border-radius: 10px; background: {{r.l}}; border: 1px solid #b5bfcb"></span><span style="font-variant-numeric: tabular-nums">{{r.l}}</span></div>
+<div style="padding: 6px 0; border-top: 1px solid #d7dee6; display: flex; align-items: center; gap: 10px"><span style="flex: 0 0 34px; height: 34px; border-radius: 10px; background: {{r.d}}; border: 1px solid #5a6675"></span><span style="font-variant-numeric: tabular-nums">{{r.d}}</span></div>
+<div style="padding: 9px 0; border-top: 1px solid #d7dee6; color: #46546a; line-height: 18px">{{r.use}}</div>
+</sc-for>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1100,"height":1320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const R = [
+      ['bg', '#eef2f6', '#161a22', 'Sfondo di ogni schermata'],
+      ['card', '#ffffff', '#202633', 'Schede e pannelli sopra lo sfondo'],
+      ['ink', '#27303b', '#e8ecf3', 'Testo principale e icone'],
+      ['mut', '#5a6675', '#a4aebd', 'Testo secondario, etichette, assi'],
+      ['line', '#d7dee6', '#2b3242', 'Linee sottili e separatori'],
+      ['lineStrong', '#6b7a8c', '#7d8aa0', 'Bordi dei controlli, mancante (punteggiato)'],
+      ['blue', '#b9c9e6', '#aebfe0', 'Notti confermate, barre e grafici di durata'],
+      ['sage', '#b4c7ae', '#a9c0a3', 'Benessere: voto selezionato, fasce di tolleranza'],
+      ['peach', '#f0c1a4', '#eab898', 'Azione principale e dati stimati'],
+      ['onFill', '#1f2a3a', '#16202e', 'Testo sopra azzurro, salvia e pesca'],
+      ['blueSoft', '#dfe7f5', '#232d44', 'Sfondo di badge e riquadri azzurri'],
+      ['blueInk', '#2a3f66', '#aebfe0', 'Testo sopra blueSoft'],
+      ['sageSoft', '#e1ebdd', '#223026', 'Sfondo di badge e riquadri salvia'],
+      ['sageInk', '#2f4a2b', '#a9c0a3', 'Testo sopra sageSoft'],
+      ['peachSoft', '#fbe6da', '#3a2a22', 'Sfondo di badge e riquadri pesca'],
+      ['peachInk', '#7a3d17', '#eab898', 'Testo sopra peachSoft, bordo delle stime'],
+      ['yellow', '#f4e3a1', '#a9c0a3', 'Energia del mattino e sonnellini. Giallo solo nel tema chiaro, nel scuro usa la salvia'],
+      ['yellowSoft', '#fbf3cf', '#223026', 'Sfondo delle schede di energia, previsione e sonnellino'],
+      ['yellowInk', '#5e4a00', '#a9c0a3', 'Testo sopra yellowSoft e bordo del voto di energia']
+    ];
+    return { rows: R.map(([name, l, d, use]) => ({ name, l, d, use })) };
+  }
+}
+</script>
+</body>
+</html>

@@ -3,8 +3,8 @@
 Memoria del progetto: contesto utente, stato attuale e informazioni da ricordare tra le sessioni.
 Va aggiornata quando si impara qualcosa di durevole. Le regole stanno in `CLAUDE.md`.
 
-## ⚠️ NOVITÀ — leggere prima del design system (aggiunte 2026-10-24, dopo l'avvio della chat design system)
-Il design system deve prevedere componenti per:
+## Requisiti recepiti nel design system (aggiunti 2026-10-24)
+Il design system li include già, vedi `docs/DESIGN.md`:
 1. **Regolarità orari** (priorità alta): barre orarie per notte sovrapposte (confronto tra giornate), scostamento da media mobile 14 giorni, tolleranza ±30 min, indicatore di deriva della media, feriali vs weekend (stessi criteri). → `docs/PROJECT.md` §5b
 2. **Ampio set di grafici e insight**: durata/debito, correlazioni fattori ↔ qualità/energia/mood, heatmap per giorno della settimana, trend, previsione energia. → `docs/PROJECT.md` §5c
 3. **NFC escluso dalla v1** (l'utente si alza subito dopo la sveglia, non consuma caffeina): niente UI per i tag.
@@ -21,10 +21,16 @@ Il design system deve prevedere componenti per:
 - Vuole tutto gratuito.
 
 ## Stato attuale
-- Fase: definizione (prima del design system).
+- Fase: design system completato (2026-10-24). Vedi `docs/DESIGN.md`.
 - Decisioni: vedi `docs/DECISIONS.md`.
 - Supabase: connesso via MCP (2026-10-24).
-- Roadmap (confermata): 1) design system → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
+- Roadmap (confermata): 1) design system ✅ → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
+
+## Design
+- Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
+- Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
+- Logo: nuvola con luna, azzurro pastello su bianco (icona PWA per iPhone). File in `docs/design/logo/`.
+- Design system (artefatto): https://claude.ai/artifact/3bLXhSQ61PrRXtpzM9F2mR · Prototipi: https://claude.ai/artifact/8MfknmomX1jzdWa26CRFRP
 
 ## Preferenze di lavoro
 - Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.

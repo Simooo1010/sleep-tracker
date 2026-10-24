@@ -1,0 +1,24 @@
+<!-- @dsCard group="Notte" height=520 subtitle="Stanotte: stimata e confermata" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Da confermare</div>
+<div class="card stack" style="gap:16px">
+<div class="eyebrow">Stanotte</div>
+<p class="big big-lg">7h 32m</p>
+<div class="row" style="flex-wrap:nowrap;gap:10px;font-size:17px"><span>23:48</span><div class="night-bar is-estimated"></div><span>07:20</span></div>
+<div class="row"><span class="badge badge-estimated">Stimata</span></div>
+<div class="muted" style="font-size:13px;line-height:19px">Inizio stimato da Riposo (23:48), fine dalla sveglia interrotta (07:20). Controlla e conferma.</div>
+<button class="btn btn-primary btn-lg btn-block">Conferma</button>
+<button class="btn btn-ghost" style="align-self:flex-start">Correggi orari</button></div></div>
+<div class="pane"><div class="cap">Confermata</div>
+<div class="card stack" style="gap:16px">
+<div class="eyebrow">Stanotte</div>
+<p class="big big-lg">7h 32m</p>
+<div class="row" style="flex-wrap:nowrap;gap:10px;font-size:17px"><span>23:48</span><div class="night-bar"></div><span>07:20</span></div>
+<div class="row"><span class="badge badge-confirmed">Confermata</span><span class="badge badge-ok">Letto +8 min · OK</span></div>
+<div class="muted" style="font-size:13px;line-height:19px">Orari confermati da te alle 08:52.</div>
+<div class="row" style="justify-content:space-between;background:var(--sage-soft);color:var(--sage-ink);border-radius:var(--radius-pill);padding:4px 6px 4px 18px;font-size:14px"><span>Registrata. Grazie.</span><button class="btn btn-ghost" style="color:var(--sage-ink)">Annulla</button></div></div></div>
+</div>
+<script>var p=document.querySelector('.pane');var s=document.querySelectorAll('.pane');s.forEach(function(e){var q=e.cloneNode(true);q.setAttribute('data-theme','scuro');e.parentNode.appendChild(q)});</script>
+</body></html>

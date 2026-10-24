@@ -1,0 +1,18 @@
+<!-- @dsCard group="Grafici" height=440 subtitle="Indizi, non cause" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="card stack" style="gap:10px;overflow-x:auto">
+<div class="eyebrow">Cosa si lega a qualità, energia e umore</div>
+<div class="corr" style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-muted);min-width:340px"><span style="flex:1 1 120px">Fattore</span><span style="flex:0 0 64px;text-align:center">Qualità</span><span style="flex:0 0 64px;text-align:center">Energia</span><span style="flex:0 0 64px;text-align:center">Umore</span></div>
+<div id="t" class="stack" style="gap:6px;min-width:340px"></div>
+<div style="font-size:12px;line-height:18px;color:var(--ink-muted)">Differenza media di voto (1–5) nelle notti con il fattore. Sono indizi, non cause. Servono almeno 14 notti e 5 occorrenze.</div></div></div>
+</div>
+<script>
+var R=[['Schermo a letto','8 notti su 21',['−0,8','−0,4','−0,3']],['Sport','9 notti su 21',['+0,7','+0,9','+0,4']],['Giornata stressante','6 notti su 21',['−0,6','−0,2','−0,9']],['Cena tardi','5 notti su 21',['−0,1','0,0','+0,1']],['Alcol','2 notti, ne servono 5',['—','—','—']]],h='';
+R.forEach(function(r){h+='<div class="corr" style="min-width:340px"><div style="flex:1 1 120px;min-width:0"><div style="font-size:14px">'+r[0]+'</div><div style="font-size:11px;color:var(--ink-muted)">'+r[1]+'</div></div>';
+r[2].forEach(function(v){var c=v=='—'?'few':(v.indexOf('+')==0&&parseFloat(v.replace(',','.'))>=0.3?'pos':(v.indexOf('−')==0&&parseFloat(v.replace('−','').replace(',','.'))>=0.3?'neg':'neu'));h+='<div class="c '+c+'">'+v+'</div>';});h+='</div>';});
+document.getElementById('t').innerHTML=h;
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>

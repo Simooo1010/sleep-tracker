@@ -1,0 +1,37 @@
+<!-- @dsCard height=340 -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300&display=swap">
+<style>
+html,body{margin:0}
+.cv{width:960px;height:340px;position:relative;background:var(--ground);overflow:hidden}
+.cv svg{position:absolute;left:0;top:0;width:960px;height:340px}
+.b-blue{fill:var(--blue)}.b-sage{fill:var(--sage)}.b-peach{fill:var(--peach)}.b-yellow{fill:var(--yellow)}
+.blk{rx:var(--radius-xl)}
+.moon-out{fill:none;stroke:var(--ground);stroke-width:2}
+.moon-lit{fill:var(--ground)}
+.name{position:absolute;left:40px;bottom:44px;width:420px}
+.name h1{margin:0;font-family:var(--font-display);font-weight:300;font-size:96px;line-height:.95;letter-spacing:-.01em;font-optical-sizing:auto;color:var(--ink)}
+.name p{margin:14px 0 0;font-family:var(--font-sans);font-size:14px;line-height:20px;color:var(--ink-muted)}
+</style></head>
+<body>
+<div class="cv">
+<svg viewBox="0 0 960 340" aria-hidden="true">
+<!-- Derivazione
+blocchi: blue 232x180 (radius-xl), peach 192x112, sage 192x164, yellow 232x96; sfalsati su due colonne a destra di x=480
+disposizione: due colonne sfalsate con la colonna sinistra più larga, come le schede dell'app
+motivo: fasi lunari, perché il voto 1-5 dell'app è una scala lunare: cinque lune ritagliate nel blu con il colore dello sfondo
+passi e raggi: spaziatura 16, raggio radius-xl 28, lune di raggio 18 -->
+<rect class="b-blue blk" x="496" y="24" width="232" height="180"/>
+<rect class="b-peach blk" x="744" y="24" width="192" height="112"/>
+<rect class="b-sage blk" x="744" y="152" width="192" height="164"/>
+<rect class="b-yellow blk" x="496" y="220" width="232" height="96"/>
+<g id="m"></g>
+</svg>
+<div class="name"><h1>Sleep<br>Tracker</h1><p>Stima da sola. Chiede solo una conferma.</p></div>
+</div>
+<script>
+var P=['','M12 2A10 10 0 0 1 12 22A5 10 0 0 0 12 2Z','M12 2A10 10 0 0 1 12 22Z','M12 2A10 10 0 0 1 12 22A5 10 0 0 1 12 2Z','M12 2a10 10 0 1 1 0 20a10 10 0 1 1 0-20'],h='';
+for(var i=0;i<5;i++){var x=514+i*42;h+='<g transform="translate('+x+' 128) scale(1.5)"><circle class="moon-out" cx="12" cy="12" r="10"/>'+(P[i]?'<path class="moon-lit" d="'+P[i]+'"/>':'')+'</g>';}
+document.getElementById('m').innerHTML=h;
+</script>
+</body></html>

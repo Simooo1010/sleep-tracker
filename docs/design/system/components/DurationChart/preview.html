@@ -1,0 +1,19 @@
+<!-- @dsCard group="Grafici" height=420 subtitle="Durata, obiettivo e debito" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="card stack" style="gap:12px">
+<div class="eyebrow">Durata e debito, ultime 14 notti</div>
+<div style="position:relative;height:150px;display:flex;align-items:flex-end;gap:4px;border-bottom:1px solid var(--line)" id="b"></div>
+<div style="display:flex;gap:4px;font-size:10px;color:var(--ink-muted);text-align:center" id="d"></div>
+<div class="row"><span class="badge badge-confirmed" style="height:28px;font-size:13px">Media 7 notti 7h 26m</span><span class="badge badge-confirmed" style="height:28px;font-size:13px">Media del mese 7h 27m</span><span class="badge badge-estimated" style="height:28px;font-size:13px">Debito 1h 05m</span><span class="badge badge-ok" style="height:28px;font-size:13px">Obiettivo 7h 30m</span></div>
+<div style="font-size:12px;color:var(--ink-muted)">Linea tratteggiata = obiettivo · barre tratteggiate = stimate</div></div></div>
+</div>
+<script>
+var H=[82.4,85.6,81.1,87.2,0,77.8,84.3,79.6,88.5,82.8,83.7,78.7,81.5,83.7],E={2:1,9:1},b='',d='';
+H.forEach(function(h,i){if(h==0)b+='<div style="flex:1 1 0;height:10%;border:1.5px dotted var(--line-strong);border-radius:6px 6px 0 0"></div>';else b+='<div class="vbar'+(E[i]?' is-estimated':'')+'" style="height:'+h+'%"></div>';d+='<div style="flex:1 1 0">'+(10+i)+'</div>';});
+b+='<div style="position:absolute;left:0;right:0;bottom:83.3%;border-top:2px dashed var(--sage-edge)"></div>';
+document.getElementById('b').innerHTML=b;document.getElementById('d').innerHTML=d;
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>
