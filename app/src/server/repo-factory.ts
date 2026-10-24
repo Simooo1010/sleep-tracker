@@ -3,6 +3,7 @@ import { createServiceClient, createSupabaseRepo } from './repo-supabase';
 import type { Repo } from './types';
 
 let memory: MemoryRepo | undefined;
+let remote: Repo | undefined;
 
 /**
  * Repo di produzione = Supabase (service role, solo server).
@@ -13,5 +14,6 @@ export function getRepo(env: NodeJS.ProcessEnv = process.env): Repo {
     memory ??= new MemoryRepo();
     return memory;
   }
-  return createSupabaseRepo(createServiceClient(env));
+  remote ??= createSupabaseRepo(createServiceClient(env));
+  return remote;
 }

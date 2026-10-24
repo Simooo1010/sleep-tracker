@@ -7,6 +7,8 @@ import { authenticate } from '@/server/token';
 
 export const dynamic = 'force-dynamic';
 
+const MAX_BODY_BYTES = 16 * 1024;
+
 const json = (status: number, body: Record<string, unknown>) =>
   NextResponse.json(body, { status, headers: { 'cache-control': 'no-store' } });
 
@@ -30,9 +32,16 @@ export async function POST(request: Request): Promise<Response> {
   }
   if (!authorized) return json(401, { ok: false, error: 'Non autorizzato.' });
 
+  const declared = Number(request.headers.get('content-length') ?? '0');
+  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
+    return json(413, { ok: false, error: 'Richiesta troppo grande.' });
+  }
+
   let body: unknown;
   try {
-    body = await request.json();
+    const text = await request.text();
+    if (text.length > MAX_BODY_BYTES) return json(413, { ok: false, error: 'Richiesta troppo grande.' });
+    body = JSON.parse(text);
   } catch {
     return json(400, { ok: false, error: 'Corpo della richiesta non valido.' });
   }

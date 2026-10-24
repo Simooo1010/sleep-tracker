@@ -325,7 +325,7 @@ describe('POST /api/events — validazione', () => {
     expectSafe(r2);
   });
 
-  it('body enorme (>100KB) non manda in crash: 400 gestito', async () => {
+  it('body enorme (>100KB) non manda in crash: 413 gestito', async () => {
     const huge = 'x'.repeat(200_000);
     const cases: unknown[] = [
       { type: 'wake', pad: huge },
@@ -336,7 +336,7 @@ describe('POST /api/events — validazione', () => {
     ];
     for (const body of cases) {
       const r = await send(body);
-      expect(r.status).toBe(400);
+      expect(r.status).toBe(413);
       expect(r.text.length).toBeLessThan(1_000);
       expectSafe(r);
     }
