@@ -24,6 +24,7 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - **Risveglio**: automazione "Sveglia interrotta" invia `wake` in automatico (gira senza aprire l'app).
 - **Gesto fisso (caffè/porta)**: tap su tag NFC → `up` (alzata effettiva) — utile se si rimane a letto dopo la sveglia.
 - **Primo uso telefono (~1h–1h30 dopo)**: notifica/widget con la notte già ricostruita → conferma in 1 tap + voto energia/qualità + fattori.
+- **Sonnellino**: comando rapido inizio/fine (o timer con sveglia che chiude da solo); se dimenticato, recupero nel check serale ("sonnellino oggi? quanto?").
 - Se un segnale manca: stima dai giorni precedenti, marcata "stimata".
 
 ## 4. Architettura (confermata: web app, tutto free)
@@ -64,6 +65,7 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - Durata e debito: durata per notte, medie 7/30 giorni, debito di sonno accumulato.
 - Correlazioni: fattori (schermi, sport, stress…) vs qualità percepita, energia mattutina, mood serale.
 - Pattern e previsioni: heatmap per giorno della settimana, trend mensili, energia prevista per domani.
+- Sonnellini pomeridiani: frequenza, durata, orario; effetto sul sonno notturno (latenza, orario di letto, qualità) e sull'energia; inclusi nel sonno totale delle 24h.
 - Insight testuali: da statistiche (sempre) + AI gateway (quando disponibile). Le correlazioni si mostrano solo con dati sufficienti (es. ≥14 notti) e come indizi, non come cause.
 
 ## 6. Domande aperte

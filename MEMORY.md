@@ -8,6 +8,7 @@ Il design system deve prevedere componenti per:
 1. **Regolarità orari** (priorità alta): barre orarie per notte sovrapposte (confronto tra giornate), scostamento da media mobile 14 giorni, tolleranza ±30 min, indicatore di deriva della media, feriali vs weekend (stessi criteri). → `docs/PROJECT.md` §5b
 2. **Ampio set di grafici e insight**: durata/debito, correlazioni fattori ↔ qualità/energia/mood, heatmap per giorno della settimana, trend, previsione energia. → `docs/PROJECT.md` §5c
 3. **NFC escluso dalla v1** (l'utente si alza subito dopo la sveglia, non consuma caffeina): niente UI per i tag.
+5. **Sonnellini pomeridiani**: statistiche dedicate + cattura con comando rapido inizio/fine e recupero nel check serale.
 4. Check serale (stanchezza/mood) subito prima di posare il telefono + Full Immersion attivata a mano.
 
 ## Contesto utente
