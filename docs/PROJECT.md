@@ -43,12 +43,14 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
   - Contro: nessun accesso diretto a HealthKit dalla PWA (mitigato da Comandi).
 - **AI**: statistiche calcolate in codice (gratis); insight testuali via LLM. Decisione aperta: provider free tier vs Claude (costo stimato pochi centesimi/mese con analisi settimanale).
 
-## 4b. AI gateway (progetto separato)
-- Router verso più provider con piano gratuito (es. Groq, Google Gemini, OpenRouter modelli free, Mistral, Cerebras) — lista da verificare.
-- Fallback automatico su errore/429/quota esaurita: provider successivo, con cooldown e health tracking.
-- Interfaccia unica (stile OpenAI-compatible); il provider è un dettaglio di configurazione → passaggio futuro a Claude/ChatGPT senza toccare l'app.
-- Ultimo livello: insight generati da regole/statistiche, così l'app non resta mai senza suggerimenti.
-- Vincolo: una sola chiave per provider, rispettando i ToS (niente account multipli per aggirare i limiti).
+## 4b. AI gateway (progetto separato) — **costruito e online** (2026-10-24)
+Documentazione completa in `docs/AI_GATEWAY.md`; codice in `gateway/`; stato in `MEMORY.md`.
+- Router verso provider con piano gratuito. Catena attuale: Groq (`gpt-oss-120b` → `gpt-oss-20b`) → OpenRouter `:free` (facoltativo, senza chiave) → insight a regole. Mistral disattivato (chiave a pagamento); Gemini, Cerebras e GitHub Models esclusi (motivi in `docs/DECISIONS.md`).
+- Fallback automatico su errore/429/quota/JSON non valido, con cooldown e health tracking.
+- Interfaccia unica OpenAI-compatible; provider e modelli sono configurazione (`gateway/providers.config.json`): aggiungerne uno non richiede codice.
+- Ultimo livello: insight a regole dalle statistiche, così l'app non resta mai senza suggerimenti.
+- Privacy: solo statistiche aggregate in ingresso, nessun log dei contenuti.
+- Vincolo: una sola chiave per provider, rispettando i ToS.
 
 ## 4c. Strategia di test
 - Unit + integrazione (API, DB, logica di stima).

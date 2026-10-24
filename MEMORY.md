@@ -27,7 +27,8 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Supabase: connesso via MCP (2026-10-24). Progetto `sleep-tracker` creato (ref `bpsvvltrhlqvpxhjjrfy`, eu-central-1, org `qjrnwnextqfbaauwvbpf`). Non riusare il progetto finanze `aedoncqvypsrksnqiwgh`.
 - Vercel: progetto `sleep-tracker` (`prj_rPEEkueywddcJBwVPKriwwwRfZFI`, team `team_7cA5Y1PcLGxH0Rcb6HXHzwHx`) collegato al repo, nessun deploy ancora.
 - AI gateway: ONLINE e verificato in produzione con Groq (2026-10-24), vedi `docs/AI_GATEWAY.md` §11. URL: `https://sleep-tracker-simone-dr-s-projects.vercel.app` (root Vercel = `gateway`, Vercel Authentication disattivata: protegge il bearer `GATEWAY_SECRET`). `GATEWAY_SECRET` ruotato dopo il test: l'utente non lo conosce; quando nascerà l'app, impostare lo stesso valore dove serve (o ruotarlo di nuovo). Env su Vercel (inserite dall'utente): `GROQ_API_KEY`, `GATEWAY_SECRET`. Mistral non disponibile (richiede piano a pagamento); `OPENROUTER_API_KEY` facoltativa.
-- Roadmap (confermata): 1) design system ✅ → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
+- **Prossimo step**: build principale (4) — partire da schema Supabase + endpoint di ingestione, poi logica di stima/statistiche, poi app Next.js/PWA in `app/` con progetto Vercel separato (il progetto `sleep-tracker` ha root `gateway`). Il layer AI si usa solo via gateway: `CLAUDE.md` § Layer AI e `docs/AI_GATEWAY.md` §13.
+- Roadmap (confermata): 1) design system ✅ → 2) AI gateway ✅ (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI ✅ (prototipi D1/D2 approvati) → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).

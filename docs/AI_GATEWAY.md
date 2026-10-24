@@ -317,3 +317,46 @@ npm run dev:server                                      # http://127.0.0.1:8787
 ```
 
 Verifiche fatte (2026-10-24, senza chiavi reali): `vercel build` (CLI 65.2.0, `@vercel/node` con TypeScript 5.9.3 del progetto) su una copia di `gateway/` con impostazioni di progetto locali → build ok, function `api/gateway.func` con `runtime: nodejs24.x`, `maxDuration: 60`, import riscritti in `.js`, `providers.config.json` incluso, rotta `^/v1(?:/(.*))$ → /api/gateway?route=$1`. L'output compilato, eseguito con Node, risponde: health senza bearer 401, health 200 (`rules_only`), chat 503 `all_providers_failed`, insight 200 da regole. **Non verificati**: deploy reale su Vercel (Fluid Compute attivo, URL ricevuto dalla function dopo il rewrite, env di produzione) e chiamate ai provider reali (§11).
+
+## 13. Come usarlo dall'app
+
+**Variabili d'ambiente dell'app** (stesse del gateway, non committare mai i valori):
+- `GATEWAY_URL` = `https://sleep-tracker-simone-dr-s-projects.vercel.app`
+- `GATEWAY_SECRET` = lo stesso bearer configurato sul progetto Vercel del gateway.
+
+**Dove vive l'app.** Il progetto Vercel `sleep-tracker` (`prj_rPEEkueywddcJBwVPKriwwwRfZFI`) ha Root Directory `gateway` ed è dedicato al gateway. L'app va in una cartella separata del repo (es. `app/`) con un **suo progetto Vercel** (Root Directory `app`), oppure si riorganizza il progetto. Non cambiare la root del progetto del gateway senza spostare anche lui.
+
+**`GATEWAY_SECRET` non è leggibile** (variabile sensitive; l'utente non lo conosce, è stato ruotato dopo il test del 2026-10-24). Procedura per impostarlo nell'app:
+1. Generare un valore casuale (`openssl rand -hex 32`).
+2. Impostarlo come `GATEWAY_SECRET` (sensitive) in **entrambi** i progetti Vercel (gateway e app), con il tool MCP Vercel `edit_project_env` / `create_project_env`.
+3. Rideployare entrambi (le env si applicano solo al deploy successivo).
+4. Verificare: `GET /v1/health` con il nuovo bearer → 200, con il vecchio → 401.
+Non scrivere il valore nel repo né in chat; non stamparlo nei log.
+
+**Esempio di client (TypeScript, server-side, mai dal browser):**
+```ts
+const res = await fetch(`${process.env.GATEWAY_URL}/v1/insights`, {
+  method: 'POST',
+  headers: {
+    authorization: `Bearer ${process.env.GATEWAY_SECRET}`,
+    'content-type': 'application/json',
+  },
+  body: JSON.stringify({
+    windowDays: 14,
+    nights: { inWindow: 14, withData: 12, confirmed: 9, estimated: 3 },
+    targetSleepMinutes: 450,
+    duration: { nights: 12, medianMinutes: 402 },
+  }),
+  signal: AbortSignal.timeout(30_000),
+});
+if (!res.ok) { /* mostrare solo gli insight a regole calcolati in locale, mai un errore all'utente */ }
+const { summary, insights, source, provider } = await res.json(); // source: 'ai' | 'rules'
+```
+Il campo `source` va mostrato in UI come provenienza (principio §3c di `docs/PROJECT.md`). Schema completo della richiesta: §6.
+
+**Regole per chi sviluppa l'app**
+- Chiamare il gateway solo da codice server (route/edge function), mai dal browser: il bearer non deve uscire.
+- Inviare solo statistiche aggregate (§8); mai note libere, nomi, email, timestamp grezzi.
+- Timeout e rete: se il gateway non risponde, l'app deve funzionare comunque (nessun dato obbligatorio, nessun errore all'utente).
+- Nuovo modello/provider: §4, non toccare l'app.
+
