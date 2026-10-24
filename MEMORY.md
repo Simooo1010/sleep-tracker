@@ -5,10 +5,11 @@ Va aggiornata quando si impara qualcosa di durevole. Le regole stanno in `CLAUDE
 
 ## Requisiti recepiti nel design system (aggiunti 2026-10-24)
 Il design system li include già, vedi `docs/DESIGN.md`:
-1. **Regolarità orari** (priorità alta): barre orarie per notte sovrapposte (confronto tra giornate), scostamento da media mobile 14 giorni, tolleranza ±30 min, indicatore di deriva della media, feriali vs weekend (stessi criteri). → `docs/PROJECT.md` §5b
+1. **Regolarità orari** (priorità alta): barre orarie per notte sovrapposte (confronto tra giornate), scostamento da mediana mobile 14 giorni, tolleranza ±30 min, indicatore di deriva della media, feriali vs weekend (stessi criteri). → `docs/PROJECT.md` §5b
 2. **Ampio set di grafici e insight**: durata/debito, correlazioni fattori ↔ qualità/energia/mood, heatmap per giorno della settimana, trend, previsione energia. → `docs/PROJECT.md` §5c
 3. **NFC escluso dalla v1** (l'utente si alza subito dopo la sveglia, non consuma caffeina): niente UI per i tag.
 5. **Sonnellini pomeridiani**: statistiche dedicate + cattura con comando rapido inizio/fine e recupero nel check serale.
+6. **Gestione dell'imprevedibilità** (`docs/PROJECT.md` §3c): nessun dato obbligatorio, etichetta di provenienza su ogni valore (automatico/confermato/stimato/mancante), chip eccezioni one-tap, indicatore di copertura dati, 2–3 domande rapide al giorno.
 4. Check serale (stanchezza/mood) subito prima di posare il telefono + Full Immersion attivata a mano.
 
 ## Contesto utente
