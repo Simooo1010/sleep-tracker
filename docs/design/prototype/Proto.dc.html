@@ -151,7 +151,7 @@ button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 </div>
 </sc-for>
 </div>
-<div style="font-size: 12px; color: {{t.mut}}">Barra colorata = stanotte · grigia = media mobile dei 14 giorni</div>
+<div style="font-size: 12px; color: {{t.mut}}">Barra colorata = stanotte · grigia = mediana mobile dei 14 giorni</div>
 </section>
 </sc-if>
 
@@ -198,7 +198,7 @@ button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 <sc-if value="{{v.regTitle}}" hint-placeholder-val="{{true}}">
 <div>
 <h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">Regolarità</h1>
-<div style="font-size: 14px; color: {{t.mut}}; margin-top: 4px">Riferimento: media mobile dei 14 giorni · tolleranza ± 30 min</div>
+<div style="font-size: 14px; color: {{t.mut}}; margin-top: 4px">Riferimento: mediana mobile dei 14 giorni · tolleranza ± 30 min</div>
 </div>
 </sc-if>
 <sc-if value="{{v.regHead}}" hint-placeholder-val="{{false}}">
@@ -236,7 +236,7 @@ button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 <div style="position: absolute; top: 0; bottom: 0; left: {{bands.wakeAvg}}; width: 0; border-left: 2px dashed {{t.sageInk}}"></div>
 </div>
 </div>
-<div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: {{t.mut}}"><span>Fascia verde = media ± 30 min (letto {{bands.bedLabel}}, sveglia {{bands.wakeLabel}})</span><span>Pieno = confermata · tratteggiato = stimata</span><span style="display: {{devShow}}">Numeri a destra = scarto da media (min): letto / sveglia</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: {{t.mut}}"><span>Fascia verde = mediana ± 30 min (letto {{bands.bedLabel}}, sveglia {{bands.wakeLabel}})</span><span>Pieno = confermata · tratteggiato = stimata</span><span style="display: {{devShow}}">Numeri a destra = scarto dalla mediana (min): letto / sveglia</span></div>
 </section>
 </sc-if>
 <sc-if value="{{v.regStats}}" hint-placeholder-val="{{true}}">
@@ -253,7 +253,7 @@ button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 <div style="display: flex; flex-wrap: wrap; gap: 20px">
 <sc-if value="{{v.drift}}" hint-placeholder-val="{{true}}">
 <section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
-<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap"><div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Deriva della media</div><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{t.peachSoft}}; color: {{t.peachInk}}">{{drift.badge}}</span></div>
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap"><div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Deriva della mediana</div><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{t.peachSoft}}; color: {{t.peachInk}}">{{drift.badge}}</span></div>
 <div style="display: flex; align-items: flex-end; gap: 8px; height: 120px">
 <sc-for list="{{drift.bars}}" as="b" hint-placeholder-count="6">
 <div style="flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px">
@@ -489,6 +489,13 @@ button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 <button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 18px; font-size: 15px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}">{{c.label}}</button>
 </sc-for>
 </div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin: 18px 0 10px">Giornata particolare</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{exceptions}}" as="c" hint-placeholder-count="5">
+<button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 18px; font-size: 15px; border: {{c.xBorder}}; background: {{c.xBg}}; color: {{c.xFg}}">{{c.label}}</button>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}; margin-top: 8px">Non conta nel riferimento della regolarità.</div>
 </div>
 </sc-if>
 <sc-if value="{{v.napQ}}" hint-placeholder-val="{{true}}">
@@ -555,13 +562,15 @@ class Component extends DCLogic {
       light: { name: 'chiaro', bg: '#eef2f6', card: '#ffffff', ink: '#27303b', mut: '#5a6675', line: '#d7dee6', lineStrong: '#6b7a8c', blue: '#b9c9e6', sage: '#b4c7ae', peach: '#f0c1a4', yellow: '#f4e3a1', onFill: '#1f2a3a', blueSoft: '#dfe7f5', blueInk: '#2a3f66', sageSoft: '#e1ebdd', sageInk: '#2f4a2b', peachSoft: '#fbe6da', peachInk: '#7a3d17', yellowSoft: '#fbf3cf', yellowInk: '#5e4a00' },
       dark: { name: 'scuro', bg: '#161a22', card: '#202633', ink: '#e8ecf3', mut: '#a4aebd', line: '#2b3242', lineStrong: '#7d8aa0', blue: '#aebfe0', sage: '#a9c0a3', peach: '#eab898', yellow: '#a9c0a3', onFill: '#16202e', blueSoft: '#232d44', blueInk: '#aebfe0', sageSoft: '#223026', sageInk: '#a9c0a3', peachSoft: '#3a2a22', peachInk: '#eab898', yellowSoft: '#223026', yellowInk: '#a9c0a3' }
     };
-    const t = s.dark ? P.dark : P.light;
+    const t = Object.assign({}, s.dark ? P.dark : P.light);
+    t.surfaceX = s.dark ? '#10141b' : '#e3e9ef';
     const pad = (n) => String(n).padStart(2, '0');
     const fmt = (x) => { const m = ((Math.round(x) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
     const durMin = (b, w) => (w + 1440 - b) % 1440;
     const hmm = (m) => Math.floor(m / 60) + 'h ' + pad(Math.round(m) % 60) + 'm';
     const comma = (x) => (x > 0 ? '+' : (x < 0 ? '−' : '')) + Math.abs(x).toFixed(1).replace('.', ',');
     const sgn = (x) => (x > 0 ? '+' : (x < 0 ? '−' : '±')) + Math.abs(Math.round(x));
+    const median = (a) => { const q = a.slice().sort((x, y) => x - y), n = q.length; return n % 2 ? q[(n - 1) / 2] : (q[n / 2 - 1] + q[n / 2]) / 2; };
     const mean = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
     const sdev = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) * (x - m)))); };
     const mk = (f) => {
@@ -587,6 +596,7 @@ class Component extends DCLogic {
       const late = dow === 4 || dow === 5;
       const screen = rnd(d + 11) < 0.35, sport = rnd(d + 23) < 0.4, stress = rnd(d + 31) < 0.3, dinner = rnd(d + 47) < 0.25, alcohol = rnd(d + 59) < 0.1;
       const nap = d === 23 || rnd(d + 71) < 0.4;
+      const exc = d === 12;
       const napStart = 810 + Math.round(rnd(d + 3) * 150), napDur = 20 + Math.round(rnd(d + 5) * 30);
       const ab = 1410 + (late ? 55 : 0) + Math.round((rnd(d) - 0.5) * 50) + (screen ? 30 : 0) + (dinner ? 15 : 0) + (nap ? 20 : 0);
       const dm = 450 - (late ? 20 : 0) + Math.round((rnd(d + 40) - 0.5) * 100) + (sport ? 15 : 0) - (screen ? 15 : 0);
@@ -594,18 +604,19 @@ class Component extends DCLogic {
       const q = clamp(Math.round(3 + (sport ? 0.8 : 0) - (screen ? 0.8 : 0) - (stress ? 0.7 : 0) + (rnd(d + 13) - 0.5)), 1, 5);
       const en = clamp(Math.round(2.6 + (dm - 420) / 90 + (rnd(d + 17) - 0.5)), 1, 5);
       const mood = clamp(Math.round(3.2 - (stress ? 1 : 0) + (sport ? 0.4 : 0) + (rnd(d + 19) - 0.5)), 1, 5);
-      N[d] = { d, dow, late, ab, dm, kind, screen, sport, stress, dinner, alcohol, nap, napStart, napDur, q, en, mood, bed: ab % 1440, wake: (ab + dm) % 1440 };
+      N[d] = { d, dow, late, exc, ab, dm, kind, screen, sport, stress, dinner, alcohol, nap, napStart, napDur, q, en, mood, bed: ab % 1440, wake: (ab + dm) % 1440 };
     }
     const DOWL = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
     const present = []; for (let d = 1; d <= 23; d++) if (N[d].kind !== 'm') present.push(N[d]);
     const last14 = []; for (let d = 10; d <= 23; d++) if (N[d].kind !== 'm') last14.push(N[d]);
-    const avgBed = mean(last14.map((n) => n.ab)), avgWake = mean(last14.map((n) => n.ab + n.dm));
+    const ref = last14.filter((n) => !n.exc);
+    const avgBed = median(ref.map((n) => n.ab)), avgWake = median(ref.map((n) => n.ab + n.dm));
     const sdBed = sdev(last14.map((n) => n.ab)), sdWake = sdev(last14.map((n) => n.ab + n.dm));
     const mp = (n) => n.ab + n.dm / 2;
     const wkEnd = last14.filter((n) => n.late), wkDay = last14.filter((n) => !n.late);
     const sjl = mean(wkEnd.map(mp)) - mean(wkDay.map(mp));
-    const inTol = (n) => Math.abs(n.ab - avgBed) <= 30 && Math.abs(n.ab + n.dm - avgWake) <= 30;
-    const nTol = last14.filter(inTol).length;
+    const inTol = (n) => !n.exc &&  Math.abs(n.ab - avgBed) <= 30 && Math.abs(n.ab + n.dm - avgWake) <= 30;
+    const nTol = ref.filter(inTol).length;
     const todayDm = durMin(s.bed, s.wake);
     const todayAb = s.bed < 600 ? s.bed + 1440 : s.bed;
     const todayDevBed = todayAb - avgBed, todayDevWake = todayAb + todayDm - avgWake;
@@ -670,9 +681,9 @@ class Component extends DCLogic {
     const step = (key, dd) => () => this.setState({ [key]: s[key] + dd });
     const comp = (k, now, usual, val, color) => ({ k, v: val, now: now + '%', usual: usual + '%', color });
     const compare = [
-      comp('Addormentamento', 64, 58, fmt(s.bed) + ' · media ' + fmt(avgBed), t.blue),
+      comp('Addormentamento', 64, 58, fmt(s.bed) + ' · mediana ' + fmt(avgBed), t.blue),
       comp('Durata', clamp(todayDm / 540 * 100, 5, 100), clamp(mean(last14.map((n) => n.dm)) / 540 * 100, 5, 100), hmm(todayDm) + ' · media ' + hmm(mean(last14.map((n) => n.dm))), t.blue),
-      comp('Regolarità', 72, 60, 'scarto ' + sgn(todayDevBed) + ' min · media ± ' + Math.round(sdBed) + ' min', t.sage)
+      comp('Regolarità', 72, 60, 'scarto ' + sgn(todayDevBed) + ' min · mediana ± ' + Math.round(sdBed) + ' min', t.sage)
     ];
     const lastNight = N[23];
     const napBase = d2 ? 'Ieri: sonnellino ' + fmt(lastNight.napStart) + '–' + fmt(lastNight.napStart + lastNight.napDur) + ' (' + lastNight.napDur + ' min), con la notte fanno ' + hmm(lastNight.dm + lastNight.napDur) + ' di sonno nelle 24 ore.' : '';
@@ -710,7 +721,7 @@ class Component extends DCLogic {
     const regRows = last14.map((n) => {
       const est = n.kind === 'e', ok = inTol(n);
       return { day: DOWL[n.dow] + ' ' + n.d, left: pc(n.ab), width: (n.dm / SP * 100) + '%', fill: est ? hatch : t.blue, border: est ? '1.5px dashed ' + t.peachInk : '1px solid transparent',
-        dev: sgn(n.ab - avgBed) + ' / ' + sgn(n.ab + n.dm - avgWake), tol: ok ? 'OK' : 'Fuori', tolBg: ok ? t.sageSoft : t.peachSoft, tolFg: ok ? t.sageInk : t.peachInk };
+        dev: sgn(n.ab - avgBed) + ' / ' + sgn(n.ab + n.dm - avgWake), tol: n.exc ? 'Viaggio' : (ok ? 'OK' : 'Fuori'), tolBg: n.exc ? t.surfaceX : (ok ? t.sageSoft : t.peachSoft), tolFg: n.exc ? t.mut : (ok ? t.sageInk : t.peachInk) };
     });
     const tokTol = Math.abs(todayDevBed) <= 30 && Math.abs(todayDevWake) <= 30;
     regRows.push({ day: 'Oggi', left: pc(todayAb), width: (todayDm / SP * 100) + '%', fill: s.confirmed ? t.blue : hatch, border: s.confirmed ? '1px solid transparent' : '1.5px dashed ' + t.peachInk,
@@ -728,8 +739,8 @@ class Component extends DCLogic {
     const offs = [-42, -33, -22, -12, -4, 0], wl = ['5 sett. fa', '4', '3', '2', '1', 'Ora'];
     const dv = avgBed + offs[0];
     const driftBars = offs.map((o, i) => { const val = avgBed + o; return { val: fmt(val), label: wl[i], h: clamp(((val - (avgBed - 70)) / 90) * 100, 8, 100) + '%', color: i === 5 ? t.peach : t.blue }; });
-    const drift = { bars: driftBars, badge: sgn(avgBed - dv) + ' min in 5 settimane', text: 'La media del tuo orario di letto si è spostata da ' + fmt(dv) + ' a ' + fmt(avgBed) + '. È oltre la tolleranza di ± 30 min: il riferimento sta scivolando verso notte fonda.' };
-    const regHead = { big: nTol + ' su ' + last14.length, sub: 'notti con letto e sveglia entro ± 30 minuti dalla tua media.', chip: 'Deriva ' + drift.badge };
+    const drift = { bars: driftBars, badge: sgn(avgBed - dv) + ' min in 5 settimane', text: 'La mediana del tuo orario di letto si è spostata da ' + fmt(dv) + ' a ' + fmt(avgBed) + '. È oltre la tolleranza di ± 30 min: il riferimento sta scivolando verso notte fonda.' };
+    const regHead = { big: nTol + ' su ' + last14.length, sub: 'notti con letto e sveglia entro ± 30 minuti dalla tua mediana. Calcolata su ' + ref.length + ' su 14 notti (un viaggio è escluso).', chip: 'Deriva ' + drift.badge };
     const wkCmp = (k, fa, fb, lo, hi) => ({ k, a: clamp((fa - lo) / (hi - lo) * 100, 6, 100) + '%', b: clamp((fb - lo) / (hi - lo) * 100, 6, 100) + '%', av: fmt(fa), bv: fmt(fb), delta: sgn(fb - fa) + ' min' });
     const wkCompare = [
       wkCmp('Letto', mean(wkDay.map((n) => n.ab)), mean(wkEnd.map((n) => n.ab)), 1300, 1700),
@@ -780,7 +791,7 @@ class Component extends DCLogic {
     const wkSj = Math.round(sjl);
     const insights = [
       Object.assign({ when: 'Stamattina', title: 'Gli schermi a letto spostano la notte', body: 'Nelle ' + present.filter((n) => n.screen).length + ' sere con schermo a letto ti sei addormentato in media ' + Math.abs(dScreen) + ' minuti più tardi, e la qualità è scesa di ' + qScreen.toFixed(1).replace('.', ',') + ' punti.' }, tg(true)),
-      Object.assign({ when: 'Ogni lunedì', title: 'Il tuo orario sta scivolando', body: 'La media del letto si è spostata di ' + sgn(avgBed - dv) + ' minuti in 5 settimane, oltre la tolleranza di ± 30 minuti.' }, tg(false)),
+      Object.assign({ when: 'Ogni lunedì', title: 'Il tuo orario sta scivolando', body: 'La mediana del letto si è spostata di ' + sgn(avgBed - dv) + ' minuti in 5 settimane, oltre la tolleranza di ± 30 minuti.' }, tg(false)),
       Object.assign({ when: 'Stamattina', title: 'Un debito piccolo, facile da chiudere', body: 'Hai ' + hmm(debt7) + ' di sonno in meno rispetto all\'obiettivo di 7h 30m nelle ultime 7 notti. Letto 20 minuti prima per tre sere e si azzera.' }, tg(true)),
       Object.assign({ when: 'Ogni lunedì', title: 'Il weekend sposta il punto medio', body: 'Il punto medio del sonno nel weekend è ' + Math.abs(wkSj) + ' minuti ' + (wkSj >= 0 ? 'dopo' : 'prima') + ' rispetto ai feriali: è il tuo social jet lag.' }, tg(false)),
       Object.assign({ when: 'Dati insufficienti', title: 'L\'alcol non è ancora valutabile', body: 'Servono almeno 5 notti con questo fattore. Per ora ne hai ' + present.filter((n) => n.alcohol).length + '.' }, tg(false)),
@@ -838,6 +849,7 @@ class Component extends DCLogic {
     // ---- sera ----
     const moods = ['Pesante', 'Così così', 'Neutro', 'Leggero', 'Sereno'].map((l, i) => chip(l, s.mood === i, () => this.setState({ mood: i })));
     const factors = ['Schermo a letto', 'Sport', 'Giornata stressante', 'Cena tardi', 'Alcol', 'Mal di testa'].map((l) => chip(l, !!s.factors[l], () => this.setState({ factors: Object.assign({}, s.factors, { [l]: !s.factors[l] }) })));
+    const exceptions = ['Malattia', 'Viaggio', 'Festa', 'Notte in bianco'].map((l) => Object.assign(chip(l, !!s.factors['x:' + l], () => this.setState({ factors: Object.assign({}, s.factors, { ['x:' + l]: !s.factors['x:' + l] }) })), { xBorder: s.factors['x:' + l] ? '1.5px solid ' + t.peachInk : '1px solid ' + t.lineStrong, xBg: s.factors['x:' + l] ? t.peachSoft : 'transparent', xFg: s.factors['x:' + l] ? t.peachInk : t.ink }));
     const napChoices = ['Nessuno', '15 min', '30 min', '45 min', '1 ora'].map((l, i) => Object.assign(chip(l, s.napChoice === i, () => this.setState({ napChoice: i })), { yBorder: s.napChoice === i ? '1.5px solid ' + t.yellowInk : '1px solid ' + t.lineStrong, yBg: s.napChoice === i ? t.yellow : 'transparent', yFg: s.napChoice === i ? t.onFill : t.ink }));
     const stepTitles = ['Quanto sei stanco?', 'Com\'è il tuo umore?', 'Cosa è successo oggi?', 'Hai fatto un sonnellino?'];
     const sera = {
@@ -849,8 +861,8 @@ class Component extends DCLogic {
     // ---- menu telefono (una voce per dato) ----
     const dots = [t.blue, t.sage, t.peach, t.yellow];
     const mr = (arr) => arr.map(([id, title, sub], i) => ({ title, sub, dot: dots[i % 4], go: goView(id) }));
-    menus.notte = mr([['timeline', 'La notte, in ordine', '5 segnali, dal check serale al primo uso']].concat(d2 ? [['compare', 'Rispetto al tuo solito', 'Letto ' + sgn(todayDevBed) + ' min dalla media'], ['nap', 'Sonnellino', 'Ieri ' + lastNight.napDur + ' min · tocca per iniziare']] : []));
-    menus.regolarita = mr([['chart', 'Confronto tra notti', '14 notti con la fascia ± 30 min'], ['stats', 'Indicatori', 'Scarti, punto medio, social jet lag'], ['drift', 'Deriva della media', drift.badge], ['wk', 'Feriali e weekend', 'Social jet lag ' + sgn(sjl) + ' min']]);
+    menus.notte = mr([['timeline', 'La notte, in ordine', '5 segnali, dal check serale al primo uso']].concat(d2 ? [['compare', 'Rispetto al tuo solito', 'Letto ' + sgn(todayDevBed) + ' min dalla mediana'], ['nap', 'Sonnellino', 'Ieri ' + lastNight.napDur + ' min · tocca per iniziare']] : []));
+    menus.regolarita = mr([['chart', 'Confronto tra notti', '14 notti con la fascia ± 30 min'], ['stats', 'Indicatori', 'Scarti, punto medio, social jet lag'], ['drift', 'Deriva della mediana', drift.badge], ['wk', 'Feriali e weekend', 'Social jet lag ' + sgn(sjl) + ' min']]);
     menus.grafici = mr([['insights', 'Insight', '6 note per te'], ['dur', 'Durata e debito', 'Debito ' + hmm(debt7)], ['heat', 'Giorni della settimana', 'Ultime 4 settimane'], ['corr', 'Cosa si lega al sonno', 'Qualità, energia, umore'], ['months', 'Trend mensile', 'Sei mesi di durata media'], ['forecast', 'Previsione di domani', 'Energia 4 su 5'], ['naps', 'Sonnellini', napAll.length + ' giorni su 14']]);
     menus.segnali = mr([['log', 'Ultimi segnali', '8 eventi recenti']]);
     const menuRows = menus[s.tab] || [];
@@ -879,7 +891,7 @@ class Component extends DCLogic {
       napGo: () => this.setState({ napPhase: nextNap[s.napPhase] }), napDone: s.napPhase === 'done', napReset: () => this.setState({ napPhase: 'idle' }),
       weekRows, regRows, bands, hourTicks, regStats, drift, regHead, wkCompare,
       insights, durBars, targetBottom: (450 / 540 * 100) + '%', durChips, heat, corr, months, forecastMoons, napStats, napList,
-      weekdays: ['L', 'M', 'M', 'G', 'V', 'S', 'D'], cells, detail, signals, log, moods, factors, napChoices,
+      weekdays: ['L', 'M', 'M', 'G', 'V', 'S', 'D'], cells, detail, signals, log, moods, factors, exceptions, napChoices,
       send: () => this.setState({ sent: true }), sent: s.sent, notSent: !s.sent
     };
   }

@@ -34,6 +34,14 @@ PC: una scheda con stanchezza (`MoonRating` azzurro), umore (5 chip), fattori (c
 
 `SignalRow` per ogni automazione (Sveglia interrotta, Riposo attivato, Check serale, Sonnellino rapido, Stima di riserva, Recupero sonnellino) con stato `Attivo` o `Da configurare`, e registro degli ultimi eventi.
 
+## Imprevedibilità (valida in tutte le schermate)
+
+- Nessun dato è obbligatorio: un dato mancante resta mancante. Niente serie di giorni consecutivi, niente rimproveri.
+- Ogni valore mostra la provenienza con una parola (`Automatico`, `Confermato`, `Stimato`, `Mancante`).
+- Ogni statistica mostra la copertura (`Coverage`): "Calcolata su 12 su 14 notti".
+- Le eccezioni (`ExceptionChips`) stanno nel check serale e come scorciatoia nella scheda Stanotte.
+- Al massimo 2–3 domande rapide al giorno (`QuickQuestion`), con `Salta` sempre disponibile.
+
 ## Regole di adattamento
 
 - Telefono: un dato per volta, elenco di voci che aprono una sezione, "Indietro" in alto.

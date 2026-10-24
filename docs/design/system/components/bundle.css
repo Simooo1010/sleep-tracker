@@ -136,3 +136,17 @@ svg{shape-rendering:geometricPrecision}
 .pane>.cap{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-muted);font-weight:600}
 .icon-tile{border-radius:22.4%;overflow:hidden;box-shadow:var(--shadow-card);background:#fff;border:var(--hairline) solid var(--line)}
 .icon-tile img{display:block;width:100%;height:100%}
+
+/* provenienza automatica, copertura, eccezioni, domande rapide */
+.badge-auto{background:transparent;color:var(--blue-ink);border:var(--hairline) solid var(--blue-edge)}
+.coverage{display:inline-flex;align-items:center;gap:10px;font-size:12px;line-height:16px;color:var(--ink-muted)}
+.coverage .dots{display:inline-flex;gap:3px}
+.coverage .dots i{width:6px;height:14px;border-radius:3px;background:var(--blue);border:var(--hairline) solid var(--blue-edge)}
+.coverage .dots i.est{background:repeating-linear-gradient(135deg,var(--peach) 0 2px,transparent 2px 4px);border:1px dashed var(--peach-edge)}
+.coverage .dots i.miss{background:transparent;border:1px dotted var(--line-strong)}
+.coverage strong{color:var(--ink);font-weight:600}
+.chip-exc.is-on{border:1.5px solid var(--peach-ink);background:var(--peach-soft);color:var(--peach-ink)}
+.chip-add{border-style:dashed;color:var(--ink-muted)}
+.qq{display:flex;flex-direction:column;gap:12px}
+.qq .q{font-family:var(--font-display);font-weight:400;font-size:22px;line-height:28px}
+.qq .a{display:flex;gap:8px;flex-wrap:wrap}

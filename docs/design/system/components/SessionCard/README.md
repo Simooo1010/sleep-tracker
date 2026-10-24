@@ -6,7 +6,7 @@ La scheda "Stanotte": il cuore dell'app. Mostra la notte già ricostruita, di qu
 1. Etichetta `STANOTTE` (`label`).
 2. Durata in `display-xl` su PC, `display-lg` su telefono.
 3. Barra della notte con gli orari ai lati: piena azzurra se confermata, tratteggiata pesca se stimata.
-4. Badge di stato e, su PC, la pillola di regolarità ("Letto +8 min · Sveglia −12 min · nella tolleranza").
+4. Badge di stato e, su PC, la pillola di regolarità ("Letto +8 min · Sveglia −12 min · nella tolleranza (scarti dalla mediana)").
 5. Frase di spiegazione in `body-sm`: "Inizio stimato da Riposo (23:48), fine dalla sveglia interrotta (07:20)."
 6. `Conferma` (peach, `btn-lg`) oppure, dopo il tocco, "Registrata. Grazie." su `sage-soft` con `Annulla`.
 7. `Correggi orari` (ghost) e il voto di energia con `MoonRating`.

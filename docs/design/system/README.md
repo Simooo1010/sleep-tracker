@@ -5,6 +5,8 @@ Sleep Tracker è un diario del sonno personale, in italiano, per un solo utente.
 - **Stima, poi conferma.** Mostra sempre la notte già ricostruita e chiedi un tocco: `Conferma`. Un dato stimato non viene mai nascosto, viene marcato.
 - **Un solo gesto principale per schermata.** Usa un solo pulsante pieno `peach` per schermata. Tutto il resto è `btn-secondary` o `btn-ghost`.
 - **Calma prima dei dati.** Su telefono mostra un dato per volta. Le viste larghe (confronto tra notti, tabelle, heatmap) restano su PC.
+- **Nessun dato è obbligatorio.** Un dato mancante resta mancante: mai zero, mai una stima nascosta, mai un errore. Niente serie di giorni consecutivi, niente rimproveri, niente colpe.
+- **Poche domande.** Al massimo 2–3 domande rapide al giorno (`QuickQuestion`, un tocco ciascuna). Se l'utente salta dei giorni si chiedono solo gli ultimi 2–3, i precedenti restano stimati.
 - **Il telefono si apre tardi.** L'utente lo usa circa 1h–1h30 dopo il risveglio e subito prima di dormire. Il mattino serve una conferma in 1 tap, la sera un check breve.
 - **Niente NFC nella v1.** Non disegnare tag, scansioni o impostazioni NFC. Il risveglio arriva dalla sveglia interrotta, il letto da Full Immersion Riposo.
 
@@ -80,8 +82,10 @@ La fiducia nel dato si vede. Ogni notte è in uno di tre stati e lo stato non di
 | Mancante | contorno punteggiato `line-strong`, nessun riempimento | `Mancante`, testo `ink-muted` |
 
 - Il voto 1–5 (energia, qualità, stanchezza) si mostra con le **fasi lunari**: luna nuova, quarto crescente, mezza, gibbosa, piena. Il voto selezionato ha anello e fondo colorati: energia in `yellow`, stanchezza in `blue-soft`.
-- La regolarità mostra due fasce `sage` (letto e sveglia, media mobile a 14 giorni ±30 min) e una linea media tratteggiata. Ogni notte riporta `OK` o `Fuori` come parola, mai solo un colore.
+- La regolarità mostra due fasce `sage` (letto e sveglia, mediana mobile a 14 giorni ±30 min) e una linea tratteggiata sulla mediana. Ogni notte riporta `OK` o `Fuori` come parola, mai solo un colore.
 - Le definizioni dei calcoli sono in "Dati e calcoli".
+- Ogni valore dichiara la sua provenienza con una parola: `Automatico` (arrivato da un segnale, senza intervento), `Confermato` (l'utente ha toccato Conferma), `Stimato`, `Mancante`.
+- Ogni statistica mostra la **copertura** dei dati (`9 su 14 notti`) con il componente `Coverage`. Sotto la soglia di dati l'insight non compare: si scrive quanti dati mancano.
 
 ## Logo e icona
 
@@ -94,7 +98,7 @@ L'icona dell'app è una nuvola molto stilizzata con una luna a falce in parte na
 
 ## Componenti
 
-Costruisci le schermate con i componenti del sistema (vedi l'indice dei componenti): `Button`, `Chip`, `Badge`, `MoonRating`, `SessionCard`, `TimeStepper`, `Timeline`, `StatTile`, `ListRow`, `FloatingNav` (barra flottante e barra laterale), `NightBars`, `DriftChart`, `DurationChart`, `Heatmap`, `CorrelationTable`, `Calendar`, `InsightCard`, `EnergyCard`, `SignalRow`, `WizardStep`, `Logo`. Le schermate complete sono descritte in "Schermate" e i calcoli in "Dati e calcoli".
+Costruisci le schermate con i componenti del sistema (vedi l'indice dei componenti): `Button`, `Chip`, `Badge`, `MoonRating`, `SessionCard`, `TimeStepper`, `Timeline`, `StatTile`, `ListRow`, `FloatingNav` (barra flottante e barra laterale), `NightBars`, `DriftChart`, `DurationChart`, `Heatmap`, `CorrelationTable`, `Calendar`, `InsightCard`, `EnergyCard`, `SignalRow`, `WizardStep`, `Coverage`, `ExceptionChips`, `QuickQuestion`, `Logo`. Le schermate complete sono descritte in "Schermate" e i calcoli in "Dati e calcoli".
 
 ## Stati e movimento
 

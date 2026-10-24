@@ -1,0 +1,15 @@
+<!-- @dsCard group="Dati" height=300 subtitle="Su quante notti è calcolato un numero" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="cap">Copertura</div>
+<div class="stack" style="gap:18px">
+<div class="coverage"><span class="dots" id="a"></span><span>Calcolata su <strong>12 su 14 notti</strong></span></div>
+<div class="coverage"><span class="dots" id="b"></span><span>Servono almeno 14 notti. Per ora ne hai <strong>9</strong>.</span></div></div></div>
+</div>
+<script>
+function d(id,pat){var h='';pat.split('').forEach(function(c){h+='<i class="'+(c=='e'?'est':(c=='m'?'miss':''))+'"></i>';});document.getElementById(id).innerHTML=h;}
+d('a','cccceccccmcccm'.replace('m','c')); d('b','mmmmmcccceeccc'.replace(/^mmmmm/,'mmmmm'));
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>

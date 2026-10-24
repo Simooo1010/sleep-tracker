@@ -22,14 +22,23 @@ Nella v1 non esistono segnali NFC. Se un segnale manca, la notte è stimata dai 
 
 ## Regolarità (priorità alta)
 
-- **Riferimento:** media mobile degli ultimi 14 giorni per orario di letto e di risveglio. Non esiste un orario obiettivo fisso.
-- **Tolleranza:** ±30 min. Una notte è "regolare" se letto e sveglia sono entro 30 min dalla media.
-- **Scarto di una notte:** `orario − media`, in minuti, con segno. Si mostra come `letto / sveglia`.
+- **Riferimento:** **mediana** mobile degli ultimi 14 giorni per orario di letto e di risveglio (robusta alle notti anomale). Non esiste un orario obiettivo fisso. I giorni-eccezione restano visibili ma sono esclusi dal riferimento.
+- **Tolleranza:** ±30 min. Una notte è "regolare" se letto e sveglia sono entro 30 min dalla mediana.
+- **Scarto di una notte:** `orario − mediana`, in minuti, con segno. Si mostra come `letto / sveglia`.
 - **Deviazione standard:** di letto e di sveglia sulle ultime 14 notti.
 - **Punto medio del sonno:** metà tra letto e risveglio.
 - **Social jet lag:** punto medio del weekend meno punto medio dei feriali. Weekend = notti di venerdì e sabato. Stessi criteri dei feriali: lo scostamento del weekend conta.
-- **Deriva:** la media dell'orario di letto si sposta nel tempo. Si mostra con 6 medie settimanali e un badge, ad esempio "+42 min in 5 settimane". Segnala quando supera la tolleranza.
+- **Deriva:** la mediana dell'orario di letto si sposta nel tempo. Si mostra con 6 mediane settimanali e un badge, ad esempio "+42 min in 5 settimane". Segnala quando supera la tolleranza.
 - **Asse del grafico:** 21:00 → 11:00 (840 min). Le barre sono posizionate in percentuale su questo asse.
+
+## Provenienza e copertura
+
+- **Provenienza di ogni valore:** `automatico` (da un segnale), `confermato` (toccato Conferma), `stimato`, `mancante`. Si mostra sempre con una parola.
+- **Segnali ridondanti per evento.** Letto: Full Immersion, poi check serale, poi stima. Risveglio: sveglia interrotta, poi prima app aperta al mattino (limite superiore), poi stima.
+- **Copertura:** ogni statistica mostra su quante notti è calcolata (`9 su 14 notti`). Sotto soglia l'insight resta nascosto con "Servono almeno N notti. Per ora ne hai M."
+- **Eccezioni:** chip a un tocco (malattia, viaggio, festa, notte in bianco, alcol...), lista aperta e personalizzabile, ordinata per frequenza d'uso. Un giorno-eccezione è visibile ma non entra nel riferimento della regolarità.
+- **Domande rapide:** 2–3 al giorno, un tocco ciascuna, scelte per valore informativo. Recupero solo degli ultimi 2–3 giorni. Se un segnale non viene usato per giorni, l'app smette di attenderlo e avvisa una sola volta, solo se cala la precisione.
+- **Nessun dato obbligatorio:** mancante resta mancante.
 
 ## Durata e debito
 

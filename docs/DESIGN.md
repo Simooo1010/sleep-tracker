@@ -2,7 +2,7 @@
 
 Fonte di verità del design. Da leggere prima di scrivere qualsiasi UI. Il resto del design sta in `docs/design/`.
 
-- **Design system (artefatto):** https://claude.ai/artifact/3bLXhSQ61PrRXtpzM9F2mR (token, brand book, 22 componenti con anteprima, logo)
+- **Design system (artefatto):** https://claude.ai/artifact/3bLXhSQ61PrRXtpzM9F2mR (token, brand book, 25 componenti con anteprima, logo)
 - **Prototipi e confronti (canvas):** https://claude.ai/artifact/8MfknmomX1jzdWa26CRFRP — pagina "Atmosfere A B C" (scartate) e pagina "Prototipi D1 D2" (approvati)
 - **Copia nel repository:** `docs/design/system/` (README del brand book, `tokens.json`, `components/*` con README e preview, `bundle.css`)
 
@@ -24,7 +24,9 @@ Calma, pastello, serif leggero. Base grigio-azzurra (`chiaro`) e blu-notte (`scu
 | Navigazione telefono | Barra flottante a pillola, staccata dai bordi (14px dai lati, 16px dal fondo), `shadow-float` |
 | Alta risoluzione | Tutto vettoriale, linee da 1px, ombre a due livelli, icone su griglia 24px, test a 390×844 DPR3, 1280×800 DPR2, 3840×2160 |
 | Logo/icona | Nuvola stilizzata con luna a falce in parte nascosta, sfumature di azzurro pastello (non gradiente lineare) su bianco |
-| Provenienza dei dati | Confermata (piena), Stimata (tratteggiata), Mancante (punteggiata): sempre con parola, mai solo colore |
+| Provenienza dei dati | Automatico (contorno azzurro), Confermato (pieno), Stimato (tratteggiato), Mancante (punteggiato): sempre con parola, mai solo colore |
+| Riferimento di regolarità | Mediana mobile a 14 giorni; i giorni-eccezione sono visibili ma esclusi; ogni statistica mostra la copertura (`9 su 14 notti`) |
+| Imprevedibilità | Nessun dato obbligatorio, niente serie né rimproveri, chip delle eccezioni a un tocco, 2–3 domande rapide al giorno (principio in `docs/PROJECT.md` §3c) |
 
 ## Cosa usare nel codice
 
