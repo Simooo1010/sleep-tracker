@@ -1,0 +1,30 @@
+/* MoonRating: integrazioni locali alle classi .moons/.moon/.moon-scale di bundle.css. Solo variabili di tokens.css. */
+.root {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 52px nel check serale su telefono */
+.lg {
+  width: 3.25rem;
+  height: 3.25rem;
+}
+
+/* Telefono: lune distribuite su tutta la riga */
+.spread {
+  justify-content: space-between;
+}
+
+.spread + .scale {
+  max-width: none;
+}
+
+/* Sola lettura (previsione): nessun puntatore */
+.static {
+  cursor: default;
+}
+
+.note {
+  margin: var(--space-2) 0 0;
+}
