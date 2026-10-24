@@ -58,6 +58,13 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - Weekend: stessi criteri dei feriali; lo scostamento del weekend conta.
 - Tolleranza: ±30 min = "regolare".
 
+## 5c. Grafici e insight (ampio set, priorità alta)
+- Regolarità: barre orarie per notte sovrapposte, scostamenti dalla media, deriva della media, feriali vs weekend, punto medio.
+- Durata e debito: durata per notte, medie 7/30 giorni, debito di sonno accumulato.
+- Correlazioni: fattori (schermi, sport, stress…) vs qualità percepita, energia mattutina, mood serale.
+- Pattern e previsioni: heatmap per giorno della settimana, trend mensili, energia prevista per domani.
+- Insight testuali: da statistiche (sempre) + AI gateway (quando disponibile). Le correlazioni si mostrano solo con dati sufficienti (es. ≥14 notti) e come indizi, non come cause.
+
 ## 6. Domande aperte
 Vedi la chat di definizione; le risposte vanno riportate in `docs/DECISIONS.md`.
 

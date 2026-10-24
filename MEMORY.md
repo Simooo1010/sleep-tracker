@@ -20,4 +20,5 @@ Va aggiornata quando si impara qualcosa di durevole. Le regole stanno in `CLAUDE
 
 ## Preferenze di lavoro
 - Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.
-- Ha i tag NFC da comprare.
+- Non consuma caffeina. Si alza subito dopo la sveglia → NFC non necessario.
+- Vuole molti grafici e insight.
