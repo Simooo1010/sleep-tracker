@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { durationMinutes } from '../../src/domain/time';
 import type { Night, SignalType } from '../../src/domain/types';
 import { ingestEvent, nightDateForEvent, type ValidatedEvent } from '../../src/server/ingest';
-import { MemoryRepo } from './memory-repo';
+import { MemoryRepo } from '../../src/server/memory-repo';
 
 // Ottobre 2026: Europe/Rome in CEST (UTC+2) fino al 25/10 alle 03:00, poi CET (UTC+1).
 const NOW = new Date('2026-10-24T12:00:00Z');

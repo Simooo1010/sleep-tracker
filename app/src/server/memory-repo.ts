@@ -6,8 +6,8 @@
  * I dati sono copiati in entrata e in uscita: i chiamanti non possono mutare lo stato interno.
  * I campi pubblici servono per ispezionare lo stato nei test (sono copie: modificarli non ha effetto).
  */
-import type { EveningCheck, Nap, Night, SignalEvent } from '../../src/domain/types';
-import type { Repo, StoredEvent } from '../../src/server/types';
+import type { EveningCheck, Nap, Night, SignalEvent } from '../domain/types';
+import type { Repo, StoredEvent } from './types';
 
 const clone = <T>(v: T): T => structuredClone(v);
 

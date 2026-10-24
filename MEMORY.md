@@ -36,6 +36,12 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Prossimo: Slice 2 (schema DB + ingestione eventi), poi 3 Notte, 4 Sera, 5 Regolarità, 6 Grafici+gateway, 7 Storico/Segnali, 8 seed+visual, 9 deploy. Piano: vedi PR #11.
 - Regola utente: attività piccole, un agente Opus ciascuna, file disgiunti (CLAUDE.md).
 
+## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
+- Vercel (progetto app): incollare `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API; i tool MCP non possono leggerla). Tutte le altre env le imposta Claude via MCP.
+- iPhone: creare i Comandi/automazioni (guida in `docs/COMANDI_IOS.md`, da scrivere) e aggiungere la PWA alla Home.
+- Primo login nell'app.
+- Opzionale: modalità Auto del menu permessi, o `.claude/settings.json` con `permissions.allow` per ridurre i prompt.
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
