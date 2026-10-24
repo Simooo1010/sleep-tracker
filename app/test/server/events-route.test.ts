@@ -2,19 +2,16 @@
  * Test HTTP dell'endpoint reale POST /api/events (route Next) con `APP_DATA_MODE=memory`.
  *
  * Nota sull'alias `@/`: vitest.config.ts non risolve i `paths` di tsconfig, quindi gli import
- * `@/server/*` della route vengono mappati qui sui moduli reali (non sono mock: stesso codice).
- * Isolamento: `getRepo()` tiene un singleton a livello di modulo; `vi.resetModules()` + import
- * dinamico in ogni test danno una route e un MemoryRepo nuovi, condivisi fra route e test.
+ * `@/server/*` della route vengono mappati qui (vi.doMock) sui moduli reali: stesso codice, nessun mock.
+ * Isolamento: `getRepo()` tiene un singleton a livello di modulo; `vi.resetModules()` + doMock +
+ * import dinamico in ogni test danno una route e un MemoryRepo nuovi, condivisi fra route e test.
+ * Nota: `Headers` (Fetch) toglie gli spazi iniziali/finali dei valori, quindi `"Bearer <t> "` arriva
+ * alla route già normalizzato: non è un caso di header malformato testabile via HTTP.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { MemoryRepo } from '../../src/server/memory-repo';
 import { generateToken, hashToken } from '../../src/server/token';
-
-vi.mock('@/server/events-schema', () => import('../../src/server/events-schema'));
-vi.mock('@/server/ingest', () => import('../../src/server/ingest'));
-vi.mock('@/server/repo-factory', () => import('../../src/server/repo-factory'));
-vi.mock('@/server/token', () => import('../../src/server/token'));
 
 // Ottobre 2026: Europe/Rome in CEST (UTC+2).
 const NOW = new Date('2026-10-24T12:00:00Z');
@@ -27,12 +24,17 @@ let POST: PostFn;
 let repo: MemoryRepo;
 let token: string;
 
+/** Route e MemoryRepo nuovi: registry dei moduli azzerato e alias `@/` ri-mappati ogni volta. */
 async function load(): Promise<void> {
   vi.resetModules();
+  vi.doMock('@/server/events-schema', () => import('../../src/server/events-schema'));
+  vi.doMock('@/server/ingest', () => import('../../src/server/ingest'));
+  vi.doMock('@/server/repo-factory', () => import('../../src/server/repo-factory'));
+  vi.doMock('@/server/token', () => import('../../src/server/token'));
   const route = await import('../../src/app/api/events/route');
   POST = route.POST;
-  const factory = await import('../../src/server/repo-factory');
-  repo = factory.getRepo() as MemoryRepo;
+  const factory = await import('@/server/repo-factory');
+  if (process.env.APP_DATA_MODE === 'memory') repo = factory.getRepo() as MemoryRepo;
 }
 
 function request(body: unknown, authorization: string | null = `Bearer ${token}`): Request {
@@ -101,7 +103,7 @@ describe('POST /api/events — autenticazione', () => {
       token,
       `Basic ${token}`,
       `Bearer  ${token}`,
-      `Bearer ${token} `,
+      `Bearer\t${token}`,
       `Bearer ${token}x`,
       'Bearer st_corto',
       `Bearer ${token.slice(3)}`,
