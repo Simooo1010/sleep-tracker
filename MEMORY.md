@@ -15,4 +15,9 @@ Va aggiornata quando si impara qualcosa di durevole. Le regole stanno in `CLAUDE
 ## Stato attuale
 - Fase: definizione (prima del design system).
 - Decisioni: vedi `docs/DECISIONS.md`.
-- Supabase: nessun connettore attivo finora.
+- Supabase: connesso via MCP (2026-10-24).
+- Prossimi passi: chat design system → chat AI gateway → build app.
+
+## Preferenze di lavoro
+- Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.
+- Ha i tag NFC da comprare.
