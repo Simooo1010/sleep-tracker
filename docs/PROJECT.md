@@ -54,7 +54,8 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - Obiettivo: andare a letto e svegliarsi alla stessa ora nella maggior parte dei giorni.
 - Analisi: scostamento giornaliero di orario di letto e risveglio rispetto al riferimento, deviazione standard, "social jet lag" (feriali vs weekend), punto medio del sonno.
 - Visualizzazione: confronto tra giornate (es. timeline/barre orarie sovrapposte per giorno) che evidenzia le differenze.
-- Riferimento: media mobile degli ultimi giorni (nessun orario obiettivo fisso).
+- Riferimento: media mobile degli ultimi 14 giorni (nessun orario obiettivo fisso).
+- Indicatore di deriva: segnala quando la media stessa si sposta nel tempo (es. "+40 min in 4 settimane").
 - Weekend: stessi criteri dei feriali; lo scostamento del weekend conta.
 - Tolleranza: ±30 min = "regolare".
 
