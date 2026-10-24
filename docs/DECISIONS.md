@@ -20,3 +20,4 @@
 | 2026-10-24 | Build autonoma end-to-end: costruzione → test (anche UI/E2E) → fix fino a funzionamento reale | confermata |
 | 2026-10-24 | Design system: definito in una chat dedicata | rinviata |
 | 2026-10-24 | Analisi regolarità orari letto/risveglio e confronto tra giornate | confermata |
+| 2026-10-24 | Regolarità: riferimento = media mobile recente, weekend uguale ai feriali, tolleranza ±30 min | confermata |
