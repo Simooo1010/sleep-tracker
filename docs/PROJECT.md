@@ -50,6 +50,12 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - Insight AI personalizzati.
 - Notifiche di recupero ("Ieri sera sembra tu sia andato a letto alle 00:40 — confermi?") in un momento della giornata in cui il telefono si usa davvero.
 
+## 5b. Regolarità (priorità alta)
+- Obiettivo: andare a letto e svegliarsi alla stessa ora nella maggior parte dei giorni.
+- Analisi: scostamento giornaliero di orario di letto e risveglio rispetto al riferimento, deviazione standard, "social jet lag" (feriali vs weekend), punto medio del sonno.
+- Visualizzazione: confronto tra giornate (es. timeline/barre orarie sovrapposte per giorno) che evidenzia le differenze.
+- Dettagli (riferimento, tolleranza, weekend): vedi domande aperte.
+
 ## 6. Domande aperte
 Vedi la chat di definizione; le risposte vanno riportate in `docs/DECISIONS.md`.
 

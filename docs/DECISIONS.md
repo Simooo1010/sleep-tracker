@@ -19,3 +19,4 @@
 | 2026-10-24 | Tag NFC: da acquistare (spesa minima), previsti in v1 | confermata |
 | 2026-10-24 | Build autonoma end-to-end: costruzione → test (anche UI/E2E) → fix fino a funzionamento reale | confermata |
 | 2026-10-24 | Design system: definito in una chat dedicata | rinviata |
+| 2026-10-24 | Analisi regolarità orari letto/risveglio e confronto tra giornate | confermata |
