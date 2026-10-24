@@ -124,7 +124,7 @@ describe('computeCorrelations — soglia notti', () => {
 
 describe('computeCorrelations — occorrenze minime', () => {
   it('4 occorrenze: diff null, neutral, "ne servono 5"', () => {
-    const specs: NightOpts[] = [...rep(4, { q: 5, factors: ['sport'] }), ...rep(10, { q: 2 })];
+    const specs: NightOpts[] = [...rep<NightOpts>(4, { q: 5, factors: ['sport'] }), ...rep<NightOpts>(10, { q: 2 })];
     const r = computeCorrelations(series(specs), [], ['sport']);
     const row = pick(r.value, 'sport', 'quality');
     expect(row).toEqual({
@@ -139,7 +139,7 @@ describe('computeCorrelations — occorrenze minime', () => {
   });
 
   it('5 occorrenze: diff calcolato', () => {
-    const specs: NightOpts[] = [...rep(5, { q: 5, factors: ['sport'] }), ...rep(9, { q: 2 })];
+    const specs: NightOpts[] = [...rep<NightOpts>(5, { q: 5, factors: ['sport'] }), ...rep<NightOpts>(9, { q: 2 })];
     const row = pick(computeCorrelations(series(specs), [], ['sport']).value, 'sport', 'quality');
     expect(row.withN).toBe(5);
     expect(row.withoutN).toBe(9);
@@ -149,9 +149,9 @@ describe('computeCorrelations — occorrenze minime', () => {
 
   it('occorrenze contate sui voti presenti: fattore in 6 notti ma solo 4 voti → null', () => {
     const specs: NightOpts[] = [
-      ...rep(4, { q: 5, factors: ['sport'] }),
-      ...rep(2, { q: null, e: 4, factors: ['sport'] }),
-      ...rep(8, { q: 2 }),
+      ...rep<NightOpts>(4, { q: 5, factors: ['sport'] }),
+      ...rep<NightOpts>(2, { q: null, e: 4, factors: ['sport'] }),
+      ...rep<NightOpts>(8, { q: 2 }),
     ];
     const r = computeCorrelations(series(specs), [], ['sport']);
     const q = pick(r.value, 'sport', 'quality');
