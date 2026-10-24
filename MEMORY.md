@@ -24,7 +24,7 @@ Il design system deve prevedere componenti per:
 - Fase: definizione (prima del design system).
 - Decisioni: vedi `docs/DECISIONS.md`.
 - Supabase: connesso via MCP (2026-10-24).
-- Prossimi passi: chat design system → chat AI gateway → build app.
+- Roadmap (confermata): 1) design system → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
 ## Preferenze di lavoro
 - Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.
