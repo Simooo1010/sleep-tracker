@@ -24,7 +24,9 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Stato attuale
 - Fase: design system completato (2026-10-24). Vedi `docs/DESIGN.md`.
 - Decisioni: vedi `docs/DECISIONS.md`.
-- Supabase: connesso via MCP (2026-10-24).
+- Supabase: connesso via MCP (2026-10-24). Progetto `sleep-tracker` creato (ref `bpsvvltrhlqvpxhjjrfy`, eu-central-1, org `qjrnwnextqfbaauwvbpf`). Non riusare il progetto finanze `aedoncqvypsrksnqiwgh`.
+- Vercel: progetto `sleep-tracker` (`prj_rPEEkueywddcJBwVPKriwwwRfZFI`, team `team_7cA5Y1PcLGxH0Rcb6HXHzwHx`) collegato al repo, nessun deploy ancora.
+- AI gateway: in costruzione (2026-10-24), vedi `docs/AI_GATEWAY.md`. Env su Vercel (inserite dall'utente): `GROQ_API_KEY`, `GATEWAY_SECRET`. Mistral non disponibile (richiede piano a pagamento); `OPENROUTER_API_KEY` facoltativa.
 - Roadmap (confermata): 1) design system ✅ → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
 ## Design

@@ -37,3 +37,8 @@
 | 2026-10-24 | Riferimento regolarità = mediana 14 giorni + indicatore di deriva | confermata |
 | 2026-10-24 | Principio gestione imprevedibilità (PROJECT §3c) | confermata |
 | 2026-10-24 | Fino a 2–3 domande rapide al giorno; recupero solo ultimi 2–3 giorni | confermata |
+| 2026-10-24 | Creati progetti: Supabase `sleep-tracker` (ref bpsvvltrhlqvpxhjjrfy, eu-central-1) e Vercel `sleep-tracker` (prj_rPEEkueywddcJBwVPKriwwwRfZFI, team simone-dr-s-projects) collegato al repo | confermata |
+| 2026-10-24 | Catena provider AI: Groq (gpt-oss-120b → gpt-oss-20b) → Mistral small → OpenRouter :free → regole. Gemini escluso (free tier vietato nello SEE + training). Cerebras e GitHub Models esclusi | confermata |
+| 2026-10-24 | Ai provider solo statistiche aggregate, mai identificativi (dati sanitari) | confermata |
+| 2026-10-24 | Chiavi API inserite dall'utente direttamente in env Vercel (mai in chat né nel repo) | confermata |
+| 2026-10-24 | Gateway guidato da configurazione: aggiungere un provider/modello = una voce di config + una env var, zero codice | confermata |

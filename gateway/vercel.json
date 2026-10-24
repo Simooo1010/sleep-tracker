@@ -1,0 +1,19 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci",
+  "outputDirectory": "public",
+  "fluid": true,
+  "functions": {
+    "api/gateway.ts": {
+      "maxDuration": 60,
+      "includeFiles": "providers.config.json"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/v1/:route(.*)",
+      "destination": "/api/gateway?route=:route"
+    }
+  ]
+}

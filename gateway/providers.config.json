@@ -1,0 +1,106 @@
+{
+  "$comment": "Lista ordinata dei provider. Aggiungere un provider OpenAI-compatible = aggiungere una voce qui + impostare la env var indicata in apiKeyEnv. Nessun codice. Priorita' piu' bassa = provato prima. Vedi docs/AI_GATEWAY.md.",
+  "providers": [
+    {
+      "id": "groq-gpt-oss-120b",
+      "label": "Groq · gpt-oss-120b",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-120b",
+      "enabled": true,
+      "priority": 10,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 20000,
+      "limits": { "rpm": 30, "rpd": 1000 },
+      "extraBody": { "reasoning_effort": "low" }
+    },
+    {
+      "id": "groq-gpt-oss-20b",
+      "label": "Groq · gpt-oss-20b",
+      "baseUrl": "https://api.groq.com/openai/v1",
+      "apiKeyEnv": "GROQ_API_KEY",
+      "model": "openai/gpt-oss-20b",
+      "enabled": true,
+      "priority": 20,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 20000,
+      "limits": { "rpm": 30, "rpd": 1000 },
+      "extraBody": { "reasoning_effort": "low" }
+    },
+    {
+      "id": "mistral-small",
+      "label": "Mistral · mistral-small-latest",
+      "baseUrl": "https://api.mistral.ai/v1",
+      "apiKeyEnv": "MISTRAL_API_KEY",
+      "model": "mistral-small-latest",
+      "enabled": false,
+      "priority": 30,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 25000,
+      "limits": { "rpm": 60 },
+      "note": "Disattivato: chiave API non ottenibile senza piano a pagamento (2026-10-24). Per riattivarlo: enabled=true + MISTRAL_API_KEY."
+    },
+    {
+      "id": "openrouter-gemma-4-31b",
+      "label": "OpenRouter · gemma-4-31b-it (free)",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "apiKeyEnv": "OPENROUTER_API_KEY",
+      "model": "google/gemma-4-31b-it:free",
+      "enabled": true,
+      "priority": 40,
+      "structuredOutput": "json_object",
+      "timeoutMs": 30000,
+      "limits": { "rpm": 20, "rpd": 50 },
+      "extraHeaders": { "X-Title": "sleep-tracker-gateway" }
+    },
+    {
+      "id": "openrouter-nemotron-3-super",
+      "label": "OpenRouter · nemotron-3-super-120b (free)",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "apiKeyEnv": "OPENROUTER_API_KEY",
+      "model": "nvidia/nemotron-3-super-120b-a12b:free",
+      "enabled": true,
+      "priority": 50,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 30000,
+      "limits": { "rpm": 20, "rpd": 50 },
+      "extraHeaders": { "X-Title": "sleep-tracker-gateway" }
+    },
+    {
+      "id": "gemini-flash",
+      "label": "Google Gemini (escluso)",
+      "baseUrl": "https://generativelanguage.googleapis.com/v1beta/openai",
+      "apiKeyEnv": "GEMINI_API_KEY",
+      "model": "gemini-2.5-flash",
+      "enabled": false,
+      "priority": 900,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 20000,
+      "note": "Escluso: il free tier non e' utilizzabile per utenti nello SEE e i dati possono essere usati per training. Dati sanitari -> no."
+    },
+    {
+      "id": "cerebras",
+      "label": "Cerebras (escluso)",
+      "baseUrl": "https://api.cerebras.ai/v1",
+      "apiKeyEnv": "CEREBRAS_API_KEY",
+      "model": "gpt-oss-120b",
+      "enabled": false,
+      "priority": 910,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 20000,
+      "note": "Escluso per decisione di progetto (docs/DECISIONS.md, catena provider AI)."
+    },
+    {
+      "id": "github-models",
+      "label": "GitHub Models (escluso)",
+      "baseUrl": "https://models.github.ai/inference",
+      "apiKeyEnv": "GITHUB_MODELS_TOKEN",
+      "model": "openai/gpt-4.1-mini",
+      "enabled": false,
+      "priority": 920,
+      "structuredOutput": "json_schema",
+      "timeoutMs": 20000,
+      "note": "Escluso per decisione di progetto (docs/DECISIONS.md, catena provider AI)."
+    }
+  ]
+}
