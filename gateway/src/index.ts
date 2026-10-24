@@ -2,6 +2,7 @@ export { createGateway, AllProvidersFailedError } from './gateway.ts';
 export type { Gateway, GatewayOptions, HealthReport, ProviderHealthReport } from './gateway.ts';
 export { createHandler } from './http/handler.ts';
 export type { HandlerOptions } from './http/handler.ts';
+export { createVercelHandler, normalizeGatewayRequest } from './http/vercel.ts';
 export { loadConfig, providerConfigSchema, defaultProviderEntries } from './config.ts';
 export type { ProviderConfig, ProviderConfigInput, ResolvedProvider, LoadedConfig } from './config.ts';
 export { registerAdapter } from './adapters/index.ts';

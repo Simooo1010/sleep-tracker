@@ -34,8 +34,10 @@ app ──HTTP + Bearer GATEWAY_SECRET──► handler (auth, rate limit, routi
 | `src/gateway.ts` | router, endpoint logici `chat`, `insights`, `health` |
 | `src/insights/*` | schema statistiche, soglie dati, prompt, generatore a regole |
 | `src/privacy.ts` | guard: rifiuto campi identificativi, redazione di email/telefoni/date complete/UUID, limiti di lunghezza |
-| `src/http/*` | handler, bearer a tempo costante, rate limit |
-| `src/log.ts` | log di soli metadati (console e/o Supabase) |
+| `src/http/*` | handler, bearer a tempo costante, rate limit, adattatore Vercel (`vercel.ts`), ponte `node:http` (`node.ts`) |
+| `api/gateway.ts` + `vercel.json` | function Vercel unica + rewrite `/v1/*` (§12) |
+| `scripts/dev-server.ts`, `scripts/fake-upstream.ts` | server locale con lo stesso entry di Vercel; provider finto OpenAI-compatible per prove locali |
+| `src/log.ts` | log di soli metadati (console; Supabase solo opt-in) |
 | `src/tools/add-provider.ts` + `scripts/add-provider.ts` | aggiunta provider da riga di comando con chiamata di prova |
 | `scripts/smoke-live.ts` | test con i provider reali (manuale, mai in CI) |
 | `supabase/migrations/…_ai_gateway_log.sql` | tabella log metadati (da applicare a mano) |
@@ -137,13 +139,13 @@ JSON non valido → ignorato con warning (resta la config del file).
 | Variabile | Obbligatoria | Note |
 |---|---|---|
 | `GATEWAY_SECRET` | sì | bearer condiviso app ↔ gateway, ≥ 16 caratteri (consigliati 32+ casuali). Se manca, ogni richiesta → 500 (fail closed). |
-| `GROQ_API_KEY` | consigliata | presente in Vercel |
+| `GROQ_API_KEY` | sì | provider principale. Senza: `/v1/insights` risponde solo a regole, `/v1/chat/completions` → 503 |
 | `OPENROUTER_API_KEY` | no | opzionale, oggi assente |
 | `MISTRAL_API_KEY` | no | provider disattivato |
 | `GATEWAY_PROVIDERS_JSON` | no | override/aggiunte (§4) |
 | `GATEWAY_RATE_LIMIT_RPM` | no | richieste/minuto per IP, default 60 |
 | `GATEWAY_LOG` | no | `off` disattiva i log |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | no | se presenti, log metadati anche su `ai_gateway_log` (solo server) |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | no | **opt-in**: solo se presenti **entrambe** (non vuote) i metadati vanno anche su `ai_gateway_log` (insert con timeout 2 s, un errore di log non blocca mai la richiesta). Altrimenti solo log su console (visibili nei log runtime Vercel). |
 
 ## 6. Endpoint
 
@@ -205,6 +207,8 @@ Stato di ogni provider: `enabled`, `configured`, `reason` (`disabled` / `missing
 
 ### Uso da Vercel / Next.js
 
+Deploy standalone (consigliato, già pronto): vedi §12. In alternativa, dentro l'app Next.js:
+
 ```ts
 // app/api/ai/[...path]/route.ts
 import { createHandler } from '../../../../gateway/src/index.ts';
@@ -215,7 +219,7 @@ export const POST = handler;
 
 Oppure da codice server, senza HTTP: `createGateway().insights(stats)`.
 
-Nota integrazione: il sorgente usa import con estensione `.ts` (eseguibile direttamente da Node ≥ 22.18) e importa `providers.config.json` con `with { type: 'json' }`. Nell'app servirà `"allowImportingTsExtensions": true` nel `tsconfig` (Next usa già `noEmit`) e va verificato che il bundler di Next/Vercel accetti gli import attributes JSON: si controlla quando si integra il gateway nell'app (fase codice).
+Nota integrazione: il sorgente usa import con estensione `.ts` (eseguibile direttamente da Node ≥ 22.18) e importa `providers.config.json` con `with { type: 'json' }`. Per il deploy standalone è verificato (§12): il `tsconfig` ha `rewriteRelativeImportExtensions: true`, quindi il compilatore di Vercel riscrive `./x.ts` → `./x.js`. Dentro un'app Next servirà `"allowImportingTsExtensions": true` nel `tsconfig` dell'app e va verificato che il bundler di Next accetti gli import attributes JSON (fase integrazione).
 
 ## 7. Routing, cooldown e circuit breaker
 
@@ -240,7 +244,7 @@ Nota integrazione: il sorgente usa import con estensione `.ts` (eseguibile diret
 cd gateway && npm install && npm run check   # tsc --noEmit + vitest
 ```
 
-Coperti (provider simulati con `fetch` finto + un test end-to-end con due server HTTP locali reali): successo al primo provider; 429 + Retry-After → fallback e cooldown; timeout; 5xx; errore di rete; 401 con cooldown lungo; JSON non valido → retry → fallback; retry che corregge; modalità strutturata per capacità del provider; tutti giù → 503 per chat e regole per insight; provider senza env saltato; **solo `GROQ_API_KEY` presente**; **nuovo provider solo via config**; override `GATEWAY_PROVIDERS_JSON` (merge, riattivazione, replace, JSON invalido); **script `add-provider`** (rilevamento modo strutturato, assenza chiave, duplicati, CLI reale); circuit breaker e half-open; limiti rpm/rpd; guard privacy; auth errata → 401; secret mancante → 500; health senza segreti; rate limit; insight sotto soglia nascosti; correlazioni come indizi; log senza contenuti. Lint: non configurato (tsc in modalità strict con `noUnused*` fa da controllo statico).
+Coperti (provider simulati con `fetch` finto + test end-to-end con server HTTP locali reali; `test/deploy.test.ts` avvia **davvero** `scripts/dev-server.ts` come processo figlio, configurato solo via env `GATEWAY_PROVIDERS_JSON` verso due provider finti locali: health 401 senza bearer / 200 con bearer senza segreti, chat con fallback dopo 429, insight con provider in cooldown saltato nella stessa istanza, forma riscritta `/api/gateway?route=…`; più logging Supabase opt-in e mappatura dei rewrite): successo al primo provider; 429 + Retry-After → fallback e cooldown; timeout; 5xx; errore di rete; 401 con cooldown lungo; JSON non valido → retry → fallback; retry che corregge; modalità strutturata per capacità del provider; tutti giù → 503 per chat e regole per insight; provider senza env saltato; **solo `GROQ_API_KEY` presente**; **nuovo provider solo via config**; override `GATEWAY_PROVIDERS_JSON` (merge, riattivazione, replace, JSON invalido); **script `add-provider`** (rilevamento modo strutturato, assenza chiave, duplicati, CLI reale); circuit breaker e half-open; limiti rpm/rpd; guard privacy; auth errata → 401; secret mancante → 500; health senza segreti; rate limit; insight sotto soglia nascosti; correlazioni come indizi; log senza contenuti. Lint: non configurato (tsc in modalità strict con `noUnused*` fa da controllo statico).
 
 ## 10. Limiti noti
 
@@ -263,3 +267,50 @@ Da fare con le chiavi (es. in una Vercel function o in locale con le env esporta
 2. Confermare che Groq accetti lo schema strict degli insight (in caso di 400 il router passa comunque al successivo; correzione: `"structuredOutput": "json_object"` nella voce).
 3. Quando ci sarà `OPENROUTER_API_KEY`: stesso smoke test per i due modelli `:free`.
 4. Applicare la migrazione `ai_gateway_log` e impostare `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` se si vogliono i log su DB.
+
+## 12. Deploy su Vercel
+
+Progetto Vercel dedicato, **Root Directory = `gateway`** (Framework preset: *Other*). Tutto il resto è in `gateway/vercel.json`, nessuna impostazione manuale aggiuntiva:
+
+| Voce | Valore |
+|---|---|
+| Function | `api/gateway.ts` (una sola: health/cooldown/rate limit sono in memoria e devono essere condivisi da tutti gli endpoint della stessa istanza; l'handler è creato una volta a livello di modulo) |
+| Runtime | Node.js (versione da `engines` `>=22.18` → Vercel usa **24.x**), `fluid: true`, `maxDuration: 60` |
+| Rewrite | `/v1/:route(.*)` → `/api/gateway?route=:route` (l'adattatore `src/http/vercel.ts` riporta il percorso a `/v1/<route>` sia che la function riceva l'URL originale sia quello riscritto) |
+| File inclusi | `providers.config.json` (`includeFiles`) |
+| Install / build | `npm ci`; nessun build: le function TS le compila Vercel. Output statico: `public/` (solo `robots.txt`, così i sorgenti non vengono serviti come file statici) |
+
+Env da impostare nel progetto Vercel (Production e Preview):
+
+- **richieste**: `GATEWAY_SECRET` (≥ 16 caratteri, consigliati 32+ casuali, es. `openssl rand -hex 32`), `GROQ_API_KEY`;
+- **opzionali**: `OPENROUTER_API_KEY`, `GATEWAY_PROVIDERS_JSON`, `GATEWAY_RATE_LIMIT_RPM`, `GATEWAY_LOG`, `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (log su DB solo con entrambe e con la migrazione `ai_gateway_log` applicata).
+
+Chiamare l'endpoint (sostituire dominio e segreto):
+
+```bash
+GW=https://<progetto>.vercel.app
+TOKEN=<GATEWAY_SECRET>
+
+curl -s "$GW/v1/health" -H "Authorization: Bearer $TOKEN"
+
+curl -s "$GW/v1/chat/completions" -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"model":"auto","messages":[{"role":"user","content":"Dammi un consiglio sul sonno in una frase."}]}'
+
+curl -s "$GW/v1/insights" -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"windowDays":14,"nights":{"inWindow":14,"withData":12,"confirmed":9,"estimated":3},"targetSleepMinutes":450,"duration":{"nights":12,"medianMinutes":402}}'
+```
+
+Senza bearer (o con bearer errato) la risposta è `401`. Se la *Deployment Protection* di Vercel è attiva sulle preview, le chiamate esterne alle preview ricevono prima la pagina di login Vercel: per provarle serve il bypass o un deploy di produzione.
+
+Prova locale con lo stesso entry di Vercel:
+
+```bash
+cd gateway
+FAKE_MODE=429 PORT=9101 npm run dev:fake-upstream &   # provider finto che risponde 429
+FAKE_MODE=ok  PORT=9102 npm run dev:fake-upstream &   # provider finto che risponde bene
+GATEWAY_SECRET=local-dev-secret-0123456789abcdef K1=x K2=y \
+GATEWAY_PROVIDERS_JSON='{"mode":"replace","providers":[{"id":"fake-429","baseUrl":"http://127.0.0.1:9101/v1","apiKeyEnv":"K1","model":"m1","priority":1},{"id":"fake-ok","baseUrl":"http://127.0.0.1:9102/v1","apiKeyEnv":"K2","model":"m2","priority":2,"structuredOutput":"json_object"}]}' \
+npm run dev:server                                      # http://127.0.0.1:8787
+```
+
+Verifiche fatte (2026-10-24, senza chiavi reali): `vercel build` (CLI 65.2.0, `@vercel/node` con TypeScript 5.9.3 del progetto) su una copia di `gateway/` con impostazioni di progetto locali → build ok, function `api/gateway.func` con `runtime: nodejs24.x`, `maxDuration: 60`, import riscritti in `.js`, `providers.config.json` incluso, rotta `^/v1(?:/(.*))$ → /api/gateway?route=$1`. L'output compilato, eseguito con Node, risponde: health senza bearer 401, health 200 (`rules_only`), chat 503 `all_providers_failed`, insight 200 da regole. **Non verificati**: deploy reale su Vercel (Fluid Compute attivo, URL ricevuto dalla function dopo il rewrite, env di produzione) e chiamate ai provider reali (§11).

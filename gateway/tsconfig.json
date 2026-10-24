@@ -14,11 +14,12 @@
     "exactOptionalPropertyTypes": false,
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
     "erasableSyntaxOnly": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src", "test", "scripts", "vitest.config.ts", "providers.config.json"]
+  "include": ["src", "api", "test", "scripts", "vitest.config.ts", "providers.config.json"]
 }

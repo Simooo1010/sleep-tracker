@@ -32,9 +32,13 @@ export const consoleLogger: GatewayLogger = {
   },
 };
 
-/** Inserts into public.ai_gateway_log via PostgREST with the service role key (server-side only). */
-export function supabaseLogger(opts: { url: string; serviceRoleKey: string; fetch?: FetchLike; table?: string }): GatewayLogger {
+/**
+ * Inserts into public.ai_gateway_log via PostgREST with the service role key (server-side only).
+ * Bounded by a short timeout so a slow/unreachable Supabase never delays a gateway response much.
+ */
+export function supabaseLogger(opts: { url: string; serviceRoleKey: string; fetch?: FetchLike; table?: string; timeoutMs?: number }): GatewayLogger {
   const f = opts.fetch ?? globalThis.fetch;
+  const timeoutMs = opts.timeoutMs ?? 2_000;
   const endpoint = `${opts.url.replace(/\/+$/, '')}/rest/v1/${opts.table ?? 'ai_gateway_log'}`;
   return {
     log: async (e) => {
@@ -47,6 +51,7 @@ export function supabaseLogger(opts: { url: string; serviceRoleKey: string; fetc
           prefer: 'return=minimal',
         },
         body: JSON.stringify(e),
+        signal: AbortSignal.timeout(timeoutMs),
       });
     },
   };
@@ -60,11 +65,14 @@ export function multiLogger(...loggers: GatewayLogger[]): GatewayLogger {
   };
 }
 
-/** Logger from env: Supabase if SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are set, console otherwise. */
+/**
+ * Logger from env. Supabase logging is OPT-IN: only when BOTH SUPABASE_URL and
+ * SUPABASE_SERVICE_ROLE_KEY are set (non-empty); otherwise console only (or nothing with GATEWAY_LOG=off).
+ */
 export function loggerFromEnv(env: Record<string, string | undefined>, fetchImpl?: FetchLike): GatewayLogger {
   if (env.GATEWAY_LOG === 'off') return noopLogger;
-  const url = env.SUPABASE_URL;
-  const key = env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = env.SUPABASE_URL?.trim();
+  const key = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (url && key) {
     return multiLogger(consoleLogger, supabaseLogger({ url, serviceRoleKey: key, ...(fetchImpl ? { fetch: fetchImpl } : {}) }));
   }

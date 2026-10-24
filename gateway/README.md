@@ -8,6 +8,7 @@ Documentazione completa: [`../docs/AI_GATEWAY.md`](../docs/AI_GATEWAY.md).
 cd gateway
 npm install            # .npmrc imposta legacy-peer-deps (bug di npm 10 con i peer di vitest)
 npm run check          # typecheck + test
+npm run dev:server     # server locale con lo stesso entry di Vercel (PORT, default 8787)
 npm run smoke:live     # test con i provider reali (solo con le chiavi in env, mai in CI)
 npm run add-provider -- --id mio-provider --baseUrl https://api.esempio.com/v1 --model esempio/modello --env ESEMPIO_API_KEY
 ```
@@ -15,6 +16,8 @@ npm run add-provider -- --id mio-provider --baseUrl https://api.esempio.com/v1 -
 - Provider: `providers.config.json` (una voce per modello) + env var della chiave. Zero codice.
 - Override senza deploy di codice: env `GATEWAY_PROVIDERS_JSON`.
 - Handler HTTP Web-standard: `createHandler()` da `src/index.ts` (Vercel function / Next route handler).
+- Deploy su Vercel come progetto a sé con **Root Directory = `gateway`**: function unica `api/gateway.ts` (Node, Fluid Compute, `maxDuration` 60) + rewrite `/v1/*` in `vercel.json`. Dettagli, env e esempi `curl`: §12 di `docs/AI_GATEWAY.md`.
+- Env: vedi `.env.example`. Obbligatorie `GATEWAY_SECRET`, `GROQ_API_KEY`; opzionali `OPENROUTER_API_KEY`, `GATEWAY_PROVIDERS_JSON`, `GATEWAY_RATE_LIMIT_RPM`, `GATEWAY_LOG`, `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (log su DB solo se presenti entrambe).
 - Migrazione log metadati: `supabase/migrations/` (da applicare a mano).
 
 Richiede Node >= 22.18 per eseguire gli script `.ts` direttamente (type stripping nativo).
