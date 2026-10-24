@@ -27,6 +27,16 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - **Sonnellino**: comando rapido inizio/fine (o timer con sveglia che chiude da solo); se dimenticato, recupero nel check serale ("sonnellino oggi? quanto?").
 - Se un segnale manca: stima dai giorni precedenti, marcata "stimata".
 
+## 3c. Gestione dell'imprevedibilità (principio di progetto)
+1. Nessun dato obbligatorio. Mancante = mancante (mai zero, mai stima nascosta, mai errore). Niente streak né rimproveri.
+2. Ogni valore ha una provenienza: automatico / confermato / stimato / mancante, mostrata in UI.
+3. Segnali ridondanti per evento. Letto: Full Immersion → check serale → stima. Risveglio: sveglia → prima app aperta al mattino (automazione Comandi, limite superiore) → stima.
+4. Recupero: al primo uso del mattino notte già ricostruita, conferma in 1–2 tap. Se si saltano giorni, si chiedono solo gli ultimi 2–3; i precedenti restano stimati.
+5. Budget domande: 2–3 domande al giorno, rapidissime (1 tap ciascuna), scelte per valore informativo.
+6. Eccezioni come chip one-tap (caffè, alcol, malattia, viaggio, festa, notte in bianco…), lista aperta e personalizzabile, ordinata per frequenza d'uso.
+7. Statistiche robuste: riferimento = **mediana** 14 giorni; giorni-eccezione visibili ma esclusi dal riferimento; ogni statistica mostra la copertura ("9/14 notti"); insight nascosti sotto soglia dati.
+8. Adattività: se un segnale non viene usato per giorni, l'app smette di attenderlo e avvisa una sola volta, solo se cala la precisione.
+
 ## 4. Architettura (confermata: web app, tutto free)
 - **v1**: Web app/PWA (Next.js) su Vercel + Supabase (Postgres, auth, edge functions). Ingestione tramite endpoint API chiamati dalle automazioni Comandi iOS (che possono anche leggere i campioni di sonno da Salute).
   - Pro: niente Apple Developer Program, niente App Store, deploy automatizzabile.
@@ -55,7 +65,7 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 - Obiettivo: andare a letto e svegliarsi alla stessa ora nella maggior parte dei giorni.
 - Analisi: scostamento giornaliero di orario di letto e risveglio rispetto al riferimento, deviazione standard, "social jet lag" (feriali vs weekend), punto medio del sonno.
 - Visualizzazione: confronto tra giornate (es. timeline/barre orarie sovrapposte per giorno) che evidenzia le differenze.
-- Riferimento: media mobile degli ultimi 14 giorni (nessun orario obiettivo fisso).
+- Riferimento: mediana mobile degli ultimi 14 giorni (nessun orario obiettivo fisso).
 - Indicatore di deriva: segnala quando la media stessa si sposta nel tempo (es. "+40 min in 4 settimane").
 - Weekend: stessi criteri dei feriali; lo scostamento del weekend conta.
 - Tolleranza: ±30 min = "regolare".
