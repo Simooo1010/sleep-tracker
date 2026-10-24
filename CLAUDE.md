@@ -1,7 +1,7 @@
 # CLAUDE.md — Sleep Tracker
 
 Regole e istruzioni del progetto. Va letto all'inizio di ogni sessione.
-La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`.
+La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`. Layer AI: `docs/AI_GATEWAY.md`.
 
 ## Principio di prodotto
 - Frizione di inserimento quasi nulla: raccolta passiva/automatica dove possibile, all'utente si chiede solo una conferma.
@@ -10,6 +10,14 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
 - Leggi `docs/DESIGN.md` e usa `docs/design/tokens.css` e `docs/design/system/`. Non inventare colori, font o componenti.
 - Un dato per volta su telefono, un solo pulsante pieno per schermata, mai solo il colore per un significato.
 - Alta risoluzione e 4K: tutto vettoriale, unità `rem`, contenuto centrato con larghezza massima.
+
+## Layer AI (già costruito e online)
+- Per qualsiasi funzione che usa l'AI (insight, previsioni, testi) si chiama il **gateway**, mai un provider direttamente. Doc completa: `docs/AI_GATEWAY.md`; codice in `gateway/`.
+- Endpoint in produzione: `https://sleep-tracker-simone-dr-s-projects.vercel.app` (`POST /v1/insights`, `POST /v1/chat/completions`, `GET /v1/health`), autenticati con `Authorization: Bearer $GATEWAY_SECRET`.
+- Gli ID dei modelli e le chiavi (`GROQ_API_KEY`, ecc.) stanno solo in env Vercel del progetto `sleep-tracker`; `GATEWAY_SECRET` è sensitive e non leggibile. Per usarlo dall'app: `docs/AI_GATEWAY.md` §13.
+- Aggiungere un provider o un modello = una voce in `gateway/providers.config.json` (o `npm run add-provider`) + una env var, zero codice (`docs/AI_GATEWAY.md` §4).
+- All'AI si inviano solo statistiche aggregate, mai dati identificativi (dati sanitari, `docs/AI_GATEWAY.md` §8). Se tutti i provider falliscono, il gateway risponde comunque con insight a regole.
+- Il progetto Vercel `sleep-tracker` ha Root Directory `gateway`: l'app va in una cartella/progetto separato (vedi `docs/AI_GATEWAY.md` §13).
 
 ## Processo di lavoro (obbligatorio)
 1. Pianificazione e definizione → 2. Design system → 3. UI (mockup) → 4. Codice → 5. Test → 6. Deploy.
