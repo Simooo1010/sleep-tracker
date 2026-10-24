@@ -4,6 +4,7 @@
  * docs/PROJECT.md §5c. Funzioni pure: la data di riferimento è sempre un parametro.
  */
 import type { Nap, Night, Stat } from './types';
+import { durationBand, type DurationBand } from './sleep-balance';
 import { addDays, bedAxisMinutes, durationMinutes, hasTimes, localParts } from './time';
 
 /** Notti con energia nota necessarie prima di mostrare una stima. */
@@ -143,8 +144,6 @@ export function forecastEnergy(
   };
 }
 
-export type DurationBand = 'sage' | 'blue' | 'peach';
-
 export interface WeekdayCell {
   /** 0 = lunedì … 6 = domenica (giorno del risveglio, cioè del nightDate). */
   weekday: number;
@@ -152,13 +151,6 @@ export interface WeekdayCell {
   avgMin: number | null;
   n: number;
   band: DurationBand | null;
-}
-
-/** Fasce di colore: >= 8h sage, >= 7h blue, altrimenti peach. */
-export function durationBand(minutes: number): DurationBand {
-  if (minutes >= 480) return 'sage';
-  if (minutes >= 420) return 'blue';
-  return 'peach';
 }
 
 /**

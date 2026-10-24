@@ -30,6 +30,12 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - **Prossimo step**: build principale (4) — partire da schema Supabase + endpoint di ingestione, poi logica di stima/statistiche, poi app Next.js/PWA in `app/` con progetto Vercel separato (il progetto `sleep-tracker` ha root `gateway`). Il layer AI si usa solo via gateway: `CLAUDE.md` § Layer AI e `docs/AI_GATEWAY.md` §13.
 - Roadmap (confermata): 1) design system ✅ → 2) AI gateway ✅ (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI ✅ (prototipi D1/D2 approvati) → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
+## Build app (in corso, branch claude/clever-hawking-s5b26t, PR #11)
+- Slice 0 ✅ scaffolding `app/` (Next 16, Vitest, Playwright iphone/desktop/uhd, CI). WebKit non installato: iPhone emulato con Chromium. Per aggiungere dipendenze usare `npx npm@11 install` (npm 10 non crea il lockfile).
+- Slice 1 ✅ dominio puro `app/src/domain/` (12 moduli, 392 test verdi, `index.ts`). Fuso Europe/Rome; asse letto = minuti dalle 18:00.
+- Prossimo: Slice 2 (schema DB + ingestione eventi), poi 3 Notte, 4 Sera, 5 Regolarità, 6 Grafici+gateway, 7 Storico/Segnali, 8 seed+visual, 9 deploy. Piano: vedi PR #11.
+- Regola utente: attività piccole, un agente Opus ciascuna, file disgiunti (CLAUDE.md).
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.

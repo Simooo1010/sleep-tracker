@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   FORECAST_MIN_NIGHTS,
-  durationBand,
   energyLabel,
   forecastEnergy,
   weekdayHeatmap,
 } from '../../src/domain/forecast';
+import { durationBand } from '../../src/domain/sleep-balance';
 import type { Nap, Night, Provenance, Score } from '../../src/domain/types';
 import { addDays, bedAxisMinutes } from '../../src/domain/time';
 
