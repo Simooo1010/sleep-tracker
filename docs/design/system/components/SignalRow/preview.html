@@ -1,0 +1,11 @@
+<!-- @dsCard group="Segnali" height=420 subtitle="Automazioni che raccolgono la notte" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="card" style="padding:6px 22px">
+<div class="signal"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="nm">Sveglia interrotta</span><span class="badge badge-ok">Attivo</span></div><div class="muted" style="font-size:12px;line-height:17px">Comando automatico · invia "wake", coincide con l'alzata</div><div class="muted" style="font-size:12px">oggi 07:20</div></div>
+<div class="signal"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="nm">Riposo attivato</span><span class="badge badge-ok">Attivo</span></div><div class="muted" style="font-size:12px;line-height:17px">Full Immersion attivata a mano · invia "bedtime_candidate"</div><div class="muted" style="font-size:12px">ieri 23:48</div></div>
+<div class="signal" style="border-bottom:0"><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span class="nm">Sonnellino rapido</span><span class="badge badge-out">Da configurare</span></div><div class="muted" style="font-size:12px;line-height:17px">Comando inizio/fine · oppure timer chiuso dalla sveglia</div><div class="muted" style="font-size:12px">ancora nessun segnale</div></div></div></div>
+</div>
+<script>var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);</script>
+</body></html>

@@ -1,0 +1,19 @@
+<!-- @dsCard group="Grafici" height=420 subtitle="Durata per giorno della settimana" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="card stack" style="gap:12px">
+<div class="eyebrow">Durata per giorno della settimana</div>
+<div class="stack" style="gap:4px" id="h"></div>
+<div style="font-size:12px;color:var(--ink-muted)">Ultime 4 settimane, dalla più vecchia. Verde 8h+ · azzurro 7–8h · pesca meno di 7h.</div></div></div>
+</div>
+<script>
+var D=[['Lun','7h35','8h05','7h20','7h48'],['Mar','7h10','7h40','7h55','7h30'],['Mer','7h25','6h50e','7h35','7h18'],['Gio','7h50','7h12','8h10','7h45'],['Ven','6h40','6h55','6h30e','6h58'],['Sab','6h45','7h05','6h50','7h00'],['Dom','7h30','—','7h45','7h52']],h='';
+D.forEach(function(r){h+='<div class="row" style="flex-wrap:nowrap;gap:4px"><div style="flex:0 0 34px;font-size:12px;color:var(--ink-muted)">'+r[0]+'</div>';
+for(var i=1;i<5;i++){var v=r[i],e=/e$/.test(v),m=v=='—',t=v.replace('e',''),mm=m?0:parseInt(t),c=m?'cell-miss':(mm>=8?'cell-8':(mm>=7?'cell-7':'cell-6'));
+h+='<div class="cell '+c+(e?' cell-est':'')+'" style="flex:1 1 0;min-width:0;height:36px">'+t+'</div>';}
+h+='</div>';});
+document.getElementById('h').innerHTML=h;
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>

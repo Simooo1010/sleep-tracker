@@ -1,10 +1,15 @@
 # CLAUDE.md — Sleep Tracker
 
 Regole e istruzioni del progetto. Va letto all'inizio di ogni sessione.
-La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`.
+La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`.
 
 ## Principio di prodotto
 - Frizione di inserimento quasi nulla: raccolta passiva/automatica dove possibile, all'utente si chiede solo una conferma.
+
+## Design (obbligatorio per ogni UI)
+- Leggi `docs/DESIGN.md` e usa `docs/design/tokens.css` e `docs/design/system/`. Non inventare colori, font o componenti.
+- Un dato per volta su telefono, un solo pulsante pieno per schermata, mai solo il colore per un significato.
+- Alta risoluzione e 4K: tutto vettoriale, unità `rem`, contenuto centrato con larghezza massima.
 
 ## Processo di lavoro (obbligatorio)
 1. Pianificazione e definizione → 2. Design system → 3. UI (mockup) → 4. Codice → 5. Test → 6. Deploy.

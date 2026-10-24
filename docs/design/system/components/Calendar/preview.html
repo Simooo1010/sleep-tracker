@@ -1,0 +1,23 @@
+<!-- @dsCard group="Grafici" height=560 subtitle="Storico del mese" -->
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap"></head>
+<body><div class="stage">
+<div class="pane"><div class="card stack" style="gap:10px;padding:18px">
+<h3 class="serif" style="margin:0;font-weight:300;font-size:30px;line-height:34px">Ottobre 2026</h3>
+<div id="c" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px"></div>
+<div style="display:flex;flex-wrap:wrap;gap:6px 12px;font-size:11px;color:var(--ink-muted)"><span>Verde 8h+</span><span>Azzurro 7–8h</span><span>Pesca meno di 7h</span><span>Tratteggio = stimata</span><span>Punti = mancante</span></div></div></div>
+</div>
+<script>
+var D=[435,458,462,440,455,448,0,470,445,462,438,0,471,420,455,430,478,447,452,425,440,452,0],h='';
+'LMMGVSD'.split('').forEach(function(w){h+='<div style="font-size:11px;text-align:center;color:var(--ink-muted)">'+w+'</div>';});
+for(var i=0;i<3;i++)h+='<div></div>';
+for(var d=1;d<=31;d++){var m=D[d-1],fut=d>24,sel=d==23,est=(d==3||d==10||d==19),cls='cell cell-6',t='';
+if(d==24){m=452;est=true;}
+if(fut){h+='<div class="cell" style="height:48px;opacity:.35;border:1px solid transparent;color:var(--ink-muted);flex-direction:column;font-size:11px">'+d+'</div>';continue;}
+if(m==0){cls='cell cell-miss';t='—';}else{cls='cell '+(m>=480?'cell-8':(m>=420?'cell-7':'cell-6'));t=Math.floor(m/60)+'h'+('0'+m%60).slice(-2);}
+if(est)cls+=' cell-est';
+h+='<div class="'+cls+'" style="height:48px;flex-direction:column;gap:0;'+(sel?'border:2px solid var(--ink)':'')+'"><span style="font-size:11px;font-weight:400">'+d+'</span><span style="font-size:11px">'+t+'</span></div>';}
+document.getElementById('c').innerHTML=h;
+var p=document.querySelector('.pane'),q=p.cloneNode(true);q.setAttribute('data-theme','scuro');p.after(q);
+</script>
+</body></html>

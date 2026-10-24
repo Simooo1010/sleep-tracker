@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Prototipo D</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,300;6..72,400&display=swap">
+<style>
+body{margin:0}
+button{font-family:'Instrument Sans',system-ui,sans-serif;cursor:pointer}
+button:focus-visible{outline:2px solid currentColor;outline-offset:2px}
+</style>
+</helmet>
+<div style="{{rootStyle}}">
+<nav style="{{navStyle}}">
+<sc-if value="{{isDesktop}}" hint-placeholder-val="{{true}}">
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 28px; margin-bottom: 8px">Sleep Tracker</div>
+</sc-if>
+<div style="{{navListStyle}}">
+<sc-for list="{{nav}}" as="n" hint-placeholder-count="5">
+<button aria-label="{{n.label}}" aria-pressed="{{n.on}}" onClick="{{n.go}}" style="{{n.btn}}">
+<span style="{{n.pill}}"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="{{n.fg}}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="{{n.icon}}"/></svg></span>{{n.label}}</button>
+</sc-for>
+</div>
+<sc-if value="{{isDesktop}}" hint-placeholder-val="{{true}}">
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 12px">
+<div style="background: {{t.card}}; border-radius: 18px; padding: 14px; font-size: 13px; line-height: 19px; color: {{t.mut}}"><span style="font-weight: 600; color: {{t.ink}}">Oggi</span><br>Sveglia 07:20 · Primo uso 08:52<br>Riposo attivato alle 23:48</div>
+<button onClick="{{toggleTheme}}" style="align-self: flex-start; min-height: 40px; border: 1px solid {{t.lineStrong}}; border-radius: 999px; padding: 0 16px; background: transparent; color: {{t.ink}}; font-size: 13px">Tema {{t.name}}</button>
+</div>
+</sc-if>
+</nav>
+
+<main style="{{mainStyle}}">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Sabato 24 ottobre</div>
+<sc-if value="{{isPhone}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 6px">
+<sc-if value="{{isD2}}" hint-placeholder-val="{{true}}"><button onClick="{{goSegnali}}" style="min-height: 36px; border: 1px solid {{t.lineStrong}}; border-radius: 999px; padding: 0 12px; background: transparent; color: {{t.ink}}; font-size: 12px">Segnali</button></sc-if>
+<button onClick="{{toggleTheme}}" style="min-height: 36px; border: 1px solid {{t.lineStrong}}; border-radius: 999px; padding: 0 12px; background: transparent; color: {{t.ink}}; font-size: 12px">Tema {{t.name}}</button>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{showBack}}" hint-placeholder-val="{{false}}">
+<button onClick="{{back}}" style="align-self: flex-start; min-height: 44px; border: 0; background: transparent; color: {{t.ink}}; font-size: 16px; display: flex; align-items: center; gap: 6px; padding: 0">
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{t.ink}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>Indietro</button>
+</sc-if>
+
+<sc-if value="{{isNotte}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-if value="{{v.hero}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 16px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Stanotte</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: {{bigSize}}; line-height: 1">{{durLabel}}</div>
+<div style="display: flex; align-items: center; gap: 10px; font-size: 17px; font-variant-numeric: tabular-nums">
+<span>{{bedLabel}}</span>
+<div style="flex-grow: 1; height: 14px; border-radius: 999px; border: {{barBorder}}; background: {{barBg}}"></div>
+<span>{{wakeLabel}}</span>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+<span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{badgeBg}}; color: {{badgeFg}}">{{badgeText}}</span>
+<sc-if value="{{showTolChip}}" hint-placeholder-val="{{true}}">
+<span style="font-size: 12px; padding: 4px 10px; border-radius: 999px; background: {{todayTol.bg}}; color: {{todayTol.fg}}">Letto {{todayTol.bed}} · Sveglia {{todayTol.wake}} · {{todayTol.word}}</span>
+</sc-if>
+</div>
+<div style="font-size: 13px; line-height: 19px; color: {{t.mut}}">{{why}}</div>
+<sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 8px; background: {{t.bg}}; border-radius: 16px; padding: 12px">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex-grow: 1; font-size: 13px">Sono andato a letto</span>
+<button aria-label="Anticipa di 5 minuti" onClick="{{bedMinus}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.lineStrong}}; background: {{t.card}}; color: {{t.ink}}; font-size: 20px">−</button>
+<span style="width: 50px; text-align: center; font-variant-numeric: tabular-nums">{{bedLabel}}</span>
+<button aria-label="Posticipa di 5 minuti" onClick="{{bedPlus}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.lineStrong}}; background: {{t.card}}; color: {{t.ink}}; font-size: 20px">+</button>
+</div>
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="flex-grow: 1; font-size: 13px">Mi sono svegliato</span>
+<button aria-label="Anticipa di 5 minuti" onClick="{{wakeMinus}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.lineStrong}}; background: {{t.card}}; color: {{t.ink}}; font-size: 20px">−</button>
+<span style="width: 50px; text-align: center; font-variant-numeric: tabular-nums">{{wakeLabel}}</span>
+<button aria-label="Posticipa di 5 minuti" onClick="{{wakePlus}}" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid {{t.lineStrong}}; background: {{t.card}}; color: {{t.ink}}; font-size: 20px">+</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{notConfirmed}}" hint-placeholder-val="{{true}}">
+<button onClick="{{confirm}}" style="border: 0; border-radius: 999px; min-height: 56px; font-size: 17px; font-weight: 600; background: {{t.peach}}; color: {{t.onFill}}">Conferma</button>
+</sc-if>
+<sc-if value="{{confirmed}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 14px; color: {{t.sageInk}}; background: {{t.sageSoft}}; border-radius: 999px; padding: 4px 6px 4px 18px"><span>Registrata. Grazie.</span><button onClick="{{undo}}" style="border: 0; background: transparent; min-height: 44px; padding: 0 12px; font-size: 14px; color: {{t.sageInk}}; text-decoration: underline; text-underline-offset: 4px">Annulla</button></div>
+</sc-if>
+<button onClick="{{toggleEdit}}" style="border: 0; background: transparent; min-height: 44px; font-size: 15px; color: {{t.ink}}; text-decoration: underline; text-underline-offset: 4px">{{editLabel}}</button>
+<div>
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 10px">Energia di questa mattina</div>
+<div style="display: flex; gap: 14px; flex-wrap: wrap">
+<sc-for list="{{energyMoons}}" as="m" hint-placeholder-count="5">
+<button aria-label="{{m.aria}}" aria-pressed="{{m.on}}" onClick="{{m.go}}" style="width: 48px; height: 48px; border-radius: 50%; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: {{m.bg}}; outline: {{m.ring}}; outline-offset: 2px">
+<svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="{{t.ink}}" stroke-width="1.5"/><path d="{{m.d}}" fill="{{t.ink}}"/></svg>
+</button>
+</sc-for>
+</div>
+</div>
+</section>
+</sc-if>
+
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<sc-if value="{{v.timeline}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">La notte, in ordine</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{events}}" as="e" hint-placeholder-count="5">
+<div style="display: flex; gap: 12px; align-items: stretch">
+<div style="flex: 0 0 42px; font-size: 13px; font-variant-numeric: tabular-nums; padding-top: 2px; color: {{t.mut}}">{{e.time}}</div>
+<div style="display: flex; flex-direction: column; align-items: center; flex: 0 0 14px">
+<div style="width: 12px; height: 12px; border-radius: 50%; margin-top: 4px; background: {{e.dot}}; border: {{e.dotBorder}}"></div>
+<div style="flex-grow: 1; width: 1px; background: {{t.line}}"></div>
+</div>
+<div style="flex-grow: 1; min-width: 0; padding-bottom: 16px">
+<div style="font-size: 14px; font-weight: 500">{{e.title}}</div>
+<div style="font-size: 12px; color: {{t.mut}}">{{e.src}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{v.nap}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.yellowSoft}}; color: {{t.yellowInk}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase">Sonnellino</div>
+<div style="font-size: 14px; line-height: 21px">{{napText}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+<button onClick="{{napGo}}" style="border: 0; border-radius: 999px; min-height: 48px; padding: 0 24px; font-size: 15px; font-weight: 600; background: {{napBg}}; color: {{napFg}}">{{napLabel}}</button>
+<sc-if value="{{napDone}}" hint-placeholder-val="{{false}}"><button onClick="{{napReset}}" style="border: 0; background: transparent; min-height: 44px; font-size: 14px; color: {{t.yellowInk}}; text-decoration: underline; text-underline-offset: 4px">Annulla</button></sc-if>
+</div>
+</section>
+</sc-if>
+</div>
+</div>
+
+<sc-if value="{{v.compare}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Rispetto al tuo solito</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px 28px">
+<sc-for list="{{compare}}" as="c" hint-placeholder-count="3">
+<div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px"><span>{{c.k}}</span><span style="font-variant-numeric: tabular-nums; color: {{t.mut}}">{{c.v}}</span></div>
+<div style="position: relative; height: 10px; border-radius: 999px; background: {{t.bg}}">
+<div style="position: absolute; top: 0; bottom: 0; left: 0; width: {{c.usual}}; border-radius: 999px; background: {{t.line}}"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: 0; width: {{c.now}}; border-radius: 999px; background: {{c.color}}; opacity: 0.9"></div>
+</div>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}">Barra colorata = stanotte · grigia = mediana mobile dei 14 giorni</div>
+</section>
+</sc-if>
+
+<sc-if value="{{v.statsN}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: {{statCols}}; gap: 14px">
+<sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+<div style="min-width: 0; box-sizing: border-box; background: {{s.bg}}; color: {{s.fg}}; border-radius: 20px; padding: 16px">
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">{{s.k}}</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 32px; line-height: 1.1; margin-top: 4px">{{s.v}}</div>
+<div style="font-size: 12px; margin-top: 2px">{{s.note}}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isSettimana}}" hint-placeholder-val="{{false}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Ultime notti</div>
+<sc-for list="{{weekRows}}" as="r" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 10px">
+<div style="flex: 0 0 36px; font-size: 13px; color: {{t.mut}}">{{r.day}}</div>
+<div style="position: relative; flex-grow: 1; height: 24px; border-radius: 999px; background: {{t.bg}}">
+<div style="position: absolute; top: 0; bottom: 0; left: {{r.left}}; width: {{r.width}}; border-radius: 999px; background: {{r.fill}}; border: {{r.border}}"></div>
+</div>
+<div style="flex: 0 0 58px; font-size: 13px; text-align: right; font-variant-numeric: tabular-nums">{{r.label}}</div>
+</div>
+</sc-for>
+<div style="display: flex; justify-content: space-between; margin-left: 46px; margin-right: 68px; font-size: 11px; color: {{t.mut}}"><span>21</span><span>00</span><span>03</span><span>06</span><span>09</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: {{t.mut}}"><span>Azzurro pieno = confermata</span><span>Pesca tratteggiata = stimata</span><span>Vuota = mancante</span></div>
+</section>
+<div style="display: grid; grid-template-columns: {{statCols}}; gap: 14px">
+<sc-for list="{{stats3}}" as="s" hint-placeholder-count="3">
+<div style="min-width: 0; box-sizing: border-box; background: {{s.bg}}; color: {{s.fg}}; border-radius: 20px; padding: 16px">
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">{{s.k}}</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 32px; line-height: 1.1; margin-top: 4px">{{s.v}}</div>
+<div style="font-size: 12px; margin-top: 2px">{{s.note}}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+
+<sc-if value="{{isRegolarita}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{v.regTitle}}" hint-placeholder-val="{{true}}">
+<div>
+<h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">Regolarità</h1>
+<div style="font-size: 14px; color: {{t.mut}}; margin-top: 4px">Riferimento: mediana mobile dei 14 giorni · tolleranza ± 30 min</div>
+</div>
+</sc-if>
+<sc-if value="{{v.regHead}}" hint-placeholder-val="{{false}}">
+<section style="box-sizing: border-box; background: {{t.sageSoft}}; color: {{t.sageInk}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 10px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase">Ultime 14 notti</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 64px; line-height: 1">{{regHead.big}}</div>
+<div style="font-size: 15px; line-height: 22px">{{regHead.sub}}</div>
+<span style="align-self: flex-start; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{t.peachSoft}}; color: {{t.peachInk}}">{{regHead.chip}}</span>
+</section>
+</sc-if>
+<sc-if value="{{v.chart}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Confronto tra notti</div>
+<div style="display: flex; gap: 8px">
+<div style="flex: 0 0 34px"></div>
+<div style="position: relative; flex-grow: 1; height: 22px; font-size: 11px; color: {{t.mut}}">
+<sc-for list="{{hourTicks}}" as="h" hint-placeholder-count="5"><span style="position: absolute; left: {{h.left}}; transform: translateX(-50%)">{{h.label}}</span></sc-for>
+</div>
+<div style="flex: 0 0 {{devW}}"></div>
+</div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{regRows}}" as="r" hint-placeholder-count="15">
+<div style="display: flex; align-items: center; gap: 8px">
+<div style="flex: 0 0 34px; font-size: 11px; color: {{t.mut}}">{{r.day}}</div>
+<div style="position: relative; flex-grow: 1; height: 14px; border-radius: 999px; background: {{t.bg}}">
+<div style="position: absolute; top: 0; bottom: 0; left: {{r.left}}; width: {{r.width}}; border-radius: 999px; background: {{r.fill}}; border: {{r.border}}; box-sizing: border-box"></div>
+</div>
+<div style="flex: 0 0 {{devW}}; display: flex; justify-content: flex-end; align-items: center; gap: 6px; font-size: 11px; font-variant-numeric: tabular-nums"><span style="color: {{t.mut}}; display: {{devShow}}">{{r.dev}}</span><span style="font-weight: 600; padding: 1px 6px; border-radius: 999px; background: {{r.tolBg}}; color: {{r.tolFg}}">{{r.tol}}</span></div>
+</div>
+</sc-for>
+<div style="position: absolute; top: 0; bottom: 0; left: 42px; right: {{devRight}}; pointer-events: none">
+<div style="position: absolute; top: 0; bottom: 0; left: {{bands.bedLeft}}; width: {{bands.w}}; background: {{t.sage}}; opacity: 0.28"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: {{bands.wakeLeft}}; width: {{bands.w}}; background: {{t.sage}}; opacity: 0.28"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: {{bands.bedAvg}}; width: 0; border-left: 2px dashed {{t.sageInk}}"></div>
+<div style="position: absolute; top: 0; bottom: 0; left: {{bands.wakeAvg}}; width: 0; border-left: 2px dashed {{t.sageInk}}"></div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: {{t.mut}}"><span>Fascia verde = mediana ± 30 min (letto {{bands.bedLabel}}, sveglia {{bands.wakeLabel}})</span><span>Pieno = confermata · tratteggiato = stimata</span><span style="display: {{devShow}}">Numeri a destra = scarto dalla mediana (min): letto / sveglia</span></div>
+</section>
+</sc-if>
+<sc-if value="{{v.regStats}}" hint-placeholder-val="{{true}}">
+<div style="display: grid; grid-template-columns: {{statCols}}; gap: 14px">
+<sc-for list="{{regStats}}" as="s" hint-placeholder-count="5">
+<div style="min-width: 0; box-sizing: border-box; background: {{s.bg}}; color: {{s.fg}}; border-radius: 20px; padding: 16px">
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">{{s.k}}</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 32px; line-height: 1.1; margin-top: 4px">{{s.v}}</div>
+<div style="font-size: 12px; margin-top: 2px">{{s.note}}</div>
+</div>
+</sc-for>
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-if value="{{v.drift}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap"><div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Deriva della mediana</div><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{t.peachSoft}}; color: {{t.peachInk}}">{{drift.badge}}</span></div>
+<div style="display: flex; align-items: flex-end; gap: 8px; height: 120px">
+<sc-for list="{{drift.bars}}" as="b" hint-placeholder-count="6">
+<div style="flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px">
+<div style="font-size: 11px; font-variant-numeric: tabular-nums; color: {{t.mut}}">{{b.val}}</div>
+<div style="width: 100%; height: {{b.h}}; border-radius: 8px 8px 4px 4px; background: {{b.color}}"></div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; gap: 8px"><sc-for list="{{drift.bars}}" as="b" hint-placeholder-count="6"><div style="flex: 1 1 0; min-width: 0; text-align: center; font-size: 11px; color: {{t.mut}}">{{b.label}}</div></sc-for></div>
+<div style="font-size: 14px; line-height: 21px; color: {{t.mut}}">{{drift.text}}</div>
+</section>
+</sc-if>
+<sc-if value="{{v.wk}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Feriali e weekend, stessi criteri</div>
+<sc-for list="{{wkCompare}}" as="w" hint-placeholder-count="3">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 13px"><span>{{w.k}}</span><span style="color: {{t.mut}}; font-variant-numeric: tabular-nums">{{w.delta}}</span></div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="flex: 0 0 62px; color: {{t.mut}}">Feriali</span><div style="flex-grow: 1; height: 10px; border-radius: 999px; background: {{t.bg}}"><div style="height: 10px; width: {{w.a}}; border-radius: 999px; background: {{t.blue}}"></div></div><span style="flex: 0 0 44px; text-align: right; font-variant-numeric: tabular-nums">{{w.av}}</span></div>
+<div style="display: flex; align-items: center; gap: 8px; font-size: 12px"><span style="flex: 0 0 62px; color: {{t.mut}}">Weekend</span><div style="flex-grow: 1; height: 10px; border-radius: 999px; background: {{t.bg}}"><div style="height: 10px; width: {{w.b}}; border-radius: 999px; background: {{t.peach}}"></div></div><span style="flex: 0 0 44px; text-align: right; font-variant-numeric: tabular-nums">{{w.bv}}</span></div>
+</div>
+</sc-for>
+<div style="font-size: 12px; color: {{t.mut}}">Weekend = notti di venerdì e sabato.</div>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isGrafici}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{v.gTitle}}" hint-placeholder-val="{{true}}"><h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">Grafici e insight</h1></sc-if>
+<sc-if value="{{v.insights}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-for list="{{insights}}" as="i" hint-placeholder-count="6">
+<article style="flex: 1 1 300px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{i.bg}}; color: {{i.fg}}">{{i.tag}}</span><span style="font-size: 12px; color: {{t.mut}}">{{i.when}}</span></div>
+<h3 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 400; font-size: 22px; line-height: 1.2">{{i.title}}</h3>
+<p style="margin: 0; font-size: 14px; line-height: 21px; color: {{t.mut}}">{{i.body}}</p>
+</article>
+</sc-for>
+</div>
+</sc-if>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-if value="{{v.dur}}" hint-placeholder-val="{{true}}">
+<section style="flex: 3 1 420px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Durata e debito, ultime 14 notti</div>
+<div style="position: relative; height: 150px; display: flex; align-items: flex-end; gap: 4px; border-bottom: 1px solid {{t.line}}">
+<sc-for list="{{durBars}}" as="b" hint-placeholder-count="14"><div title="{{b.title}}" style="flex: 1 1 0; min-width: 0; height: {{b.h}}; border-radius: 6px 6px 0 0; background: {{b.fill}}; border: {{b.border}}; box-sizing: border-box"></div></sc-for>
+<div style="position: absolute; left: 0; right: 0; bottom: {{targetBottom}}; border-top: 2px dashed {{t.sageInk}}"></div>
+</div>
+<div style="display: flex; gap: 4px"><sc-for list="{{durBars}}" as="b" hint-placeholder-count="14"><div style="flex: 1 1 0; min-width: 0; text-align: center; font-size: 10px; color: {{t.mut}}">{{b.day}}</div></sc-for></div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{durChips}}" as="c" hint-placeholder-count="4"><span style="font-size: 13px; padding: 6px 12px; border-radius: 999px; background: {{c.bg}}; color: {{c.fg}}">{{c.text}}</span></sc-for>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}">Linea tratteggiata = obiettivo 7h 30m · barre tratteggiate = stimate</div>
+</section>
+</sc-if>
+<sc-if value="{{v.heat}}" hint-placeholder-val="{{true}}">
+<section style="flex: 2 1 300px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Durata per giorno della settimana</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<sc-for list="{{heat}}" as="r" hint-placeholder-count="7">
+<div style="display: flex; align-items: center; gap: 4px">
+<div style="flex: 0 0 34px; font-size: 12px; color: {{t.mut}}">{{r.day}}</div>
+<sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4"><div style="flex: 1 1 0; min-width: 0; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; background: {{c.bg}}; color: {{c.fg}}; border: {{c.border}}; box-sizing: border-box">{{c.label}}</div></sc-for>
+</div>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}">Ultime 4 settimane, dalla più vecchia. Verde 8h+ · azzurro 7–8h · pesca meno di 7h.</div>
+</section>
+</sc-if>
+</div>
+
+<sc-if value="{{v.corr}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Cosa si lega a qualità, energia e umore</div>
+<div style="overflow-x: auto"><div style="min-width: 380px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; gap: 6px; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: {{t.mut}}"><span style="flex: 1 1 130px">Fattore</span><span style="flex: 0 0 64px; text-align: center">Qualità</span><span style="flex: 0 0 64px; text-align: center">Energia</span><span style="flex: 0 0 64px; text-align: center">Umore</span></div>
+<sc-for list="{{corr}}" as="r" hint-placeholder-count="5">
+<div style="display: flex; gap: 6px; align-items: center">
+<div style="flex: 1 1 130px; min-width: 0"><div style="font-size: 14px">{{r.k}}</div><div style="font-size: 11px; color: {{t.mut}}">{{r.n}}</div></div>
+<sc-for list="{{r.cells}}" as="c" hint-placeholder-count="3"><div style="flex: 0 0 64px; box-sizing: border-box; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; background: {{c.bg}}; color: {{c.fg}}">{{c.v}}</div></sc-for>
+</div>
+</sc-for>
+</div></div>
+<div style="font-size: 12px; line-height: 18px; color: {{t.mut}}">Differenza media di voto (1–5) nelle notti con il fattore rispetto a quelle senza. Sono indizi, non cause. Mostrati con almeno 14 notti di dati; con meno di 5 occorrenze il fattore resta grigio.</div>
+</section>
+</sc-if>
+
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<sc-if value="{{v.months}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 300px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Trend mensile · durata media</div>
+<div style="display: flex; align-items: flex-end; gap: 8px; height: 130px">
+<sc-for list="{{months}}" as="m" hint-placeholder-count="6">
+<div style="flex: 1 1 0; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px">
+<div style="font-size: 11px; font-variant-numeric: tabular-nums; color: {{t.mut}}">{{m.val}}</div>
+<div style="width: 100%; height: {{m.h}}; border-radius: 8px 8px 4px 4px; background: {{m.color}}"></div>
+<div style="font-size: 11px; color: {{t.mut}}">{{m.label}}</div>
+</div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+<sc-if value="{{v.forecast}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 300px; min-width: 0; box-sizing: border-box; background: {{t.yellowSoft}}; color: {{t.yellowInk}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; gap: 10px"><span style="font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{t.card}}; color: {{t.yellowInk}}">Previsione</span><span style="font-size: 12px">Domani mattina</span></div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 46px; line-height: 1">Energia 4 su 5</div>
+<div style="display: flex; gap: 10px">
+<sc-for list="{{forecastMoons}}" as="m" hint-placeholder-count="5"><span style="width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: {{m.bg}}; outline: {{m.ring}}; outline-offset: 2px"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="{{t.ink}}" stroke-width="1.5"/><path d="{{m.d}}" fill="{{t.ink}}"/></svg></span></sc-for>
+</div>
+<div style="font-size: 14px; line-height: 21px">Se vai a letto entro le 23:55 e dormi almeno 7h 15m, nei tuoi giorni simili l'energia è stata alta 7 volte su 9. Stima su 23 notti.</div>
+</section>
+</sc-if>
+</div>
+
+<sc-if value="{{v.naps}}" hint-placeholder-val="{{true}}">
+<section style="box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 14px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">Sonnellini pomeridiani · ultime 2 settimane</div>
+<div style="display: grid; grid-template-columns: {{statCols}}; gap: 14px">
+<sc-for list="{{napStats}}" as="s" hint-placeholder-count="4">
+<div style="min-width: 0; box-sizing: border-box; background: {{s.bg}}; color: {{s.fg}}; border-radius: 18px; padding: 14px">
+<div style="font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase">{{s.k}}</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 28px; line-height: 1.1; margin-top: 4px">{{s.v}}</div>
+<div style="font-size: 12px; margin-top: 2px">{{s.note}}</div>
+</div>
+</sc-for>
+</div>
+<div style="display: flex; flex-direction: column">
+<sc-for list="{{napList}}" as="n" hint-placeholder-count="5">
+<div style="display: flex; justify-content: space-between; gap: 8px; padding: 9px 0; border-top: 1px solid {{t.line}}; font-size: 14px"><span>{{n.date}}</span><span style="font-variant-numeric: tabular-nums">{{n.range}}</span><span style="color: {{t.mut}}; font-variant-numeric: tabular-nums">{{n.dur}}</span></div>
+</sc-for>
+</div>
+</section>
+</sc-if>
+</sc-if>
+
+<sc-if value="{{isStorico}}" hint-placeholder-val="{{false}}">
+<h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">Ottobre 2026</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<section style="flex: 3 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{calPad}}; display: flex; flex-direction: column; gap: 10px">
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{weekdays}}" as="w" hint-placeholder-count="7"><div style="font-size: 11px; text-align: center; color: {{t.mut}}">{{w}}</div></sc-for>
+<sc-for list="{{cells}}" as="c" hint-placeholder-count="31">
+<button aria-label="{{c.aria}}" disabled="{{c.disabled}}" onClick="{{c.go}}" style="min-height: {{cellH}}; min-width: 0; box-sizing: border-box; border-radius: 12px; padding: 4px 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}; visibility: {{c.vis}}">
+<span style="font-size: 11px">{{c.day}}</span>
+<span style="font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; display: {{cellShort}}">{{c.short}}</span>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 11px; color: {{t.mut}}; padding: 0 4px"><span>Verde 8h+</span><span>Azzurro 7–8h</span><span>Pesca meno di 7h</span><span>Tratteggio = stimata</span><span>Punti = mancante</span></div>
+</section>
+<section style="flex: 2 1 300px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">{{detail.title}}</div>
+<div style="font-family: 'Newsreader', serif; font-weight: 300; font-size: 54px; line-height: 1">{{detail.dur}}</div>
+<div style="font-size: 16px; font-variant-numeric: tabular-nums">{{detail.range}}</div>
+<div style="align-self: flex-start; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: {{detail.badgeBg}}; color: {{detail.badgeFg}}">{{detail.badge}}</div>
+<div style="font-size: 14px; line-height: 21px; color: {{t.mut}}">{{detail.note}}</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{detail.tags}}" as="g" hint-placeholder-count="3"><span style="font-size: 13px; padding: 6px 12px; border-radius: 999px; background: {{t.bg}}">{{g}}</span></sc-for>
+</div>
+</section>
+</div>
+</sc-if>
+
+<sc-if value="{{isSegnali}}" hint-placeholder-val="{{false}}">
+<h1 style="margin: 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">Segnali</h1>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<sc-if value="{{v.sigs}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: 6px {{cp}}; display: flex; flex-direction: column">
+<sc-for list="{{signals}}" as="g" hint-placeholder-count="6">
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 0; border-bottom: 1px solid {{t.line}}">
+<div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span style="font-size: 15px; font-weight: 500">{{g.name}}</span><span style="flex: 0 0 auto; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; background: {{g.bg}}; color: {{g.fg}}">{{g.status}}</span></div>
+<div style="font-size: 12px; line-height: 17px; color: {{t.mut}}">{{g.how}}</div>
+<div style="font-size: 12px; color: {{t.mut}}">{{g.last}}</div>
+</div>
+</sc-for>
+</section>
+</sc-if>
+<sc-if value="{{v.log}}" hint-placeholder-val="{{true}}">
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 4px">
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 6px">Ultimi segnali</div>
+<sc-for list="{{log}}" as="l" hint-placeholder-count="8">
+<div style="display: flex; flex-direction: column; gap: 2px; padding: 9px 0; border-top: 1px solid {{t.line}}">
+<div style="display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: {{t.mut}}"><span>{{l.when}}</span><span>{{l.result}}</span></div>
+<div style="font-size: 14px">{{l.what}}</div>
+</div>
+</sc-for>
+</section>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{isSera}}" hint-placeholder-val="{{false}}">
+<section style="align-self: flex-start; width: 100%; max-width: 640px; box-sizing: border-box; background: {{t.card}}; border-radius: {{cr}}; padding: {{cp}}; display: flex; flex-direction: column; gap: 24px">
+<div>
+<div style="font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}">{{sera.kicker}}</div>
+<h1 style="margin: 6px 0 0; font-family: 'Newsreader', serif; font-weight: 300; font-size: 38px; line-height: 1.1">{{sera.title}}</h1>
+<sc-if value="{{isPhone}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 6px; margin-top: 14px">
+<sc-for list="{{sera.dots}}" as="d" hint-placeholder-count="4"><span style="flex: 1 1 0; height: 4px; border-radius: 999px; background: {{d.color}}"></span></sc-for>
+</div>
+</sc-if>
+</div>
+<sc-if value="{{v.tired}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 10px">Stanchezza</div>
+<div style="display: flex; gap: 14px; flex-wrap: wrap; justify-content: {{moonJ}}">
+<sc-for list="{{tiredMoons}}" as="m" hint-placeholder-count="5">
+<button aria-label="{{m.aria}}" aria-pressed="{{m.on}}" onClick="{{m.go}}" style="width: 52px; height: 52px; border-radius: 50%; border: 0; padding: 0; display: flex; align-items: center; justify-content: center; background: {{m.bg}}; outline: {{m.ring}}; outline-offset: 2px">
+<svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="{{t.ink}}" stroke-width="1.5"/><path d="{{m.d}}" fill="{{t.ink}}"/></svg>
+</button>
+</sc-for>
+</div>
+<div style="display: flex; justify-content: space-between; max-width: 320px; font-size: 12px; color: {{t.mut}}; margin-top: 8px"><span>Per niente</span><span>Esausto</span></div>
+</div>
+</sc-if>
+<sc-if value="{{v.mood}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 10px">Umore</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{moods}}" as="c" hint-placeholder-count="5">
+<button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 20px; font-size: 15px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{v.fact}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 10px">Cosa è successo oggi</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{factors}}" as="c" hint-placeholder-count="6">
+<button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 18px; font-size: 15px; border: {{c.border}}; background: {{c.bg}}; color: {{c.fg}}">{{c.label}}</button>
+</sc-for>
+</div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin: 18px 0 10px">Giornata particolare</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{exceptions}}" as="c" hint-placeholder-count="5">
+<button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 18px; font-size: 15px; border: {{c.xBorder}}; background: {{c.xBg}}; color: {{c.xFg}}">{{c.label}}</button>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}; margin-top: 8px">Non conta nel riferimento della regolarità.</div>
+</div>
+</sc-if>
+<sc-if value="{{v.napQ}}" hint-placeholder-val="{{true}}">
+<div>
+<div style="display: {{lblDisp}}; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: {{t.mut}}; margin-bottom: 4px">Sonnellino oggi?</div>
+<div style="font-size: 13px; color: {{t.mut}}; margin-bottom: 12px">Se non hai usato il comando rapido, lo recuperi qui.</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<sc-for list="{{napChoices}}" as="c" hint-placeholder-count="5">
+<button aria-pressed="{{c.on}}" onClick="{{c.go}}" style="min-height: 48px; border-radius: 999px; padding: 0 20px; font-size: 15px; border: {{c.yBorder}}; background: {{c.yBg}}; color: {{c.yFg}}">{{c.label}}</button>
+</sc-for>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{v.next}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; gap: 10px">
+<sc-if value="{{v.prev}}" hint-placeholder-val="{{false}}"><button onClick="{{prevStep}}" style="flex: 0 0 auto; min-height: 56px; border-radius: 999px; padding: 0 22px; font-size: 16px; border: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.ink}}">Indietro</button></sc-if>
+<button onClick="{{nextStep}}" style="flex: 1 1 0; min-height: 56px; border: 0; border-radius: 999px; font-size: 17px; font-weight: 600; background: {{t.blueSoft}}; color: {{t.blueInk}}">Avanti</button>
+</div>
+</sc-if>
+<sc-if value="{{v.sendBlock}}" hint-placeholder-val="{{true}}">
+<sc-if value="{{notSent}}" hint-placeholder-val="{{true}}">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; gap: 10px">
+<sc-if value="{{v.prevSend}}" hint-placeholder-val="{{false}}"><button onClick="{{prevStep}}" style="flex: 0 0 auto; min-height: 56px; border-radius: 999px; padding: 0 22px; font-size: 16px; border: 1px solid {{t.lineStrong}}; background: transparent; color: {{t.ink}}">Indietro</button></sc-if>
+<button onClick="{{send}}" style="flex: 1 1 0; border: 0; border-radius: 999px; min-height: 56px; font-size: 17px; font-weight: 600; background: {{t.peach}}; color: {{t.onFill}}">Vado a dormire</button>
+</div>
+<div style="font-size: 12px; color: {{t.mut}}">Salva il check e avvia il Comando che attiva Riposo.</div>
+</div>
+</sc-if>
+<sc-if value="{{sent}}" hint-placeholder-val="{{false}}">
+<div style="background: {{t.sageSoft}}; color: {{t.sageInk}}; border-radius: 18px; padding: 16px 18px; font-size: 14px; line-height: 21px">Buonanotte. Check salvato alle 23:41. Riposo è attivo e la sveglia delle 07:15 è impostata.</div>
+</sc-if>
+</sc-if>
+</section>
+</sc-if>
+
+<sc-if value="{{showMenu}}" hint-placeholder-val="{{false}}">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<sc-for list="{{menuRows}}" as="m" hint-placeholder-count="5">
+<button onClick="{{m.go}}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; gap: 14px; text-align: left; min-height: 68px; padding: 14px 18px; border: 0; border-radius: 22px; background: {{t.card}}; color: {{t.ink}}">
+<span style="flex: 0 0 12px; height: 12px; border-radius: 50%; background: {{m.dot}}"></span>
+<span style="flex: 1 1 0; min-width: 0"><span style="display: block; font-size: 16px; font-weight: 500">{{m.title}}</span><span style="display: block; font-size: 13px; line-height: 18px; color: {{t.mut}}; margin-top: 2px">{{m.sub}}</span></span>
+<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="{{t.mut}}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>
+</button>
+</sc-for>
+</div>
+</sc-if>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"layout":{"editor":"enum","options":["desktop","phone"],"default":"desktop"},"dark":{"editor":"boolean","default":false},"tab":{"editor":"text","default":"notte"},"edition":{"editor":"enum","options":["1","2"],"default":"2"},"$preview":{"width":1280,"height":1500}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const p = props || {};
+    this.state = { tab: p.tab || 'notte', view: null, step: 0, dark: p.dark === true || p.dark === 'true', confirmed: false, editing: false, bed: 1428, wake: 440, energy: 3, tired: 3, mood: 3, factors: {}, sent: false, sel: 23, napPhase: 'idle', napChoice: -1 };
+  }
+  renderVals() {
+    const s = this.state;
+    const p = this.props || {};
+    const phone = p.layout === 'phone';
+    const d2 = String(p.edition || '2') !== '1';
+    const P = {
+      light: { name: 'chiaro', bg: '#eef2f6', card: '#ffffff', ink: '#27303b', mut: '#5a6675', line: '#d7dee6', lineStrong: '#6b7a8c', blue: '#b9c9e6', sage: '#b4c7ae', peach: '#f0c1a4', yellow: '#f4e3a1', onFill: '#1f2a3a', blueSoft: '#dfe7f5', blueInk: '#2a3f66', sageSoft: '#e1ebdd', sageInk: '#2f4a2b', peachSoft: '#fbe6da', peachInk: '#7a3d17', yellowSoft: '#fbf3cf', yellowInk: '#5e4a00' },
+      dark: { name: 'scuro', bg: '#161a22', card: '#202633', ink: '#e8ecf3', mut: '#a4aebd', line: '#2b3242', lineStrong: '#7d8aa0', blue: '#aebfe0', sage: '#a9c0a3', peach: '#eab898', yellow: '#a9c0a3', onFill: '#16202e', blueSoft: '#232d44', blueInk: '#aebfe0', sageSoft: '#223026', sageInk: '#a9c0a3', peachSoft: '#3a2a22', peachInk: '#eab898', yellowSoft: '#223026', yellowInk: '#a9c0a3' }
+    };
+    const t = Object.assign({}, s.dark ? P.dark : P.light);
+    t.surfaceX = s.dark ? '#10141b' : '#e3e9ef';
+    const pad = (n) => String(n).padStart(2, '0');
+    const fmt = (x) => { const m = ((Math.round(x) % 1440) + 1440) % 1440; return pad(Math.floor(m / 60)) + ':' + pad(m % 60); };
+    const durMin = (b, w) => (w + 1440 - b) % 1440;
+    const hmm = (m) => Math.floor(m / 60) + 'h ' + pad(Math.round(m) % 60) + 'm';
+    const comma = (x) => (x > 0 ? '+' : (x < 0 ? '−' : '')) + Math.abs(x).toFixed(1).replace('.', ',');
+    const sgn = (x) => (x > 0 ? '+' : (x < 0 ? '−' : '±')) + Math.abs(Math.round(x));
+    const median = (a) => { const q = a.slice().sort((x, y) => x - y), n = q.length; return n % 2 ? q[(n - 1) / 2] : (q[n / 2 - 1] + q[n / 2]) / 2; };
+    const mean = (a) => a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0;
+    const sdev = (a) => { const m = mean(a); return Math.sqrt(mean(a.map((x) => (x - m) * (x - m)))); };
+    const mk = (f) => {
+      if (f <= 0) return '';
+      if (f >= 1) return 'M12 2a10 10 0 1 1 0 20a10 10 0 1 1 0-20';
+      const r = Math.abs(1 - 2 * f) * 10;
+      return 'M12 2A10 10 0 0 1 12 22A' + r + ' 10 0 0 ' + (f < 0.5 ? 0 : 1) + ' 12 2Z';
+    };
+    const MC = { energy: [t.yellowInk, t.yellow], tired: [t.blueInk, t.blueSoft] };
+    const moons = (key) => [0, 0.25, 0.5, 0.75, 1].map((f, i) => ({
+      d: mk(f), on: s[key] === i, aria: (key === 'energy' ? 'Energia ' : 'Stanchezza ') + (i + 1) + ' di 5',
+      ring: s[key] === i ? '2px solid ' + MC[key][0] : '2px solid transparent', bg: s[key] === i ? MC[key][1] : t.bg,
+      go: () => this.setState({ [key]: i })
+    }));
+    const chip = (label, on, go) => ({ label, on, go, border: on ? '1.5px solid ' + t.sageInk : '1px solid ' + t.lineStrong, bg: on ? t.sageSoft : 'transparent', fg: on ? t.sageInk : t.ink });
+
+    // ---- dati: 23 notti di ottobre generate in modo deterministico ----
+    const rnd = (n) => ((n * 9301 + 49297) % 233280) / 233280;
+    const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+    const N = {};
+    for (let d = 1; d <= 23; d++) {
+      const dow = (d + 2) % 7;
+      const late = dow === 4 || dow === 5;
+      const screen = rnd(d + 11) < 0.35, sport = rnd(d + 23) < 0.4, stress = rnd(d + 31) < 0.3, dinner = rnd(d + 47) < 0.25, alcohol = rnd(d + 59) < 0.1;
+      const nap = d === 23 || rnd(d + 71) < 0.4;
+      const exc = d === 12;
+      const napStart = 810 + Math.round(rnd(d + 3) * 150), napDur = 20 + Math.round(rnd(d + 5) * 30);
+      const ab = 1410 + (late ? 55 : 0) + Math.round((rnd(d) - 0.5) * 50) + (screen ? 30 : 0) + (dinner ? 15 : 0) + (nap ? 20 : 0);
+      const dm = 450 - (late ? 20 : 0) + Math.round((rnd(d + 40) - 0.5) * 100) + (sport ? 15 : 0) - (screen ? 15 : 0);
+      const kind = (d === 6 || d === 14) ? 'm' : (rnd(d + 90) < 0.17 ? 'e' : 'c');
+      const q = clamp(Math.round(3 + (sport ? 0.8 : 0) - (screen ? 0.8 : 0) - (stress ? 0.7 : 0) + (rnd(d + 13) - 0.5)), 1, 5);
+      const en = clamp(Math.round(2.6 + (dm - 420) / 90 + (rnd(d + 17) - 0.5)), 1, 5);
+      const mood = clamp(Math.round(3.2 - (stress ? 1 : 0) + (sport ? 0.4 : 0) + (rnd(d + 19) - 0.5)), 1, 5);
+      N[d] = { d, dow, late, exc, ab, dm, kind, screen, sport, stress, dinner, alcohol, nap, napStart, napDur, q, en, mood, bed: ab % 1440, wake: (ab + dm) % 1440 };
+    }
+    const DOWL = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
+    const present = []; for (let d = 1; d <= 23; d++) if (N[d].kind !== 'm') present.push(N[d]);
+    const last14 = []; for (let d = 10; d <= 23; d++) if (N[d].kind !== 'm') last14.push(N[d]);
+    const ref = last14.filter((n) => !n.exc);
+    const avgBed = median(ref.map((n) => n.ab)), avgWake = median(ref.map((n) => n.ab + n.dm));
+    const sdBed = sdev(last14.map((n) => n.ab)), sdWake = sdev(last14.map((n) => n.ab + n.dm));
+    const mp = (n) => n.ab + n.dm / 2;
+    const wkEnd = last14.filter((n) => n.late), wkDay = last14.filter((n) => !n.late);
+    const sjl = mean(wkEnd.map(mp)) - mean(wkDay.map(mp));
+    const inTol = (n) => !n.exc &&  Math.abs(n.ab - avgBed) <= 30 && Math.abs(n.ab + n.dm - avgWake) <= 30;
+    const nTol = ref.filter(inTol).length;
+    const todayDm = durMin(s.bed, s.wake);
+    const todayAb = s.bed < 600 ? s.bed + 1440 : s.bed;
+    const todayDevBed = todayAb - avgBed, todayDevWake = todayAb + todayDm - avgWake;
+    const tolWord = Math.abs(todayDevBed) <= 30 && Math.abs(todayDevWake) <= 30 ? 'nella tolleranza' : 'fuori tolleranza';
+    const todayTol = { bed: sgn(todayDevBed) + ' min', wake: sgn(todayDevWake) + ' min', word: tolWord, bg: tolWord === 'nella tolleranza' ? t.sageSoft : t.peachSoft, fg: tolWord === 'nella tolleranza' ? t.sageInk : t.peachInk };
+
+    // ---- visibilità: su telefono un solo dato per volta ----
+    const root = phone && s.view === null;
+    const V = (id) => !phone || s.view === id;
+    const lastStep = d2 ? 3 : 2;
+    const v = {
+      hero: !phone || root, timeline: V('timeline'), nap: d2 && V('nap'), compare: d2 && V('compare'), statsN: !phone,
+      regTitle: !phone || root, regHead: root, chart: V('chart'), regStats: V('stats'), drift: V('drift'), wk: V('wk'),
+      gTitle: !phone || root, insights: V('insights'), dur: V('dur'), heat: V('heat'), corr: V('corr'), months: V('months'), forecast: V('forecast'), naps: V('naps'),
+      sigs: !phone || root, log: V('log'),
+      tired: !phone || s.step === 0, mood: !phone || s.step === 1, fact: !phone || s.step === 2, napQ: d2 && (!phone || s.step === 3),
+      next: phone && s.step < lastStep, prev: phone && s.step > 0, sendBlock: !phone || s.step === lastStep, prevSend: phone && s.step > 0
+    };
+    const goView = (id) => () => this.setState({ view: id });
+    const menus = { notte: [], regolarita: [], grafici: [], segnali: [] };
+
+    // ---- layout ----
+    const cp = phone ? '22px' : '28px', cr = phone ? '26px' : '28px';
+    const rootStyle = phone
+      ? "position: relative; width: 390px; height: 844px; box-sizing: border-box; border-radius: 36px; overflow: hidden; display: flex; flex-direction: column; background: " + t.bg + "; color: " + t.ink + "; font-family: 'Instrument Sans', system-ui, sans-serif"
+      : "width: 100%; min-height: 900px; box-sizing: border-box; display: flex; flex-direction: row; background: " + t.bg + "; color: " + t.ink + "; font-family: 'Instrument Sans', system-ui, sans-serif";
+    const navStyle = phone
+      ? 'position: absolute; left: 14px; right: 14px; bottom: 16px; z-index: 5; box-sizing: border-box; padding: 6px; border-radius: 999px; background: ' + t.card + '; border: 1px solid ' + t.line + '; box-shadow: ' + (s.dark ? '0 10px 28px rgba(0,0,0,0.5)' : '0 10px 28px rgba(39,48,59,0.16)')
+      : 'order: 0; flex: 0 0 240px; box-sizing: border-box; padding: 28px 16px; display: flex; flex-direction: column; gap: 14px; border-right: 1px solid ' + t.line;
+    const mainStyle = phone
+      ? 'order: 1; flex: 1 1 0; min-height: 0; overflow-y: auto; box-sizing: border-box; padding: 30px 20px 120px; display: flex; flex-direction: column; gap: 18px'
+      : 'order: 1; flex: 1 1 0; min-width: 0; max-width: 1480px; margin: 0 auto; box-sizing: border-box; padding: 40px; display: flex; flex-direction: column; gap: 26px';
+    const items = d2
+      ? [['notte', 'Notte'], ['regolarita', 'Regolarità'], ['grafici', 'Grafici'], ['storico', 'Storico'], ['sera', 'Sera']].concat(phone ? [] : [['segnali', 'Segnali']])
+      : [['notte', 'Notte'], ['sera', 'Sera'], ['settimana', 'Settimana']];
+    const icons = {
+      notte: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z', regolarita: 'M4 7h9M4 12h13M4 17h7M18 5v14', grafici: 'M5 19V11M12 19V5M19 19v-6',
+      storico: 'M5 5h14v15H5zM5 10h14M9 3v4M15 3v4', segnali: 'M4 9a12 12 0 0 1 16 0M7 12.5a8 8 0 0 1 10 0M10 16a4 4 0 0 1 4 0M12 19.5v.01',
+      sera: 'M4 17h16M7 17a5 5 0 0 1 10 0M12 6v3M5.6 9.6l1.8 1.8M18.4 9.6l-1.8 1.8', settimana: 'M5 19V11M12 19V5M19 19v-6'
+    };
+    const navListStyle = phone ? 'display: grid; grid-template-columns: repeat(' + items.length + ', minmax(0, 1fr))' : 'display: flex; flex-direction: column; gap: 6px';
+    const nav = items.map(([k, l]) => {
+      const on = s.tab === k;
+      return {
+        label: l, icon: icons[k], on, go: () => this.setState({ tab: k, view: null, step: 0 }), fg: on ? t.blueInk : t.mut,
+        btn: phone
+          ? 'border: 0; border-radius: 999px; background: ' + (on ? t.blueSoft : 'transparent') + '; min-height: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: ' + (on ? t.blueInk : t.mut) + '; font-size: 11px; font-weight: ' + (on ? 600 : 400)
+          : 'border: 0; border-radius: 14px; min-height: 46px; padding: 0 14px; display: flex; flex-direction: row; align-items: center; gap: 12px; text-align: left; font-size: 15px; background: ' + (on ? t.blueSoft : 'transparent') + '; color: ' + (on ? t.blueInk : t.mut) + '; font-weight: ' + (on ? 600 : 400),
+        pill: phone ? 'width: 28px; height: 24px; display: flex; align-items: center; justify-content: center' :'width: 24px; height: 24px; display: flex; align-items: center; justify-content: center'
+      };
+    });
+
+    // ---- notte ----
+    const ev = (time, title, src, kind) => ({ time, title, src, dot: kind === 'e' ? 'transparent' : (kind === 'n' ? t.sage : t.blue), dotBorder: kind === 'e' ? '1.5px dashed ' + t.peachInk : '1.5px solid transparent' });
+    const events = [
+      ev('23:41', 'Check serale salvato', 'Comando "Sera" · stanchezza 4 su 5', 'n'),
+      ev('23:48', 'Riposo attivato', 'Comando Full Immersion', 'c'),
+      ev('03:12', 'Possibile risveglio di circa 10 min', 'Movimento del telefono · da confermare', 'e'),
+      ev('07:20', 'Sveglia interrotta', 'Comando automatico · sei in piedi', 'c'),
+      ev('08:52', 'Primo uso del telefono', 'Notte ricostruita, da confermare', 'n')
+    ];
+    const step = (key, dd) => () => this.setState({ [key]: s[key] + dd });
+    const comp = (k, now, usual, val, color) => ({ k, v: val, now: now + '%', usual: usual + '%', color });
+    const compare = [
+      comp('Addormentamento', 64, 58, fmt(s.bed) + ' · mediana ' + fmt(avgBed), t.blue),
+      comp('Durata', clamp(todayDm / 540 * 100, 5, 100), clamp(mean(last14.map((n) => n.dm)) / 540 * 100, 5, 100), hmm(todayDm) + ' · media ' + hmm(mean(last14.map((n) => n.dm))), t.blue),
+      comp('Regolarità', 72, 60, 'scarto ' + sgn(todayDevBed) + ' min · mediana ± ' + Math.round(sdBed) + ' min', t.sage)
+    ];
+    const lastNight = N[23];
+    const napBase = d2 ? 'Ieri: sonnellino ' + fmt(lastNight.napStart) + '–' + fmt(lastNight.napStart + lastNight.napDur) + ' (' + lastNight.napDur + ' min), con la notte fanno ' + hmm(lastNight.dm + lastNight.napDur) + ' di sonno nelle 24 ore.' : '';
+    const napText = s.napPhase === 'idle' ? napBase + ' Tocca il comando rapido quando ti sdrai.' : (s.napPhase === 'run' ? 'In corso dalle 14:05. Termina quando ti alzi, oppure lascia che la sveglia lo chiuda.' : 'Registrato: 14:05–14:37, 32 min. Contano nel sonno delle 24 ore.');
+    const nextNap = { idle: 'run', run: 'done', done: 'done' };
+    const debt7 = [17, 18, 19, 20, 21, 22, 23].reduce((a, d) => a + Math.max(0, 450 - N[d].dm), 0);
+    const stats = d2
+      ? [
+        { k: 'Durata media', v: hmm(mean(last14.map((n) => n.dm))), note: '14 notti', bg: t.blueSoft, fg: t.blueInk },
+        { k: 'Regolarità', v: '± ' + Math.round(sdBed) + ' min', note: nTol + ' notti su ' + last14.length + ' nella tolleranza', bg: t.sageSoft, fg: t.sageInk },
+        { k: 'Debito', v: hmm(debt7), note: 'Ultime 7 notti', bg: t.peachSoft, fg: t.peachInk },
+        { k: 'Sonno 24 ore', v: hmm(lastNight.dm + lastNight.napDur), note: 'Ieri, con sonnellino', bg: t.yellowSoft, fg: t.yellowInk }
+      ]
+      : [
+        { k: 'Durata media', v: hmm(mean(last14.map((n) => n.dm))), note: '14 notti', bg: t.blueSoft, fg: t.blueInk },
+        { k: 'Regolarità', v: '± ' + Math.round(sdBed) + ' min', note: 'Orari più stabili', bg: t.sageSoft, fg: t.sageInk },
+        { k: 'Debito di sonno', v: '1h 05m', note: 'Da recuperare', bg: t.peachSoft, fg: t.peachInk }
+      ];
+
+    // ---- settimana (D1) ----
+    const hmn = (x) => { const [h, n] = x.split(':').map(Number); return h * 60 + n; };
+    const wnights = [['Dom', '23:30', '07:30', 'c'], ['Lun', null, null, 'm'], ['Mar', '00:10', '07:40', 'c'], ['Mer', '23:50', '07:00', 'e'], ['Gio', '00:40', '08:05', 'c'], ['Ven', '23:20', '06:50', 'c']];
+    const cm = (x) => ((x - 1260) + 1440) % 1440;
+    const hatch = 'repeating-linear-gradient(135deg,' + t.peach + ' 0 4px,transparent 4px 8px)';
+    const weekRows = wnights.map((n) => {
+      if (n[3] === 'm') return { day: n[0], left: '0%', width: '100%', fill: 'transparent', border: '1.5px dotted ' + t.mut, label: '—' };
+      const b = hmn(n[1]), w = hmn(n[2]); const est = n[3] === 'e';
+      return { day: n[0], left: cm(b) / 840 * 100 + '%', width: ((w + 1440 - b) % 1440) / 840 * 100 + '%', fill: est ? hatch : t.blue, border: est ? '1.5px dashed ' + t.peach : '1.5px solid ' + t.blue, label: hmm((w + 1440 - b) % 1440) };
+    });
+    weekRows.push({ day: 'Oggi', left: cm(s.bed) / 840 * 100 + '%', width: todayDm / 840 * 100 + '%', fill: s.confirmed ? t.blue : hatch, border: s.confirmed ? '1.5px solid ' + t.blue : '1.5px dashed ' + t.peach, label: hmm(todayDm) });
+
+    // ---- regolarità ----
+    const L0 = 1260, SP = 840;
+    const pc = (x) => ((x - L0) / SP * 100) + '%';
+    const regRows = last14.map((n) => {
+      const est = n.kind === 'e', ok = inTol(n);
+      return { day: DOWL[n.dow] + ' ' + n.d, left: pc(n.ab), width: (n.dm / SP * 100) + '%', fill: est ? hatch : t.blue, border: est ? '1.5px dashed ' + t.peachInk : '1px solid transparent',
+        dev: sgn(n.ab - avgBed) + ' / ' + sgn(n.ab + n.dm - avgWake), tol: n.exc ? 'Viaggio' : (ok ? 'OK' : 'Fuori'), tolBg: n.exc ? t.surfaceX : (ok ? t.sageSoft : t.peachSoft), tolFg: n.exc ? t.mut : (ok ? t.sageInk : t.peachInk) };
+    });
+    const tokTol = Math.abs(todayDevBed) <= 30 && Math.abs(todayDevWake) <= 30;
+    regRows.push({ day: 'Oggi', left: pc(todayAb), width: (todayDm / SP * 100) + '%', fill: s.confirmed ? t.blue : hatch, border: s.confirmed ? '1px solid transparent' : '1.5px dashed ' + t.peachInk,
+      dev: sgn(todayDevBed) + ' / ' + sgn(todayDevWake), tol: tokTol ? 'OK' : 'Fuori', tolBg: tokTol ? t.sageSoft : t.peachSoft, tolFg: tokTol ? t.sageInk : t.peachInk });
+    const devW = phone ? '52px' : '112px';
+    const bands = { bedLeft: pc(avgBed - 30), wakeLeft: pc(avgWake - 30), w: (60 / SP * 100) + '%', bedAvg: pc(avgBed), wakeAvg: pc(avgWake), bedLabel: fmt(avgBed), wakeLabel: fmt(avgWake) };
+    const hourTicks = [['21', 1260], ['00', 1440], ['03', 1620], ['06', 1800], ['09', 1980]].map(([l, x]) => ({ label: l, left: pc(x) }));
+    const regStats = [
+      { k: 'Scarto letto', v: '± ' + Math.round(sdBed) + ' min', note: 'Deviazione standard, 14 notti', bg: t.blueSoft, fg: t.blueInk },
+      { k: 'Scarto sveglia', v: '± ' + Math.round(sdWake) + ' min', note: 'Deviazione standard, 14 notti', bg: t.blueSoft, fg: t.blueInk },
+      { k: 'Nella tolleranza', v: nTol + ' su ' + last14.length, note: 'Letto e sveglia entro ± 30 min', bg: t.sageSoft, fg: t.sageInk },
+      { k: 'Punto medio', v: fmt(mean(last14.map(mp))), note: 'Metà del sonno', bg: t.blueSoft, fg: t.blueInk },
+      { k: 'Social jet lag', v: sgn(sjl) + ' min', note: 'Weekend rispetto ai feriali', bg: t.peachSoft, fg: t.peachInk }
+    ];
+    const offs = [-42, -33, -22, -12, -4, 0], wl = ['5 sett. fa', '4', '3', '2', '1', 'Ora'];
+    const dv = avgBed + offs[0];
+    const driftBars = offs.map((o, i) => { const val = avgBed + o; return { val: fmt(val), label: wl[i], h: clamp(((val - (avgBed - 70)) / 90) * 100, 8, 100) + '%', color: i === 5 ? t.peach : t.blue }; });
+    const drift = { bars: driftBars, badge: sgn(avgBed - dv) + ' min in 5 settimane', text: 'La mediana del tuo orario di letto si è spostata da ' + fmt(dv) + ' a ' + fmt(avgBed) + '. È oltre la tolleranza di ± 30 min: il riferimento sta scivolando verso notte fonda.' };
+    const regHead = { big: nTol + ' su ' + last14.length, sub: 'notti con letto e sveglia entro ± 30 minuti dalla tua mediana. Calcolata su ' + ref.length + ' su 14 notti (un viaggio è escluso).', chip: 'Deriva ' + drift.badge };
+    const wkCmp = (k, fa, fb, lo, hi) => ({ k, a: clamp((fa - lo) / (hi - lo) * 100, 6, 100) + '%', b: clamp((fb - lo) / (hi - lo) * 100, 6, 100) + '%', av: fmt(fa), bv: fmt(fb), delta: sgn(fb - fa) + ' min' });
+    const wkCompare = [
+      wkCmp('Letto', mean(wkDay.map((n) => n.ab)), mean(wkEnd.map((n) => n.ab)), 1300, 1700),
+      wkCmp('Sveglia', mean(wkDay.map((n) => n.ab + n.dm)), mean(wkEnd.map((n) => n.ab + n.dm)), 1800, 2000),
+      wkCmp('Punto medio', mean(wkDay.map(mp)), mean(wkEnd.map(mp)), 1560, 1760)
+    ];
+
+    // ---- grafici ----
+    const bucket = (dm) => dm >= 480 ? [t.sageSoft, t.sageInk] : (dm >= 420 ? [t.blueSoft, t.blueInk] : [t.peachSoft, t.peachInk]);
+    const dbars = []; for (let d = 10; d <= 23; d++) dbars.push(N[d]);
+    const durBars = dbars.map((n) => n.kind === 'm'
+      ? { day: n.d, h: '10%', fill: 'transparent', border: '1.5px dotted ' + t.mut, title: n.d + ' ottobre · mancante' }
+      : { day: n.d, h: clamp(n.dm / 540 * 100, 8, 100) + '%', fill: n.kind === 'e' ? hatch : t.blue, border: n.kind === 'e' ? '1.5px dashed ' + t.peachInk : '1px solid transparent', title: n.d + ' ottobre · ' + hmm(n.dm) });
+    const avg7 = mean([17, 18, 19, 20, 21, 22, 23].map((d) => N[d].dm)), avgAll = mean(present.map((n) => n.dm));
+    const durChips = [
+      { text: 'Media 7 notti ' + hmm(avg7), bg: t.blueSoft, fg: t.blueInk },
+      { text: 'Media del mese ' + hmm(avgAll), bg: t.blueSoft, fg: t.blueInk },
+      { text: 'Debito accumulato ' + hmm(debt7), bg: t.peachSoft, fg: t.peachInk },
+      { text: 'Obiettivo 7h 30m', bg: t.sageSoft, fg: t.sageInk }
+    ];
+    const heat = [0, 1, 2, 3, 4, 5, 6].map((dow) => {
+      const list = []; for (let d = 1; d <= 23; d++) if (N[d].dow === dow) list.push(N[d]);
+      const last4 = list.slice(-4);
+      while (last4.length < 4) last4.unshift(null);
+      return { day: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'][dow], cells: last4.map((n) => {
+        if (!n) return { label: '', bg: 'transparent', fg: t.mut, border: '1px solid transparent' };
+        if (n.kind === 'm') return { label: '—', bg: 'transparent', fg: t.mut, border: '1.5px dotted ' + t.mut };
+        const [bg, fg] = bucket(n.dm);
+        return { label: Math.floor(n.dm / 60) + 'h' + pad(n.dm % 60), bg, fg, border: n.kind === 'e' ? '1.5px dashed ' + t.peachInk : '1px solid transparent' };
+      }) };
+    });
+    const FACT = [['Schermo a letto', 'screen'], ['Sport', 'sport'], ['Giornata stressante', 'stress'], ['Cena tardi', 'dinner'], ['Alcol', 'alcohol']];
+    const corr = FACT.map(([k, key]) => {
+      const w = present.filter((n) => n[key]), wo = present.filter((n) => !n[key]);
+      const few = w.length < 5;
+      const cells = ['q', 'en', 'mood'].map((o) => {
+        if (few) return { v: '—', bg: 'transparent', fg: t.mut };
+        const dlt = Math.round((mean(w.map((n) => n[o])) - mean(wo.map((n) => n[o]))) * 10) / 10;
+        return { v: comma(dlt), bg: dlt >= 0.3 ? t.sageSoft : (dlt <= -0.3 ? t.peachSoft : t.bg), fg: dlt >= 0.3 ? t.sageInk : (dlt <= -0.3 ? t.peachInk : t.ink) };
+      });
+      return { k, n: few ? w.length + ' notti, ne servono 5' : w.length + ' notti su ' + present.length, cells };
+    });
+    const dScreen = Math.round(mean(present.filter((n) => n.screen).map((n) => n.ab)) - mean(present.filter((n) => !n.screen).map((n) => n.ab)));
+    const qScreen = Math.abs(mean(present.filter((n) => n.screen).map((n) => n.q)) - mean(present.filter((n) => !n.screen).map((n) => n.q)));
+    const napBedDelta = Math.round(mean(present.filter((n) => n.nap).map((n) => n.ab)) - mean(present.filter((n) => !n.nap).map((n) => n.ab)));
+    const napEnDelta = Math.round((mean(present.filter((n) => n.nap).map((n) => n.en)) - mean(present.filter((n) => !n.nap).map((n) => n.en))) * 10) / 10;
+    const tg = (ai) => ai ? { tag: 'AI', bg: t.blueSoft, fg: t.blueInk } : { tag: 'Regole', bg: t.sageSoft, fg: t.sageInk };
+    const wkSj = Math.round(sjl);
+    const insights = [
+      Object.assign({ when: 'Stamattina', title: 'Gli schermi a letto spostano la notte', body: 'Nelle ' + present.filter((n) => n.screen).length + ' sere con schermo a letto ti sei addormentato in media ' + Math.abs(dScreen) + ' minuti più tardi, e la qualità è scesa di ' + qScreen.toFixed(1).replace('.', ',') + ' punti.' }, tg(true)),
+      Object.assign({ when: 'Ogni lunedì', title: 'Il tuo orario sta scivolando', body: 'La mediana del letto si è spostata di ' + sgn(avgBed - dv) + ' minuti in 5 settimane, oltre la tolleranza di ± 30 minuti.' }, tg(false)),
+      Object.assign({ when: 'Stamattina', title: 'Un debito piccolo, facile da chiudere', body: 'Hai ' + hmm(debt7) + ' di sonno in meno rispetto all\'obiettivo di 7h 30m nelle ultime 7 notti. Letto 20 minuti prima per tre sere e si azzera.' }, tg(true)),
+      Object.assign({ when: 'Ogni lunedì', title: 'Il weekend sposta il punto medio', body: 'Il punto medio del sonno nel weekend è ' + Math.abs(wkSj) + ' minuti ' + (wkSj >= 0 ? 'dopo' : 'prima') + ' rispetto ai feriali: è il tuo social jet lag.' }, tg(false)),
+      Object.assign({ when: 'Dati insufficienti', title: 'L\'alcol non è ancora valutabile', body: 'Servono almeno 5 notti con questo fattore. Per ora ne hai ' + present.filter((n) => n.alcohol).length + '.' }, tg(false)),
+      Object.assign({ when: 'Aggiornato ieri', title: 'I sonnellini ti fanno andare a letto più tardi', body: 'Nei giorni con sonnellino vai a letto in media ' + Math.abs(napBedDelta) + ' minuti ' + (napBedDelta >= 0 ? 'più tardi' : 'prima') + '. Se resti sotto i 30 minuti l\'effetto sparisce.' }, tg(true))
+    ];
+    const months = [['mag', 426], ['giu', 431], ['lug', 422], ['ago', 438], ['set', 433], ['ott', Math.round(avgAll)]].map(([l, val], i) => ({ label: l, val: Math.floor(val / 60) + 'h' + pad(val % 60), h: clamp((val - 380) / 90 * 100, 10, 100) + '%', color: i === 5 ? t.peach : t.blue }));
+    const forecastMoons = [0, 0.25, 0.5, 0.75, 1].map((f, i) => ({ d: mk(f), ring: i === 3 ? '2px solid ' + t.yellowInk : '2px solid transparent', bg: i === 3 ? t.yellow : t.card }));
+    const napAll = []; for (let d = 10; d <= 23; d++) if (N[d].nap) napAll.push(N[d]);
+    const napStats = [
+      { k: 'Frequenza', v: napAll.length + ' su 14', note: 'Giorni con sonnellino', bg: t.yellowSoft, fg: t.yellowInk },
+      { k: 'Durata media', v: Math.round(mean(napAll.map((n) => n.napDur))) + ' min', note: 'Per sonnellino', bg: t.yellowSoft, fg: t.yellowInk },
+      { k: 'Orario tipico', v: fmt(mean(napAll.map((n) => n.napStart))), note: 'Inizio medio', bg: t.blueSoft, fg: t.blueInk },
+      { k: 'Effetto sul letto', v: sgn(napBedDelta) + ' min', note: 'Energia ' + comma(napEnDelta) + ' il giorno dopo', bg: t.peachSoft, fg: t.peachInk }
+    ];
+    const napList = napAll.slice(-5).reverse().map((n) => ({ date: DOWL[n.dow] + ' ' + n.d + ' ott', range: fmt(n.napStart) + '–' + fmt(n.napStart + n.napDur), dur: n.napDur + ' min' }));
+
+    // ---- storico ----
+    const cells = [];
+    for (let i = 0; i < 3; i++) cells.push({ day: '', short: '', aria: '', bg: 'transparent', fg: t.ink, border: '1px solid transparent', vis: 'hidden', disabled: true, go: () => {} });
+    const sh = (m) => Math.floor(m / 60) + 'h' + pad(m % 60);
+    for (let d = 1; d <= 31; d++) {
+      const n = d === 24 ? { dm: todayDm, kind: s.confirmed ? 'c' : 'e' } : N[d];
+      const fut = d > 24;
+      const [bg, fg] = n && !fut ? (n.kind === 'm' ? ['transparent', t.mut] : bucket(n.dm)) : ['transparent', t.mut];
+      cells.push({
+        day: d, short: fut ? '' : (n.kind === 'm' ? '—' : sh(n.dm)), aria: 'Notte del ' + d + ' ottobre', disabled: fut, bg, fg, vis: 'visible',
+        border: s.sel === d ? '2px solid ' + t.ink : (fut ? '1px solid transparent' : (n.kind === 'e' ? '1.5px dashed ' + t.peachInk : (n.kind === 'm' ? '1.5px dotted ' + t.mut : '1px solid transparent'))),
+        go: () => this.setState({ sel: d })
+      });
+    }
+    const sd = s.sel === 24 ? { bed: s.bed, wake: s.wake, dm: todayDm, kind: s.confirmed ? 'c' : 'e', late: false, q: 4, en: s.energy + 1, nap: false } : N[s.sel];
+    const detail = sd.kind === 'm'
+      ? { title: 'Notte del ' + s.sel + ' ottobre', dur: '—', range: 'Nessun dato', badge: 'Mancante', badgeBg: t.bg, badgeFg: t.mut, note: 'Nessun segnale ricevuto. Puoi inserire gli orari a mano o lasciare la stima dei giorni vicini.', tags: [] }
+      : { title: 'Notte del ' + s.sel + ' ottobre', dur: hmm(sd.dm), range: fmt(sd.bed) + ' → ' + fmt(sd.wake), badge: sd.kind === 'c' ? 'Confermata' : 'Stimata', badgeBg: sd.kind === 'c' ? t.blueSoft : t.peachSoft, badgeFg: sd.kind === 'c' ? t.blueInk : t.peachInk,
+        note: sd.kind === 'c' ? 'Orari confermati da te la mattina dopo.' : 'Orari stimati dai segnali. Conferma per renderli definitivi.',
+        tags: ['Qualità ' + sd.q + ' su 5', 'Energia ' + sd.en + ' su 5', sd.late ? 'Notte del weekend' : 'Giorno feriale'].concat(sd.nap ? ['Sonnellino ' + sd.napDur + ' min'] : []).concat(sd.screen ? ['Schermo a letto'] : []) };
+
+    // ---- segnali ----
+    const sg = (name, how, last, ok) => ({ name, how, last, status: ok ? 'Attivo' : 'Da configurare', bg: ok ? t.sageSoft : t.peachSoft, fg: ok ? t.sageInk : t.peachInk });
+    const signals = [
+      sg('Sveglia interrotta', 'Comando automatico · invia "wake", coincide con l\'alzata', 'oggi 07:20', true),
+      sg('Riposo attivato', 'Full Immersion attivata a mano · invia "bedtime_candidate"', 'ieri 23:48', true),
+      sg('Check serale', 'Comando "Sera" · salva stanchezza, umore e fattori', 'ieri 23:41', true),
+      sg('Sonnellino rapido', 'Comando inizio/fine · oppure timer chiuso dalla sveglia', 'ieri 14:05', true),
+      sg('Stima di riserva', 'Se un segnale manca, propone l\'orario dei giorni simili', 'usata 3 volte a ottobre', true),
+      sg('Recupero sonnellino', 'Domanda nel check serale se il comando non è stato usato', 'ieri sera', true)
+    ];
+    const log = [
+      ['oggi 07:20', 'Sveglia interrotta → wake', 'Registrato'], ['oggi 03:12', 'Movimento del telefono rilevato', 'Da confermare'],
+      ['ieri 23:48', 'Riposo attivato → bedtime_candidate', 'Registrato'], ['ieri 23:41', 'Check serale salvato', 'Registrato'],
+      ['ieri 14:37', 'Sonnellino terminato → 32 min', 'Registrato'], ['ieri 14:05', 'Sonnellino iniziato', 'Registrato'],
+      ['ven 08:05', 'Sveglia interrotta → wake', 'Registrato'], ['gio 07:30', 'Nessun segnale di risveglio', 'Stima usata']
+    ].map(([when, what, result]) => ({ when, what, result }));
+
+    // ---- sera ----
+    const moods = ['Pesante', 'Così così', 'Neutro', 'Leggero', 'Sereno'].map((l, i) => chip(l, s.mood === i, () => this.setState({ mood: i })));
+    const factors = ['Schermo a letto', 'Sport', 'Giornata stressante', 'Cena tardi', 'Alcol', 'Mal di testa'].map((l) => chip(l, !!s.factors[l], () => this.setState({ factors: Object.assign({}, s.factors, { [l]: !s.factors[l] }) })));
+    const exceptions = ['Malattia', 'Viaggio', 'Festa', 'Notte in bianco'].map((l) => Object.assign(chip(l, !!s.factors['x:' + l], () => this.setState({ factors: Object.assign({}, s.factors, { ['x:' + l]: !s.factors['x:' + l] }) })), { xBorder: s.factors['x:' + l] ? '1.5px solid ' + t.peachInk : '1px solid ' + t.lineStrong, xBg: s.factors['x:' + l] ? t.peachSoft : 'transparent', xFg: s.factors['x:' + l] ? t.peachInk : t.ink }));
+    const napChoices = ['Nessuno', '15 min', '30 min', '45 min', '1 ora'].map((l, i) => Object.assign(chip(l, s.napChoice === i, () => this.setState({ napChoice: i })), { yBorder: s.napChoice === i ? '1.5px solid ' + t.yellowInk : '1px solid ' + t.lineStrong, yBg: s.napChoice === i ? t.yellow : 'transparent', yFg: s.napChoice === i ? t.onFill : t.ink }));
+    const stepTitles = ['Quanto sei stanco?', 'Com\'è il tuo umore?', 'Cosa è successo oggi?', 'Hai fatto un sonnellino?'];
+    const sera = {
+      kicker: phone ? 'Check serale · domanda ' + (s.step + 1) + ' di ' + (lastStep + 1) : 'Check serale · 23:41',
+      title: phone ? stepTitles[s.step] : 'Come stai stasera?',
+      dots: Array.from({ length: lastStep + 1 }, (_, i) => ({ color: i <= s.step ? t.blueInk : t.line }))
+    };
+
+    // ---- menu telefono (una voce per dato) ----
+    const dots = [t.blue, t.sage, t.peach, t.yellow];
+    const mr = (arr) => arr.map(([id, title, sub], i) => ({ title, sub, dot: dots[i % 4], go: goView(id) }));
+    menus.notte = mr([['timeline', 'La notte, in ordine', '5 segnali, dal check serale al primo uso']].concat(d2 ? [['compare', 'Rispetto al tuo solito', 'Letto ' + sgn(todayDevBed) + ' min dalla mediana'], ['nap', 'Sonnellino', 'Ieri ' + lastNight.napDur + ' min · tocca per iniziare']] : []));
+    menus.regolarita = mr([['chart', 'Confronto tra notti', '14 notti con la fascia ± 30 min'], ['stats', 'Indicatori', 'Scarti, punto medio, social jet lag'], ['drift', 'Deriva della mediana', drift.badge], ['wk', 'Feriali e weekend', 'Social jet lag ' + sgn(sjl) + ' min']]);
+    menus.grafici = mr([['insights', 'Insight', '6 note per te'], ['dur', 'Durata e debito', 'Debito ' + hmm(debt7)], ['heat', 'Giorni della settimana', 'Ultime 4 settimane'], ['corr', 'Cosa si lega al sonno', 'Qualità, energia, umore'], ['months', 'Trend mensile', 'Sei mesi di durata media'], ['forecast', 'Previsione di domani', 'Energia 4 su 5'], ['naps', 'Sonnellini', napAll.length + ' giorni su 14']]);
+    menus.segnali = mr([['log', 'Ultimi segnali', '8 eventi recenti']]);
+    const menuRows = menus[s.tab] || [];
+
+    return {
+      t, nav, rootStyle, navStyle, mainStyle, navListStyle, cp, cr, isDesktop: !phone, isPhone: phone, isD2: d2, v, sera,
+      bigSize: phone ? '64px' : '84px', statCols: phone ? 'repeat(2, minmax(0, 1fr))' : 'repeat(auto-fit, minmax(190px, 1fr))',
+      cellH: phone ? '48px' : '66px', cellShort: phone ? 'none' : 'block', calPad: phone ? '16px 12px' : cp, devW, devRight: phone ? '60px' : '120px', devShow: phone ? 'none' : 'inline',
+      lblDisp: phone ? 'none' : 'block', moonJ: phone ? 'space-between' : 'flex-start',
+      showTolChip: d2 && !phone, showBack: phone && s.view !== null, back: () => this.setState({ view: null }),
+      showMenu: phone && s.view === null && menuRows.length > 0, menuRows,
+      nextStep: () => this.setState({ step: Math.min(lastStep, s.step + 1) }), prevStep: () => this.setState({ step: Math.max(0, s.step - 1) }),
+      toggleTheme: () => this.setState({ dark: !s.dark }), goSegnali: () => this.setState({ tab: 'segnali', view: null }),
+      isNotte: s.tab === 'notte', isSettimana: s.tab === 'settimana', isRegolarita: s.tab === 'regolarita', isGrafici: s.tab === 'grafici', isStorico: s.tab === 'storico', isSegnali: s.tab === 'segnali', isSera: s.tab === 'sera',
+      confirmed: s.confirmed, notConfirmed: !s.confirmed, editing: s.editing,
+      confirm: () => this.setState({ confirmed: true, editing: false }), undo: () => this.setState({ confirmed: false }),
+      toggleEdit: () => this.setState({ editing: !s.editing }), editLabel: s.editing ? 'Fine' : 'Correggi orari',
+      bedMinus: step('bed', -5), bedPlus: step('bed', 5), wakeMinus: step('wake', -5), wakePlus: step('wake', 5),
+      bedLabel: fmt(s.bed), wakeLabel: fmt(s.wake), durLabel: hmm(todayDm), todayTol,
+      why: s.confirmed ? 'Orari confermati da te alle 08:52.' : 'Inizio stimato da Riposo (23:48), fine dalla sveglia interrotta (07:20). Controlla e conferma.',
+      barBorder: s.confirmed ? '1.5px solid ' + t.blue : '1.5px dashed ' + t.peach, barBg: s.confirmed ? t.blue : hatch,
+      badgeBg: s.confirmed ? t.blueSoft : t.peachSoft, badgeFg: s.confirmed ? t.blueInk : t.peachInk, badgeText: s.confirmed ? 'Confermata' : 'Stimata',
+      energyMoons: moons('energy'), tiredMoons: moons('tired'), events, compare, stats, stats3: stats,
+      napText, napLabel: s.napPhase === 'idle' ? 'Inizia sonnellino' : (s.napPhase === 'run' ? 'Termina' : 'Registrato'),
+      napBg: s.napPhase === 'done' ? t.card : t.peach, napFg: t.onFill,
+      napGo: () => this.setState({ napPhase: nextNap[s.napPhase] }), napDone: s.napPhase === 'done', napReset: () => this.setState({ napPhase: 'idle' }),
+      weekRows, regRows, bands, hourTicks, regStats, drift, regHead, wkCompare,
+      insights, durBars, targetBottom: (450 / 540 * 100) + '%', durChips, heat, corr, months, forecastMoons, napStats, napList,
+      weekdays: ['L', 'M', 'M', 'G', 'V', 'S', 'D'], cells, detail, signals, log, moods, factors, exceptions, napChoices,
+      send: () => this.setState({ sent: true }), sent: s.sent, notSent: !s.sent
+    };
+  }
+}
+</script>
+</body>
+</html>
