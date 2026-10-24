@@ -1,0 +1,16 @@
+/* Coverage: va a capo su schermi stretti (390px) e dentro le tessere. Solo variabili di tokens.css. */
+.wrap {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  max-width: 100%;
+}
+
+.dots {
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+  max-width: 100%;
+}
+
+.text {
+  min-width: 0;
+}

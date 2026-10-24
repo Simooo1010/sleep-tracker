@@ -26,9 +26,8 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
 3. `MEMORY.md` e `docs/` sono la fonte di verità tra una sessione e l'altra: aggiornarli quando cambia qualcosa.
 
 ## Regole sui subagent
-- **Haiku**: ricerca, lettura, attività read-only, controlli leggeri e a basso rischio.
-- **Sonnet**: costruzione e implementazione quando l'obiettivo è ben definito (default per scrivere codice, test, componenti, fix puntuali).
-- **Opus (o Fable se disponibile)**: solo attività di altissimo livello: architettura, problemi ambigui o difficili, bug che Sonnet non risolve, verifiche critiche (sicurezza, correttezza dei dati). (Regola dell'utente, 2026-10-24: aggiornata rispetto alla versione precedente.)
+- **Haiku / Sonnet**: ricerca, lettura, attività read-only, task leggere o a basso rischio; Sonnet esegue quando l'obiettivo è già chiaro.
+- **Opus (o Fable se disponibile)**: pianificazione, chiarimento, architettura, implementazione, fix, test, verifica — tutto ciò che richiede precisione.
 - Sforzo massimo: **high**. Mai max/ultra.
 - Subagent indipendenti → in parallelo nello stesso turno.
 - **Granularità (regola dell'utente, 2026-10-24):** ogni obiettivo si spezza in attività sempre più piccole, ognuna con file propri (nessuna sovrapposizione), contratto/tipi condivisi definiti prima, e affidata a un subagent dedicato. Più agenti piccoli in parallelo battono pochi agenti grandi. L'orchestratore integra, lancia i controlli e committa; i fix vanno a un agente per problema.
