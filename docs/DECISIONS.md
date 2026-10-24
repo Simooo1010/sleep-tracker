@@ -16,6 +16,11 @@
 | 2026-10-24 | AI gateway = progetto separato, chat isolata, dopo il design system e prima dell'app | confermata |
 | 2026-10-24 | Full Immersion attivata manualmente dall'utente → automazione Comandi invia l'evento | confermata |
 | 2026-10-24 | Check serale (stanchezza/mood) subito prima di posare il telefono | confermata |
-| 2026-10-24 | Tag NFC: da acquistare (spesa minima), previsti in v1 | confermata |
+| 2026-10-24 | Tag NFC: da acquistare (spesa minima), previsti in v1 | superata |
 | 2026-10-24 | Build autonoma end-to-end: costruzione → test (anche UI/E2E) → fix fino a funzionamento reale | confermata |
 | 2026-10-24 | Design system: definito in una chat dedicata | rinviata |
+| 2026-10-24 | Analisi regolarità orari letto/risveglio e confronto tra giornate | confermata |
+| 2026-10-24 | Regolarità: riferimento = media mobile recente, weekend uguale ai feriali, tolleranza ±30 min | confermata |
+| 2026-10-24 | NFC escluso dalla v1 (si alza subito, sveglia = risveglio; niente caffeina) | confermata |
+| 2026-10-24 | Ampio set di grafici: regolarità, durata/debito, correlazioni, pattern/previsioni | confermata |
+| 2026-10-24 | Media mobile a 14 giorni + indicatore di deriva della media | confermata |
