@@ -24,7 +24,9 @@ Il design system deve prevedere componenti per:
 ## Stato attuale
 - Fase: definizione (prima del design system).
 - Decisioni: vedi `docs/DECISIONS.md`.
-- Supabase: connesso via MCP (2026-10-24).
+- Supabase: connesso via MCP (2026-10-24). Progetto `sleep-tracker` creato (ref `bpsvvltrhlqvpxhjjrfy`, eu-central-1, org `qjrnwnextqfbaauwvbpf`). Non riusare il progetto finanze `aedoncqvypsrksnqiwgh`.
+- Vercel: progetto `sleep-tracker` (`prj_rPEEkueywddcJBwVPKriwwwRfZFI`, team `team_7cA5Y1PcLGxH0Rcb6HXHzwHx`) collegato al repo, nessun deploy ancora.
+- AI gateway: in costruzione (2026-10-24), vedi `docs/AI_GATEWAY.md`. Chiavi `GROQ_API_KEY`, `MISTRAL_API_KEY`, `OPENROUTER_API_KEY` inserite dall'utente in env Vercel.
 - Roadmap (confermata): 1) design system → 2) AI gateway (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
 ## Preferenze di lavoro
