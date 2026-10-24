@@ -18,12 +18,19 @@ Il telefono non è usato come ultima/prima cosa della giornata. Quindi la cattur
 
 Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati va colmato con una stima marcata come tale, non lasciato vuoto.
 
-## 4. Architettura proposta (da confermare)
+## 3b. Flusso giornaliero concreto (v1)
+- **Sera**: Full Immersion "Riposo" si attiva → automazione Comandi invia `bedtime_candidate`. Opzionale: prima di attivarla, 1 tap su widget "stanchezza/mood".
+- **Notte**: risvegli registrati solo se l'utente lo vuole (tap / NFC), altrimenti chiesti a posteriori.
+- **Risveglio**: automazione "Sveglia interrotta" invia `wake` in automatico (gira senza aprire l'app).
+- **Gesto fisso (caffè/porta)**: tap su tag NFC → `up` (alzata effettiva) — utile se si rimane a letto dopo la sveglia.
+- **Primo uso telefono (~1h–1h30 dopo)**: notifica/widget con la notte già ricostruita → conferma in 1 tap + voto energia/qualità + fattori.
+- Se un segnale manca: stima dai giorni precedenti, marcata "stimata".
+
+## 4. Architettura (confermata: web app, tutto free)
 - **v1**: Web app/PWA (Next.js) su Vercel + Supabase (Postgres, auth, edge functions). Ingestione tramite endpoint API chiamati dalle automazioni Comandi iOS (che possono anche leggere i campioni di sonno da Salute).
   - Pro: niente Apple Developer Program, niente App Store, deploy automatizzabile.
   - Contro: nessun accesso diretto a HealthKit dalla PWA (mitigato da Comandi).
-- **v2 (eventuale)**: app nativa SwiftUI con HealthKit, widget, background delivery.
-- **AI**: Claude via API, analisi periodica (settimanale) + insight su richiesta.
+- **AI**: statistiche calcolate in codice (gratis); insight testuali via LLM. Decisione aperta: provider free tier vs Claude (costo stimato pochi centesimi/mese con analisi settimanale).
 
 ## 5. Funzionalità (backlog iniziale)
 - Registro sessioni di sonno (inizio, fine, fonte, confidenza).
