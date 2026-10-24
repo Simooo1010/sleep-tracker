@@ -81,7 +81,7 @@ export function SessionCard({
   const timesLabel = `Letto ${bed ?? 'mancante'}, sveglia ${wake ?? 'mancante'}`;
 
   return (
-    <section className={cx('card', 'stack', styles.card)} aria-labelledby={headingId}>
+    <section className={cx('card', styles.card)} aria-labelledby={headingId}>
       <h2 id={headingId} className={cx('eyebrow', styles.heading)}>
         {title}
       </h2>
@@ -95,7 +95,7 @@ export function SessionCard({
         </p>
       )}
 
-      <div className={cx('row', styles.times)}>
+      <div className={styles.times}>
         <span className={styles.srOnly}>{timesLabel}</span>
         <span className={styles.time} aria-hidden="true">
           {bed ?? '—'}
@@ -106,7 +106,7 @@ export function SessionCard({
         </span>
       </div>
 
-      <div className="row">
+      <div className={styles.badges}>
         <span className={badge.className}>{badge.text}</span>
         {regularity && present(regularity.text) ? (
           <span className={cx('badge', regularity.inTolerance ? 'badge-ok' : 'badge-out')}>
@@ -124,7 +124,7 @@ export function SessionCard({
       ) : null}
 
       {status === 'confermata' ? (
-        <div className={cx('row', styles.registered)} role="status">
+        <div className={styles.registered} role="status">
           <span>Registrata. Grazie.</span>
           {onUndo ? (
             <button type="button" className={cx('btn', 'btn-ghost', styles.undo)} onClick={onUndo}>

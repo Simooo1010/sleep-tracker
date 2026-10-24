@@ -3,7 +3,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.875rem;
-  padding: 1.375rem;
   min-width: 0;
 }
 
@@ -24,7 +23,7 @@
 }
 
 /* .title del sistema tipografico è serif: qui il titolo resta nell'interfaccia (sans). */
-.title {
+.list .title {
   font-family: var(--font-sans);
   font-variation-settings: normal;
 }
