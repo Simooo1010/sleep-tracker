@@ -42,3 +42,6 @@
 | 2026-10-24 | Ai provider solo statistiche aggregate, mai identificativi (dati sanitari) | confermata |
 | 2026-10-24 | Chiavi API inserite dall'utente direttamente in env Vercel (mai in chat né nel repo) | confermata |
 | 2026-10-24 | Gateway guidato da configurazione: aggiungere un provider/modello = una voce di config + una env var, zero codice | confermata |
+| 2026-10-24 | Gateway deployato su Vercel (root `gateway`), Vercel Authentication disattivata: l'accesso è protetto dal bearer `GATEWAY_SECRET` | confermata |
+| 2026-10-24 | Test reale su Groq eseguito da Claude ruotando `GATEWAY_SECRET` (valore di test poi invalidato con una seconda rotazione) | confermata |
+| 2026-10-24 | Mistral disattivato (chiave non ottenibile senza piano a pagamento); OpenRouter facoltativo | confermata |

@@ -254,19 +254,22 @@ Coperti (provider simulati con `fetch` finto + test end-to-end con server HTTP l
 - I limiti `rpm`/`rpd` in config sono stime dei piani free (Groq: 30 rpm / 1000 rpd verificati sulla documentazione il 2026-10-24; OpenRouter free: 20 rpm / 50 rpd senza crediti); non tengono conto dei limiti a token (Groq free: 8K TPM).
 - Modelli "reasoning" (gpt-oss, Nemotron, Gemma 4): `max_tokens` basso può lasciare il contenuto vuoto → trattato come `invalid_response` e fallback. Per Groq si usa `reasoning_effort: "low"`.
 
-## 11. Cosa resta da verificare live
+## 11. Stato delle verifiche live
 
-Nell'ambiente di costruzione **non c'erano chiavi**, quindi `npm run smoke:live` non ha chiamato provider reali (output: "Nessun provider configurato nell'ambiente: smoke test live PENDENTE").
+**Verificato in produzione il 2026-10-24** (`https://sleep-tracker-simone-dr-s-projects.vercel.app`, progetto Vercel `sleep-tracker`, root `gateway`, Node 24, regione `iad1`):
+- Senza bearer o con bearer errato: `401`. Dopo la rotazione del secret il vecchio valore dà `401`, il nuovo `200`.
+- `/v1/health`: Groq 120b e 20b `configured: true`; Mistral disattivato; OpenRouter `missing_env` (nessuna chiave); Gemini, Cerebras e GitHub Models esclusi.
+- `/v1/chat/completions`: risposta da `openai/gpt-oss-120b` in ~350 ms; con `response_format` `json_schema` strict l'output è JSON valido (~270 ms).
+- `/v1/insights` con statistiche aggregate: `source: "ai"`, provider Groq 120b, ~860 ms, copertura e confidenza corrette.
 
-Verifiche fatte senza chiave (2026-10-24):
-- OpenRouter: entrambi gli ID (`google/gemma-4-31b-it:free`, `nvidia/nemotron-3-super-120b-a12b:free`) esistono nell'elenco pubblico `/api/v1/models`; Gemma supporta `response_format` ma non `structured_outputs` → configurato `json_object`; Nemotron supporta `structured_outputs` → `json_schema`.
-- Groq: `openai/gpt-oss-120b` e `openai/gpt-oss-20b` presenti tra i modelli di produzione, con strict `json_schema` e `reasoning_effort` (low/medium/high) secondo la documentazione.
+**Non ancora verificato**
+- OpenRouter (nessuna chiave): rifare lo smoke test quando c'è `OPENROUTER_API_KEY`.
+- Fallback reale tra provider in produzione (coperto solo dai test con provider simulati).
+- Log su DB: migrazione `ai_gateway_log` non applicata, `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` non impostate (il log è opt-in).
+- Regione funzioni: `iad1` (USA est). Per l'uso dall'Italia valutare `fra1` in `vercel.json`.
+- Limiti reali del piano Free di Groq: non leggibili dalla documentazione, da controllare su console.groq.com/settings/limits.
 
-Da fare con le chiavi (es. in una Vercel function o in locale con le env esportate):
-1. `GROQ_API_KEY=… npm run smoke:live` → entrambi i Groq devono dare `✔ … insight validi`.
-2. Confermare che Groq accetti lo schema strict degli insight (in caso di 400 il router passa comunque al successivo; correzione: `"structuredOutput": "json_object"` nella voce).
-3. Quando ci sarà `OPENROUTER_API_KEY`: stesso smoke test per i due modelli `:free`.
-4. Applicare la migrazione `ai_gateway_log` e impostare `SUPABASE_URL`/`SUPABASE_SERVICE_ROLE_KEY` se si vogliono i log su DB.
+Ricetta per riverificare in qualsiasi momento: chiamare `/v1/health` e `/v1/insights` con il bearer (vedi §12).
 
 ## 12. Deploy su Vercel
 
