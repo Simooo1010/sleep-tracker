@@ -86,10 +86,10 @@ describe('buildNightView: stanotte stimata dai segnali', () => {
   it('pillola di regolarità e confronto con il solito', () => {
     expect(v.regularity).toEqual({
       bedText: '+13 min',
-      wakeText: '+10 min',
+      wakeText: '+15 min',
       ok: true,
       word: 'nella tolleranza',
-      text: 'Letto +13 min · Sveglia +10 min · nella tolleranza (scarti dalla mediana)',
+      text: 'Letto +13 min · Sveglia +15 min · nella tolleranza (scarti dalla mediana)',
     });
     expect(v.comparison.title).toBe('Rispetto al tuo solito');
     expect(v.comparison.hidden).toBe(false);
