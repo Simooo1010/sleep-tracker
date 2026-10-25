@@ -6,6 +6,7 @@ import {
   actionNap,
   actionRateNight,
   actionRecordQuestion,
+  actionSaveEveningCheck,
   actionSetExceptions,
   type ActionResult,
 } from '@/app/actions';
@@ -30,6 +31,11 @@ export interface NightSectionsProps {
   view: NightView;
   /** Giorno locale di oggi ('YYYY-MM-DD'): è la data con cui si registrano le domande. */
   todayDate: string;
+  /**
+   * Avvisa quando su telefono si apre (true) o si chiude (false) una sezione a tutto schermo:
+   * la pagina nasconde la scheda Stanotte finché una sezione è aperta. Facoltativa.
+   */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export type SectionKey = 'exceptions' | 'nap' | 'comparison' | 'stats';
@@ -108,7 +114,17 @@ function recordInput(q: QuickQuestionView, todayDate: string) {
 
 const failed = (): ActionResult => ({ ok: false, error: GENERIC_ERROR });
 
-/** Risposta a una domanda: voti → `actionRateNight`, altre → registro della domanda. Mai un'eccezione. */
+/** Minuti di sonnellino di una risposta ('0' = Nessuno, '15', ..., '60'): intero 0–600, altrimenti null. */
+export function toNapMinutes(value: string): number | null {
+  if (!/^\d{1,3}$/.test(value)) return null;
+  const n = Number(value);
+  return n <= 600 ? n : null;
+}
+
+/**
+ * Risposta a una domanda: voti → `actionRateNight`, sonnellino di oggi → `actionSaveEveningCheck`
+ * (i minuti; 'Nessuno' = 0, che non crea sonnellini), altre → solo registro della domanda. Mai un'eccezione.
+ */
 export async function sendAnswer(
   q: QuickQuestionView,
   value: string,
@@ -125,6 +141,15 @@ export async function sendAnswer(
       );
       if (!rated.ok) return rated;
       // Il voto è salvato: la domanda risulta risposta (serve al budget del giorno). Se fallisce non è un errore.
+      await actionRecordQuestion(recordInput(q, todayDate)).catch(() => undefined);
+      return { ok: true };
+    }
+    if (q.kind === 'nap_today') {
+      const minutes = toNapMinutes(value);
+      if (minutes === null) return failed();
+      const saved = await actionSaveEveningCheck({ date: todayDate, napMinutesToday: minutes });
+      if (!saved.ok) return saved;
+      // Come per i voti: i minuti sono salvati, la domanda risulta risposta anche se il registro fallisce.
       await actionRecordQuestion(recordInput(q, todayDate)).catch(() => undefined);
       return { ok: true };
     }
@@ -250,7 +275,7 @@ function ComparisonRow({ row }: { row: ComparisonRowView }) {
 
 const IDLE: NapState = { status: 'idle' };
 
-export function NightSections({ view, todayDate }: NightSectionsProps) {
+export function NightSections({ view, todayDate, onOpenChange }: NightSectionsProps) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set());
@@ -288,6 +313,12 @@ export function NightSections({ view, todayDate }: NightSectionsProps) {
       listRef.current?.focus();
     }
   }, [openSection]);
+
+  // La pagina sa se una sezione è aperta (per nascondere la scheda Stanotte su telefono).
+  const isOpen = openSection !== null;
+  useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
 
   const setHidden = (key: string, hidden: boolean) =>
     setAnswered((prev) => {

@@ -6,10 +6,17 @@ vi.mock('@/app/actions', () => ({
   actionNap: vi.fn(),
   actionRateNight: vi.fn(),
   actionRecordQuestion: vi.fn(),
+  actionSaveEveningCheck: vi.fn(),
   actionSetExceptions: vi.fn(),
 }));
 
-import { actionNap, actionRateNight, actionRecordQuestion, actionSetExceptions } from '@/app/actions';
+import {
+  actionNap,
+  actionRateNight,
+  actionRecordQuestion,
+  actionSaveEveningCheck,
+  actionSetExceptions,
+} from '@/app/actions';
 import {
   GENERIC_ERROR,
   NightSections,
@@ -23,6 +30,7 @@ import {
   sendExceptions,
   sendNap,
   sendSkip,
+  toNapMinutes,
   toggleSlug,
 } from '@/app/NightSections';
 import { buildNightView, type NightView, type QuickQuestionView } from '@/server/views';
@@ -65,6 +73,7 @@ beforeEach(() => {
   vi.mocked(actionNap).mockReset().mockResolvedValue({ ok: true, value: { nightDate: null } });
   vi.mocked(actionRateNight).mockReset().mockResolvedValue({ ok: true });
   vi.mocked(actionRecordQuestion).mockReset().mockResolvedValue({ ok: true });
+  vi.mocked(actionSaveEveningCheck).mockReset().mockResolvedValue({ ok: true });
   vi.mocked(actionSetExceptions).mockReset().mockResolvedValue({ ok: true });
 });
 
@@ -302,9 +311,58 @@ describe('NightSections: azioni', () => {
     expect(actionRateNight).not.toHaveBeenCalled();
   });
 
-  it('sonnellino e le altre domande → actionRecordQuestion', async () => {
-    await sendAnswer(q({ kind: 'nap_today' }), '30', TODAY, TODAY);
-    expect(actionRecordQuestion).toHaveBeenLastCalledWith({ date: TODAY, kind: 'nap_today', answeredOrSkipped: true });
+  it('sonnellino di oggi → actionSaveEveningCheck con i minuti, poi la domanda risulta risposta', async () => {
+    const order: string[] = [];
+    vi.mocked(actionSaveEveningCheck).mockImplementation(async () => {
+      order.push('save');
+      return { ok: true };
+    });
+    vi.mocked(actionRecordQuestion).mockImplementation(async () => {
+      order.push('record');
+      return { ok: true };
+    });
+    await expect(sendAnswer(q({ kind: 'nap_today' }), '30', TODAY, TODAY)).resolves.toEqual({ ok: true });
+    expect(actionSaveEveningCheck).toHaveBeenCalledTimes(1);
+    expect(actionSaveEveningCheck).toHaveBeenCalledWith({ date: TODAY, napMinutesToday: 30 });
+    expect(actionRecordQuestion).toHaveBeenCalledWith({ date: TODAY, kind: 'nap_today', answeredOrSkipped: true });
+    expect(order).toEqual(['save', 'record']);
+    expect(actionRateNight).not.toHaveBeenCalled();
+    expect(actionNap).not.toHaveBeenCalled();
+
+    for (const [value, minutes] of [['15', 15], ['45', 45], ['60', 60]] as const) {
+      await sendAnswer(q({ kind: 'nap_today' }), value, TODAY, TODAY);
+      expect(actionSaveEveningCheck).toHaveBeenLastCalledWith({ date: TODAY, napMinutesToday: minutes });
+    }
+  });
+
+  it('sonnellino "Nessuno" → 0 minuti, senza avviare né creare sonnellini', async () => {
+    await expect(sendAnswer(q({ kind: 'nap_today' }), '0', TODAY, TODAY)).resolves.toEqual({ ok: true });
+    expect(actionSaveEveningCheck).toHaveBeenCalledWith({ date: TODAY, napMinutesToday: 0 });
+    expect(actionRecordQuestion).toHaveBeenCalledWith({ date: TODAY, kind: 'nap_today', answeredOrSkipped: true });
+    expect(actionNap).not.toHaveBeenCalled();
+  });
+
+  it('sonnellino: risposta non valida o salvataggio fallito → errore, la domanda non risulta risposta', async () => {
+    await expect(sendAnswer(q({ kind: 'nap_today' }), 'x', TODAY, TODAY)).resolves.toEqual({ ok: false, error: GENERIC_ERROR });
+    expect(actionSaveEveningCheck).not.toHaveBeenCalled();
+    vi.mocked(actionSaveEveningCheck).mockResolvedValue({ ok: false, error: 'Dati non validi.' });
+    await expect(sendAnswer(q({ kind: 'nap_today' }), '30', TODAY, TODAY)).resolves.toEqual({
+      ok: false,
+      error: 'Dati non validi.',
+    });
+    expect(actionRecordQuestion).not.toHaveBeenCalled();
+    vi.mocked(actionSaveEveningCheck).mockRejectedValue(new Error('rete'));
+    await expect(sendAnswer(q({ kind: 'nap_today' }), '30', TODAY, TODAY)).resolves.toEqual({ ok: false, error: GENERIC_ERROR });
+  });
+
+  it('toNapMinutes: solo interi 0–600', () => {
+    expect(toNapMinutes('0')).toBe(0);
+    expect(toNapMinutes('60')).toBe(60);
+    expect(toNapMinutes('600')).toBe(600);
+    for (const bad of ['', '-5', '601', '1.5', 'abc', '1e2']) expect(toNapMinutes(bad)).toBeNull();
+  });
+
+  it('le altre domande → solo actionRecordQuestion', async () => {
     await sendAnswer(q({ kind: 'confirm_night', nightDate: TODAY }), 'conferma', TODAY, TODAY);
     expect(actionRecordQuestion).toHaveBeenLastCalledWith({
       date: TODAY,
@@ -313,11 +371,15 @@ describe('NightSections: azioni', () => {
       answeredOrSkipped: true,
     });
     expect(actionRateNight).not.toHaveBeenCalled();
+    expect(actionSaveEveningCheck).not.toHaveBeenCalled();
   });
 
   it('Salta registra la domanda come chiusa', async () => {
     await expect(sendSkip(q({ kind: 'factors' }), TODAY)).resolves.toEqual({ ok: true });
     expect(actionRecordQuestion).toHaveBeenCalledWith({ date: TODAY, kind: 'factors', answeredOrSkipped: true });
+    // Saltare il sonnellino non salva minuti.
+    await sendSkip(q({ kind: 'nap_today' }), TODAY);
+    expect(actionSaveEveningCheck).not.toHaveBeenCalled();
   });
 
   it('errori del server o eccezioni: ok false, mai un throw', async () => {

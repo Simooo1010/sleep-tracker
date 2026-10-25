@@ -8,7 +8,8 @@ import { expect, test, type Page } from '@playwright/test';
 const isDesktop = (name: string) => name === 'desktop';
 const isPhone = (name: string) => name === 'iphone';
 
-const card = (page: Page) => page.getByRole('region', { name: 'Stanotte' });
+// `exact`: anche la domanda rapida "Stanotte: a letto alle…" è una region, il cui nome contiene la parola.
+const card = (page: Page) => page.getByRole('region', { name: 'Stanotte', exact: true });
 
 /** "23:48" + 5 minuti → "23:53" (con giro a mezzanotte). */
 function plusMinutes(time: string, delta: number): string {
@@ -115,4 +116,34 @@ test('Chiudi lascia la notte com’è, senza scrivere nulla', async ({ page }, t
   await c.getByRole('button', { name: 'Chiudi' }).click();
   await expect(c.getByRole('group', { name: 'Correggi orari' })).toHaveCount(0);
   await expect(c.getByText('Stimata', { exact: true })).toBeVisible();
+});
+
+test('telefono: aprendo una sezione la scheda Stanotte non è visibile; Indietro la riporta', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo.project.name), 'solo telefono');
+  await page.goto('/');
+  await expect(card(page)).toBeVisible();
+
+  await page.getByRole('button', { name: /Sonnellino/ }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Sonnellino' })).toBeVisible();
+  await expect(card(page)).toBeHidden();
+  await expect(page.getByRole('heading', { level: 2, name: 'Stanotte' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Correggi orari' })).toBeHidden();
+
+  await page.getByRole('button', { name: 'Indietro' }).click();
+  await expect(card(page)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Sonnellino' })).toBeHidden();
+
+  // Stesso comportamento con un'altra sezione.
+  await page.getByRole('button', { name: /In numeri/ }).click();
+  await expect(card(page)).toBeHidden();
+  await page.getByRole('button', { name: 'Indietro' }).click();
+  await expect(card(page)).toBeVisible();
+});
+
+test('PC: la scheda Stanotte e le sezioni restano sempre visibili, senza "Indietro"', async ({ page }, testInfo) => {
+  test.skip(isPhone(testInfo.project.name), 'solo PC');
+  await page.goto('/');
+  await expect(card(page)).toBeVisible();
+  await expect(page.getByRole('heading', { level: 2, name: 'Sonnellino' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Indietro' })).toBeHidden();
 });

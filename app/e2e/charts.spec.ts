@@ -18,7 +18,7 @@ test('un solo h1 "Grafici", nessun errore e nessun testo rotto', async ({ page }
 test('PC: DurationChart, Heatmap e tabella delle correlazioni sono visibili insieme', async ({ page }, testInfo) => {
   test.skip(isPhone(testInfo.project.name), 'Vista larga: solo PC');
   await page.goto('/grafici');
-  await expect(page.getByText('Durata e debito, ultime 14 notti')).toBeVisible();
+  await expect(page.getByText('Durata e debito, ultime 14 notti', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Giorni della settimana', level: 3 })).toBeVisible();
   await expect(page.getByRole('table', { name: 'Cosa si lega a qualità, energia e umore' })).toBeVisible();
   await expect(page.getByText('Sono indizi, non cause.')).toBeVisible();
@@ -46,10 +46,10 @@ test('telefono: elenco di sette voci, una sezione per volta con Indietro', async
     await expect(list.getByRole('button', { name: new RegExp(`^${title}`) })).toBeVisible();
   }
   // Nessun grafico è visibile finché non si apre una voce.
-  await expect(page.getByText('Durata e debito, ultime 14 notti')).toBeHidden();
+  await expect(page.getByText('Durata e debito, ultime 14 notti', { exact: true })).toBeHidden();
 
   await list.getByRole('button', { name: /^Durata e debito/ }).click();
-  await expect(page.getByText('Durata e debito, ultime 14 notti')).toBeVisible();
+  await expect(page.getByText('Durata e debito, ultime 14 notti', { exact: true })).toBeVisible();
   await expect(list).toBeHidden();
   await expect(page.getByRole('heading', { level: 2, name: 'Durata e debito' })).toBeVisible();
   // Una sola sezione alla volta: la heatmap resta nascosta.
@@ -57,7 +57,7 @@ test('telefono: elenco di sette voci, una sezione per volta con Indietro', async
 
   await page.getByRole('button', { name: 'Indietro' }).filter({ visible: true }).click();
   await expect(list).toBeVisible();
-  await expect(page.getByText('Durata e debito, ultime 14 notti')).toBeHidden();
+  await expect(page.getByText('Durata e debito, ultime 14 notti', { exact: true })).toBeHidden();
 });
 
 test('telefono: la sezione Fattori mostra la tabella come indizi', async ({ page }, testInfo) => {

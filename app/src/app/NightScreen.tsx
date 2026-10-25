@@ -98,6 +98,8 @@ export function NightScreen({ view, todayDate }: NightScreenProps) {
   const [editing, setEditing] = useState(false);
   const [times, setTimes] = useState<Times>({ bed: DEFAULT_BED_TIME, wake: DEFAULT_WAKE_TIME });
   const [error, setError] = useState<string | null>(null);
+  // Telefono: una sezione di NightSections è aperta a tutto schermo, la scheda Stanotte si nasconde.
+  const [sectionOpen, setSectionOpen] = useState(false);
 
   // Quando il server manda una view nuova (dopo revalidate) vale quella: la scelta ottimistica decade.
   if (seenView !== view) {
@@ -228,8 +230,8 @@ export function NightScreen({ view, todayDate }: NightScreenProps) {
   const stepperLabel = status === 'mancante' ? 'Aggiungi orari' : 'Correggi orari';
 
   return (
-    <div className={styles.page} aria-busy={pending}>
-      <div className={styles.column}>
+    <div className={styles.page} aria-busy={pending} data-section-open={sectionOpen ? 'true' : 'false'}>
+      <div className={`${styles.column} ${styles.primary}`}>
         <SessionCard
           status={status}
           duration={shown.durationText}
@@ -290,7 +292,7 @@ export function NightScreen({ view, todayDate }: NightScreenProps) {
       </div>
 
       <div className={styles.column}>
-        <NightSections view={view} todayDate={todayDate} />
+        <NightSections view={view} todayDate={todayDate} onOpenChange={setSectionOpen} />
       </div>
     </div>
   );

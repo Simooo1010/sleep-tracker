@@ -13,11 +13,31 @@ for (const { scheme, theme, ground } of THEMES) {
 
     await expect(page.locator('html')).toHaveAttribute('lang', 'it');
     await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
-    await expect(page.getByRole('heading', { level: 1, name: 'Sleep Tracker' })).toBeVisible();
+    // La home è la pagina Notte (oggi = sabato 24 ottobre 2026): un solo h1 e il titolo della scheda.
+    await expect(page.getByRole('heading', { level: 1 })).toHaveCount(1);
+    await expect(page.getByRole('heading', { level: 1, name: 'Notte di sabato 24 ottobre' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 2, name: 'Stanotte' })).toBeVisible();
+    await expect(page).toHaveTitle('Sleep Tracker');
 
-    const logo = page.getByRole('img', { name: /Icona di Sleep Tracker/ });
-    await expect(logo).toBeVisible();
-    expect(await logo.evaluate((img: HTMLImageElement) => img.complete && img.naturalWidth > 0)).toBe(true);
+    // Il guscio mostra il nome del prodotto: nella barra laterale su PC, mentre su telefono c'è la pillola.
+    if (testInfo.project.name === 'iphone') {
+      await expect(page.locator('nav.navpill')).toBeVisible();
+    } else {
+      await expect(page.locator('nav.side .brand')).toHaveText('Sleep Tracker');
+    }
+
+    // L'icona dell'app (apple-touch-icon, dichiarata nell'head) si carica e si decodifica davvero.
+    const iconLoads = await page.evaluate(
+      (href) =>
+        new Promise<boolean>((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(img.naturalWidth > 0);
+          img.onerror = () => resolve(false);
+          img.src = href;
+        }),
+      await page.locator('link[rel="apple-touch-icon"]').getAttribute('href').then((h) => h ?? ''),
+    );
+    expect(iconLoads).toBe(true);
 
     // Colori dai token del tema e font self-hosted caricati.
     expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe(ground);

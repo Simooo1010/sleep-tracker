@@ -12,7 +12,8 @@ test('mostra il titolo, le automazioni con il loro stato e il registro', async (
 
   const main = page.locator('main#contenuto');
   for (const name of ['Sveglia interrotta', 'Riposo attivato', 'Check serale', 'Sonnellino rapido', 'Stima di riserva', 'Recupero sonnellino']) {
-    await expect(main.locator('li.signal', { hasText: name })).toBeVisible();
+    // Per nome esatto: la descrizione di "Recupero sonnellino" cita anche "check serale".
+    await expect(main.locator('li.signal').filter({ has: page.getByText(name, { exact: true }) })).toBeVisible();
   }
   // Ogni riga dice il proprio stato a parole.
   const states = main.locator('li.signal .badge');

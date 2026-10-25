@@ -25,9 +25,12 @@ test('PC: confronto tra notti, cinque indicatori, deriva con badge, feriali e we
   await expect(drift).toBeVisible();
   await expect(page.locator('figure').filter({ has: drift }).locator('.badge')).toHaveText(/^\+\d+ min in \d+ settimane$/);
 
-  await expect(page.getByText('Feriali e weekend', { exact: true })).toBeVisible();
-  await expect(page.getByText(/^Social jet lag [+−]?\d+ min$/)).toBeVisible();
-  await expect(page.getByText(/Calcolata su \d+ su 14 notti/).first()).toBeVisible();
+  // Il titolo c'è anche nell'elenco del telefono (nascosto su PC): si guarda solo la vista larga.
+  const desktop = page.locator('[data-layout="desktop"]');
+  await expect(desktop.getByText('Feriali e weekend', { exact: true })).toBeVisible();
+  await expect(desktop.getByRole('table', { name: /^Feriali e weekend/ })).toBeVisible();
+  await expect(desktop.getByText(/^Social jet lag [+−]?\d+ min$/)).toBeVisible();
+  await expect(desktop.getByText(/Calcolata su \d+ su 14 notti/).first()).toBeVisible();
 
   // Le voci dell'elenco del telefono non si vedono su PC.
   await expect(page.getByRole('button', { name: /Cinque indicatori/ })).toBeHidden();

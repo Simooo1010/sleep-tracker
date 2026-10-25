@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -6,8 +7,12 @@ vi.mock('@/app/actions', () => ({
   actionUndoConfirmNight: vi.fn(),
   actionRateNight: vi.fn(),
 }));
+const sectionsProps = vi.hoisted(() => ({ last: null as null | { onOpenChange?: unknown } }));
 vi.mock('../../src/app/NightSections', () => ({
-  NightSections: ({ todayDate }: { todayDate: string }) => <div data-testid="sections">{todayDate}</div>,
+  NightSections: (props: { todayDate: string; onOpenChange?: unknown }) => {
+    sectionsProps.last = props;
+    return <div data-testid="sections">{props.todayDate}</div>;
+  },
 }));
 
 import { NightScreen, toNightIso } from '../../src/app/NightScreen';
@@ -140,5 +145,21 @@ describe('NightScreen', () => {
     expect(out.match(/<h2[^>]*>Stanotte<\/h2>/g)).toHaveLength(1);
     expect(out).toMatch(/<section class="card [^"]*" aria-labelledby="([^"]+)"><h2 id="\1"/);
     expect(out).toContain('aria-busy="false"');
+  });
+
+  it('telefono: la pagina riceve da NightSections se una sezione è aperta; all’inizio nessuna', async () => {
+    const out = html(await demoView());
+    expect(out).toContain('data-section-open="false"');
+    expect(out).not.toContain('data-section-open="true"');
+    expect(typeof sectionsProps.last?.onOpenChange).toBe('function');
+    // La scheda Stanotte e la timeline stanno nella colonna che si nasconde (classe "primary").
+    expect(out).toMatch(/class="[^"]*primary[^"]*"[^>]*><section[^>]*aria-labelledby/);
+  });
+
+  it('CSS: con data-section-open la colonna della scheda si nasconde su telefono e torna visibile da 60rem', () => {
+    const css = readFileSync(new URL('../../src/app/NightScreen.module.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\.page\[data-section-open='true'\] > \.primary\s*\{\s*display: none;/);
+    const desktop = css.slice(css.indexOf('@media (min-width: 60rem)'));
+    expect(desktop).toMatch(/\.page\[data-section-open='true'\] > \.primary\s*\{\s*display: flex;/);
   });
 });

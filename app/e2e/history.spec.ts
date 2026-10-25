@@ -9,7 +9,7 @@ test('mostra ottobre 2026 con giorni colorati e scritti', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Ottobre 2026' })).toBeVisible();
 
   // 24 giorni passati selezionabili, ognuno con la parola di stato nel nome accessibile.
-  const days = page.getByRole('button', { name: /^\w+ \d+ ottobre, / });
+  const days = page.getByRole('button', { name: /^\S+ \d+ ottobre, / });
   await expect(days).toHaveCount(24);
   await expect(page.getByRole('button', { name: /^sabato 24 ottobre, \d+h \d{2}m, (confermata|stimata)$/ })).toBeVisible();
 
@@ -46,7 +46,7 @@ test('Mese precedente mostra settembre 2026; il successivo è disabilitato nel m
   await page.getByRole('link', { name: 'Mese precedente' }).click();
   await expect(page).toHaveURL(/\/storico\?m=2026-09$/);
   await expect(page.getByRole('heading', { name: 'Settembre 2026' })).toBeVisible();
-  await expect(page.getByRole('button', { name: /^\w+ \d+ settembre, / })).toHaveCount(30);
+  await expect(page.getByRole('button', { name: /^\S+ \d+ settembre, / })).toHaveCount(30);
   // Da settembre si può tornare avanti.
   await page.getByRole('link', { name: 'Mese successivo' }).click();
   await expect(page.getByRole('heading', { name: 'Ottobre 2026' })).toBeVisible();
