@@ -1,7 +1,7 @@
 # CLAUDE.md — Sleep Tracker
 
 Regole e istruzioni del progetto. Va letto all'inizio di ogni sessione.
-La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`. Layer AI: `docs/AI_GATEWAY.md`.
+La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`. Layer AI: `docs/AI_GATEWAY.md`. **Stato e passaggio di consegne: `docs/HANDOFF.md`.**
 
 ## Principio di prodotto
 - Frizione di inserimento quasi nulla: raccolta passiva/automatica dove possibile, all'utente si chiede solo una conferma.
