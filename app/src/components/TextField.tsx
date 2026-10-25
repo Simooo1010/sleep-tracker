@@ -113,7 +113,7 @@ export function TextField({
 
   return (
     <div className={[styles.root, className].filter(Boolean).join(' ')}>
-      <label htmlFor={fieldId} className={hideLabel ? 'sr-only' : `body-sm ${styles.label}`}>
+      <label htmlFor={fieldId} className={hideLabel ? styles.srOnly : `body-sm ${styles.label}`}>
         {label}
       </label>
       {multiline ? (

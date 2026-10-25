@@ -201,10 +201,11 @@ describe('dayContext via HTTP', () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     const logger = { log: (e: unknown) => void events.push(e) };
     try {
-      for (const routes of [
+      const routeSets: Array<Parameters<typeof fakeFetch>[0]> = [
         { 'https://p1.test/v1': () => completion(validInsightsJson) },
         { 'https://p1.test/v1': () => status(500), 'https://p2.test/v1': () => status(500), 'https://p3.test/v1': () => status(500) },
-      ]) {
+      ];
+      for (const routes of routeSets) {
         const { h } = handler(routes, { logger });
         for (const b of [body(ctx), body([{ ...ctx[0], text: 'TESTO-RISERVATO' + 'a'.repeat(140) }])]) {
           const res = await h(req('/v1/insights', { method: 'POST', body: b }));
