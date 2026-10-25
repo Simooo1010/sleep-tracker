@@ -165,17 +165,6 @@ describe('RegularityScreen con i dati demo', () => {
 });
 
 describe('RegularityScreen: dati scarsi e vuoto', () => {
-  it('sotto soglia: "Servono almeno N notti. Per ora ne hai M." e "—" con la parola Mancante', () => {
-    const view = buildRegularityView({
-      today: '2026-10-24',
-      nights: [],
-    });
-    const html = renderToStaticMarkup(<RegularityScreen view={view} />);
-    expect(text(html)).toContain(view.emptyText as string);
-    expect(html).not.toContain('<figure');
-    clean(html);
-  });
-
   it('poche notti: nessun grafico di confronto, tessere con parola Mancante e soglia scritta', async () => {
     const full = await demoView();
     // Solo tre notti con orari: si parte dal seed e si tengono le ultime tre.

@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: 'Regolarità · Sleep Tracker' };
 const LOAD_ERROR_TEXT = 'Le notti non si caricano in questo momento. Riprova tra qualche istante.';
 
 export default async function RegolaritaPage() {
-  let view: RegularityView | null = null;
+  let view: RegularityView | null;
   try {
     view = (await loadRegularityPage(getRepo(), getNow())).view;
   } catch {
