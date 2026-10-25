@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { APP_ICONS, FAVICON_ID, TOUCH_ICON_ID, iconInitScript } from '../src/lib/app-icon';
+import { APP_ICONS, FAVICON_ID, TOUCH_ICON_ID, syncAppIcons } from '../src/lib/app-icon';
 
 const publicDir = join(import.meta.dirname, '..', 'public');
 
@@ -19,22 +19,22 @@ describe('icone chiaro/scuro', () => {
 
   function run(dark: boolean) {
     const attrs: Record<string, string> = {};
-    const el = (id: string) => ({ setAttribute: (_: string, v: string) => (attrs[id] = v) });
-    vi.stubGlobal('window', { matchMedia: () => ({ matches: dark, addEventListener: () => undefined }) });
-    vi.stubGlobal('document', { getElementById: (id: string) => el(id) });
-    new Function(iconInitScript)();
-    vi.unstubAllGlobals();
-    return attrs;
+    const listeners: (() => void)[] = [];
+    const query = { matches: dark, addEventListener: (_: string, f: () => void) => listeners.push(f), removeEventListener: () => undefined };
+    const doc = { getElementById: (id: string) => ({ setAttribute: (_: string, v: string) => (attrs[id] = v) }) };
+    const stop = syncAppIcons(doc as unknown as Document, { matchMedia: () => query } as unknown as Window);
+    return { attrs, query, listeners, stop };
   }
 
-  it('lo script sceglie le icone scure col sistema scuro e chiare altrimenti', () => {
-    expect(run(true)).toEqual({ [TOUCH_ICON_ID]: APP_ICONS.scuro.touch, [FAVICON_ID]: APP_ICONS.scuro.favicon });
-    expect(run(false)).toEqual({ [TOUCH_ICON_ID]: APP_ICONS.chiaro.touch, [FAVICON_ID]: APP_ICONS.chiaro.favicon });
+  it('sceglie le icone scure col sistema scuro e chiare altrimenti', () => {
+    expect(run(true).attrs).toEqual({ [TOUCH_ICON_ID]: APP_ICONS.scuro.touch, [FAVICON_ID]: APP_ICONS.scuro.favicon });
+    expect(run(false).attrs).toEqual({ [TOUCH_ICON_ID]: APP_ICONS.chiaro.touch, [FAVICON_ID]: APP_ICONS.chiaro.favicon });
   });
 
-  it('lo script non lancia senza matchMedia', () => {
-    vi.stubGlobal('window', {});
-    expect(() => new Function(iconInitScript)()).not.toThrow();
-    vi.unstubAllGlobals();
+  it('segue il cambio di modalità del sistema', () => {
+    const { attrs, query, listeners } = run(false);
+    query.matches = true;
+    listeners.forEach((f) => f());
+    expect(attrs[TOUCH_ICON_ID]).toBe(APP_ICONS.scuro.touch);
   });
 });

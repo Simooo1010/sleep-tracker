@@ -1,7 +1,8 @@
 /**
  * Icona dell'app in modalità scura (sfondo `--ground` del tema scuro al posto del bianco, stesso segno).
  * Safari ignora `media` su `apple-touch-icon` (l'icona si scarica una volta, quando si aggiunge alla Home),
- * quindi si sceglie l'`href` da script in base alla modalità del sistema, prima che l'utente possa condividere/aggiungere.
+ * quindi si cambia l'`href` dopo l'idratazione in base alla modalità del sistema (da `AppIconSync`).
+ * Non da uno script inline: React rigenera i `<link>` in conflitto e il DOM resta con due icone.
  * File in `public/`, copie di `docs/design/logo/`.
  */
 
@@ -13,5 +14,15 @@ export const APP_ICONS = {
 export const TOUCH_ICON_ID = 'apple-touch-icon';
 export const FAVICON_ID = 'favicon';
 
-/** Script inline per `<head>`, dopo i `<link>` delle icone: allinea le icone alla modalità del sistema e la segue nei cambi. */
-export const iconInitScript = `(function(){try{var m=window.matchMedia('(prefers-color-scheme: dark)');var i=${JSON.stringify(APP_ICONS)};var a=function(){var s=m.matches?i.scuro:i.chiaro;var t=document.getElementById('${TOUCH_ICON_ID}');var f=document.getElementById('${FAVICON_ID}');if(t)t.setAttribute('href',s.touch);if(f)f.setAttribute('href',s.favicon)};a();if(m.addEventListener)m.addEventListener('change',a)}catch(e){}})();`;
+/** Allinea le icone nel DOM alla modalità del sistema. Ritorna la funzione che toglie l'ascolto dei cambi. */
+export function syncAppIcons(doc: Document, win: Window): () => void {
+  const query = win.matchMedia('(prefers-color-scheme: dark)');
+  const apply = () => {
+    const set = query.matches ? APP_ICONS.scuro : APP_ICONS.chiaro;
+    doc.getElementById(TOUCH_ICON_ID)?.setAttribute('href', set.touch);
+    doc.getElementById(FAVICON_ID)?.setAttribute('href', set.favicon);
+  };
+  apply();
+  query.addEventListener('change', apply);
+  return () => query.removeEventListener('change', apply);
+}

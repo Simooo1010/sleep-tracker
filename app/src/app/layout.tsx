@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { AppShell } from '@/components/AppShell';
-import { FAVICON_ID, TOUCH_ICON_ID, iconInitScript } from '@/lib/app-icon';
+import { AppIconSync } from '@/components/AppIconSync';
+import { FAVICON_ID, TOUCH_ICON_ID } from '@/lib/app-icon';
 import { themeInitScript } from '@/lib/theme';
 
 import '@/styles/fonts.css';
@@ -30,8 +31,6 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         {/* Tag PWA esatti di docs/DESIGN.md §Logo */}
         <link id={TOUCH_ICON_ID} rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link id={FAVICON_ID} rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
-        {/* Variante scura delle icone (sfondo --ground scuro) quando il sistema è in modalità scura: vedi lib/app-icon.ts. */}
-        <script dangerouslySetInnerHTML={{ __html: iconInitScript }} />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Sleep Tracker" />
@@ -39,6 +38,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <meta name="theme-color" content="#161a22" media="(prefers-color-scheme: dark)" />
       </head>
       <body>
+        {/* Variante scura delle icone quando il sistema è in modalità scura, dopo l'idratazione: vedi lib/app-icon.ts. */}
+        <AppIconSync />
         <AppShell>{children}</AppShell>
       </body>
     </html>
