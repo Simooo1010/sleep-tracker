@@ -162,10 +162,15 @@ test('sessione: pulsante secondario "Esci"', async ({ page }, testInfo) => {
   await expect(exit).toBeVisible();
   await expect(exit).toHaveClass(/btn-secondary/);
   await expect(exit).not.toHaveClass(/btn-primary/);
-  // Un solo pulsante pieno per schermata: è "Crea token", non "Esci".
+  // Un solo pulsante pieno per schermata, e non è "Esci". Su telefono la sezione Sessione è l'unica visibile
+  // (nessun pulsante pieno); su PC le sezioni sono affiancate e l'unico pieno è "Crea token".
   const filled = page.locator('main .btn-primary:visible');
-  await expect(filled).toHaveCount(1);
-  await expect(filled).toHaveText('Crea token');
+  if (isPhone(testInfo.project.name)) {
+    await expect(filled).toHaveCount(0);
+  } else {
+    await expect(filled).toHaveCount(1);
+    await expect(filled).toHaveText('Crea token');
+  }
 });
 
 test('telefono: una sezione per volta con "Indietro"; PC: sezioni affiancate', async ({ page }, testInfo) => {
