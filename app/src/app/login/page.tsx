@@ -6,6 +6,7 @@ import { isAuthorized } from '@/lib/auth-server';
 
 import { actionLogin, actionLogout } from './actions';
 import styles from './page.module.css';
+import { PasswordField } from './PasswordField';
 
 // Dipende dall'ambiente e dal cookie: mai in cache.
 export const dynamic = 'force-dynamic';
@@ -57,22 +58,7 @@ export default async function LoginPage({
     body = (
       <form action={actionLogin} className={styles.form}>
         <input type="hidden" name="next" value={next} />
-        <div className={styles.field}>
-          <label htmlFor="password" className={`body ${styles.label}`}>
-            Password
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            maxLength={200}
-            className={styles.input}
-            aria-invalid={failed ? true : undefined}
-            aria-describedby={failed ? 'login-errore' : undefined}
-          />
-        </div>
+        <PasswordField invalid={failed} describedBy={failed ? 'login-errore' : undefined} />
         {failed ? (
           <p id="login-errore" className={`body ${styles.error}`} role="alert">
             Password non corretta.
