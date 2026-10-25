@@ -111,7 +111,7 @@ export function describeNightBars(props: NightBarsProps): string {
       ? `Mediana del letto ${bed}, della sveglia ${wake}, tolleranza ± ${tol} min.`
       : `Mediana ${bed !== null ? `del letto ${bed}` : 'del letto mancante'}, ${wake !== null ? `della sveglia ${wake}` : 'della sveglia mancante'}.`;
   const notti = total === 1 ? 'notte' : 'notti';
-  return `${props.title ?? 'Confronto tra notti'}: ${total} ${notti} sull'asse 21:00 → 11:00. ${counts.ok} nella tolleranza, ${counts.fuori} fuori, ${counts.mancante} mancanti. ${ref}`;
+  return `${props.title ?? 'Confronto tra notti'}: ${total} ${notti} sull'asse 21:00 → 11:00. ${counts.ok} nella tolleranza, ${counts.fuori} fuori, ${counts.mancante} ${counts.mancante === 1 ? 'mancante' : 'mancanti'}. ${ref}`;
 }
 
 const BAR_CLASS: Record<Provenienza, string | undefined> = {

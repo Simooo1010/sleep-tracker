@@ -12,6 +12,7 @@ import {
 } from '../../src/components/NightBars';
 
 const text = (html: string) => html.replace(/<[^>]+>/g, '');
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const nights: NightBarsNight[] = [
   { label: 'V 23', fullLabel: 'venerdì 23 ottobre', bedMin: 328, wakeMin: 446, provenance: 'confermato', bedDevMin: 8, wakeDevMin: -4 },
@@ -50,9 +51,9 @@ describe('NightBars', () => {
 
   it('ha un riassunto accessibile e una tabella con tutti i dati', () => {
     expect(html).toContain('role="img"');
-    expect(html).toContain(`aria-label="${describeNightBars(props)}"`);
+    expect(html).toContain(`aria-label="${esc(describeNightBars(props))}"`);
     expect(describeNightBars(props)).toContain('5 notti');
-    expect(describeNightBars(props)).toContain('3 nella tolleranza, 1 fuori, 1 mancanti');
+    expect(describeNightBars(props)).toContain('3 nella tolleranza, 1 fuori, 1 mancante');
     expect(describeNightBars(props)).toContain('Mediana del letto 23:20, della sveglia 07:30, tolleranza ± 30 min');
     expect(html).toContain('<table');
     expect(html.match(/<tr>/g)).toHaveLength(6);

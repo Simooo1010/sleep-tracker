@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Coverage, safeCount, thresholdSentence } from '../../src/components/Coverage';
 
-const text = (html: string) => html.replace(/<[^>]+>/g, '');
+const text = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&amp;/g, '&');
 
 describe('Coverage', () => {
   it('mostra la frase con i numeri e un segno per notte', () => {

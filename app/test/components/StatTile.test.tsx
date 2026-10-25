@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 import { StatTile } from '../../src/components/StatTile';
 
-const text = (html: string) => html.replace(/<[^>]+>/g, '');
+const text = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&amp;/g, '&');
 
 describe('StatTile', () => {
   it('mostra etichetta, valore, nota e la classe dell’accento', () => {

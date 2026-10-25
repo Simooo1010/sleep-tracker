@@ -83,7 +83,7 @@ describe('Heatmap', () => {
   it('stimata tratteggiata e dichiarata, mancante punteggiata con "—"; righe corte completate', () => {
     expect(html).toContain('cell cell-6 cell-est');
     expect(html).toContain(', stimata');
-    expect(html.match(/cell cell-miss/g)).toHaveLength(2);
+    expect(html.match(/cell cell-miss/g)).toHaveLength(3); // 2 celle + legenda
     expect(html).toContain('—');
     expect(html).toContain(', mancante');
   });

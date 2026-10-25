@@ -65,7 +65,7 @@ export function describeDurationChart(props: DurationChartProps): string {
   const notti = total === 1 ? 'notte' : 'notti';
   return (
     `Durata delle ultime ${total} ${notti}, obiettivo ${formatDuration(target)}. ` +
-    `${below} sotto l'obiettivo, ${missing} mancanti. ` +
+    `${below} sotto l'obiettivo, ${missing} ${missing === 1 ? 'mancante' : 'mancanti'}. ` +
     `Media 7 notti ${avg7}, media del mese ${avgM}, ${debtText(props.debtMin).toLowerCase()}.`
   );
 }
