@@ -23,7 +23,7 @@ import { buildEveningView } from '../../src/server/views';
 
 const TODAY = '2026-10-24';
 const NIGHT = '2026-10-25';
-const text = (html: string) => html.replace(/<[^>]+>/g, '');
+const text = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'");
 
 const emptyView = buildEveningView({ today: TODAY });
 const empty: EveningAnswers = initialAnswers(emptyView);

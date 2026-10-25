@@ -11,8 +11,7 @@ import { EnergyCard } from '@/components/EnergyCard';
 import { Heatmap } from '@/components/Heatmap';
 import { ListRow, type ListRowAccent } from '@/components/ListRow';
 import { StatTile } from '@/components/StatTile';
-import type { ChartsView, MonthlyTrendView, NapsView } from '@/server/views';
-import type { StatTileView } from '@/server/views';
+import type { ChartsView, MonthlyTrendView, NapsView, StatTileView } from '@/server/views';
 
 import styles from './ChartsScreen.module.css';
 import { forecastParts, heatmapCoverage, toCorrelationRows, toDurationChartProps, toHeatmapDays } from './mapping';
