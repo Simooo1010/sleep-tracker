@@ -153,7 +153,8 @@ export async function sendExceptions(nightDate: string, slugs: string[]): Promis
 
 export async function sendNap(action: 'start' | 'stop'): Promise<ActionResult> {
   try {
-    return await actionNap({ action });
+    const res = await actionNap({ action });
+    return res.ok ? { ok: true } : res;
   } catch {
     return failed();
   }

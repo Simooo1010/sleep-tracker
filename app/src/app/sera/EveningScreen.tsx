@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { actionSaveEveningCheck, actionSetExceptions } from '@/app/actions';
 import { Chip } from '@/components/Chip';
@@ -8,39 +8,38 @@ import { ExceptionChips } from '@/components/ExceptionChips';
 import { MoonRating, toScore } from '@/components/MoonRating';
 import { WizardStep } from '@/components/WizardStep';
 import type { Score } from '@/domain/types';
-import type {
-  EveningOptionView,
-  EveningStepKey,
-  EveningStepView,
-  EveningSummaryRowView,
-  EveningView,
-} from '@/server/views/evening';
-import { DASH, formatScore } from '@/server/views/format';
+import type { EveningStepView, EveningSummaryRowView, EveningView } from '@/server/views/evening';
+import { DASH, formatMinutes, formatScore } from '@/server/views/format';
 
 import styles from './EveningScreen.module.css';
 
 /**
- * Check serale (docs/design/system/Schermate.md §Sera).
- * Telefono: una domanda per schermata (WizardStep), `Avanti`/`Indietro` sempre attivi, ultimo passo con riepilogo
- * e l'unico pulsante pieno `Vado a dormire`. PC (da 60rem): una scheda sola con tutti i passi visibili.
- * Nessuna risposta è obbligatoria; si inviano solo i campi toccati. Nessuna animazione.
+ * Schermata Sera (docs/design/system/Schermate.md §Sera).
+ * Telefono: una domanda per schermata (WizardStep) con Avanti/Indietro; l'ultima mostra il riepilogo e `Vado a dormire`.
+ * PC (da 60rem): una scheda sola con tutti i passi visibili. Le due viste condividono lo stesso stato e si
+ * scambiano via CSS (nessun flash all'idratazione); per l'utente ne esiste una sola per volta.
+ * Nessuna risposta è obbligatoria: `Avanti` e `Vado a dormire` sono sempre attivi.
  */
 
-export const SAVE_ERROR_TEXT = 'Non è stato possibile salvare il check. Le tue risposte restano qui: riprova tra un momento.';
-export const EXCEPTION_ERROR_TEXT = 'Non è stato possibile salvare le eccezioni. Riprova tra un momento.';
-export const WIDE_QUERY = '(min-width: 60rem)';
+export const EVENING_ERROR_TEXT =
+  'Non sono riuscito a salvare il check. Le tue risposte sono ancora qui: riprova tra un momento.';
+export const EVENING_SEND_HINT = 'Salva il check e avvia il Comando che attiva Riposo.';
 
-// --- Risposte → input dell'azione (pure) ------------------------------------------------------
+// --- Risposte e mappatura verso le Server Actions (funzioni pure) ----------------------------
 
-/** Risposte toccate dall'utente. `undefined`/`null` = non risposto: il campo non viene inviato. */
 export interface EveningAnswers {
-  tiredness?: Score | null;
-  mood?: Score | null;
-  factors?: string[];
-  napMinutes?: number | null;
+  tiredness: Score | null;
+  mood: Score | null;
+  /** null = fattori mai toccati né precompilati. Un elenco vuoto è una risposta ("nessuno"). */
+  factors: string[] | null;
+  /** null = eccezioni mai toccate: non si chiama `actionSetExceptions`; si mostrano quelle attive della view. */
+  exceptions: string[] | null;
+  nap: number | null;
+  /** Il sonnellino precompilato può venire dal comando rapido (già registrato): si invia solo se toccato. */
+  napTouched: boolean;
 }
 
-export interface EveningActionInput {
+export interface EveningCheckInput {
   date: string;
   tiredness?: Score;
   mood?: Score;
@@ -48,377 +47,374 @@ export interface EveningActionInput {
   napMinutesToday?: number;
 }
 
-/** Input di `actionSaveEveningCheck` con SOLO i campi risposti. I fattori vuoti ma toccati ([]) si inviano. */
-export function answersToActionInput(date: string, answers: EveningAnswers): EveningActionInput {
-  const input: EveningActionInput = { date };
-  const tiredness = toScore(answers.tiredness);
-  const mood = toScore(answers.mood);
-  if (tiredness !== null) input.tiredness = tiredness;
-  if (mood !== null) input.mood = mood;
-  if (Array.isArray(answers.factors)) input.factors = [...answers.factors];
-  const nap = answers.napMinutes;
-  if (typeof nap === 'number' && Number.isInteger(nap) && nap >= 0) input.napMinutesToday = nap;
-  return input;
-}
-
-/** Aggiunge lo slug se manca, lo toglie se c'è. Non modifica l'array dato. */
-export function toggleSlug(list: readonly string[], slug: string): string[] {
-  return list.includes(slug) ? list.filter((s) => s !== slug) : [...list, slug];
-}
-
-function selectedValues(options: readonly EveningOptionView[]): string[] {
-  return options.filter((o) => o.selected).map((o) => o.value);
+export interface ExceptionsInput {
+  nightDate: string;
+  slugs: string[];
 }
 
 function stepOf(view: EveningView, key: EveningStepView['key']): EveningStepView | undefined {
   return view.steps.find((s) => s.key === key);
 }
 
-/** Valori mostrati all'apertura, ricavati dal view (check già salvato o sonnellino registrato). */
-export interface EveningInitial {
-  tiredness: Score | null;
-  mood: Score | null;
-  factors: string[];
-  exceptions: string[];
-  napMinutes: number | null;
+function selectedValues(view: EveningView, key: EveningStepView['key']): string[] {
+  return (stepOf(view, key)?.options ?? []).filter((o) => o.selected).map((o) => o.value);
 }
 
-export function initialFromView(view: EveningView): EveningInitial {
-  const first = (key: EveningStepKey): number | null => {
-    const v = selectedValues(stepOf(view, key)?.options ?? [])[0];
-    return v === undefined ? null : Number(v);
-  };
+function toMinutes(value: string | undefined): number | null {
+  if (value === undefined || value.trim() === '') return null;
+  const n = Number(value);
+  return Number.isInteger(n) && n >= 0 ? n : null;
+}
+
+function toScoreValue(value: string | undefined): Score | null {
+  return value === undefined ? null : toScore(Number(value));
+}
+
+/** Risposte iniziali: ciò che la view segna come selezionato (check già salvato stasera o sonnellino registrato). */
+export function initialAnswers(view: EveningView): EveningAnswers {
+  const factors = selectedValues(view, 'factors');
   return {
-    tiredness: toScore(first('tiredness')),
-    mood: toScore(first('mood')),
-    factors: selectedValues(stepOf(view, 'factors')?.options ?? []),
-    exceptions: selectedValues(stepOf(view, 'factors')?.exceptions ?? []),
-    napMinutes: first('nap'),
+    tiredness: toScoreValue(selectedValues(view, 'tiredness')[0]),
+    mood: toScoreValue(selectedValues(view, 'mood')[0]),
+    factors: factors.length > 0 ? factors : null,
+    exceptions: null,
+    nap: toMinutes(selectedValues(view, 'nap')[0]),
+    napTouched: false,
   };
 }
 
-/** Righe del riepilogo aggiornate alle risposte date; i campi non toccati restano quelli di `view.summary`. */
-export function summaryRows(
-  view: EveningView,
-  answers: EveningAnswers,
-  exceptions: readonly string[],
-  initial: EveningInitial,
-): EveningSummaryRowView[] {
-  const labelOf = (key: EveningStepKey, value: string): string | undefined =>
-    stepOf(view, key)?.options.find((o) => o.value === value)?.label;
-  const exceptionsChanged =
-    exceptions.length !== initial.exceptions.length || exceptions.some((s) => !initial.exceptions.includes(s));
+/** Slug delle eccezioni attive: quelle scelte dall'utente, altrimenti quelle già attive per la notte. */
+export function currentExceptions(view: EveningView, answers: EveningAnswers): string[] {
+  if (answers.exceptions !== null) return answers.exceptions;
+  return (stepOf(view, 'factors')?.exceptions ?? []).filter((e) => e.selected).map((e) => e.value);
+}
 
-  return view.summary.rows.map((row) => {
-    switch (row.key) {
+/** Aggiunge o toglie uno slug senza duplicati. */
+export function withSlug(list: readonly string[], slug: string, on: boolean): string[] {
+  const rest = list.filter((s) => s !== slug);
+  return on ? [...rest, slug] : rest;
+}
+
+/** Input di `actionSaveEveningCheck`: SOLO i campi risposti (mai chiavi undefined, mai zero per "non risposto"). */
+export function toCheckInput(date: string, answers: EveningAnswers): EveningCheckInput {
+  const input: EveningCheckInput = { date };
+  if (answers.tiredness !== null) input.tiredness = answers.tiredness;
+  if (answers.mood !== null) input.mood = answers.mood;
+  if (answers.factors !== null) input.factors = [...answers.factors];
+  if (answers.nap !== null && answers.napTouched) input.napMinutesToday = answers.nap;
+  return input;
+}
+
+/** Input di `actionSetExceptions`, oppure null se l'utente non ha toccato le eccezioni. */
+export function toExceptionsInput(nightDate: string, answers: EveningAnswers): ExceptionsInput | null {
+  return answers.exceptions === null ? null : { nightDate, slugs: [...answers.exceptions] };
+}
+
+function optionLabel(view: EveningView, key: EveningStepView['key'], value: string): string | undefined {
+  return stepOf(view, key)?.options.find((o) => o.value === value)?.label;
+}
+
+/** Righe del riepilogo con le risposte di adesso (etichette dalla view, valori dalle risposte). */
+export function summaryRows(view: EveningView, answers: EveningAnswers): EveningSummaryRowView[] {
+  const exceptionLabels = currentExceptions(view, answers).map(
+    (slug) => stepOf(view, 'factors')?.exceptions.find((e) => e.value === slug)?.label ?? slug,
+  );
+  const factorLabels = (answers.factors ?? []).map((slug) => optionLabel(view, 'factors', slug) ?? slug);
+  const factorsAll = [...factorLabels, ...exceptionLabels];
+
+  const valueOf = (key: EveningStepKey): string => {
+    switch (key) {
       case 'tiredness':
-        return answers.tiredness === undefined ? row : { ...row, value: formatScore(answers.tiredness) };
+        return formatScore(answers.tiredness);
       case 'mood':
-        return answers.mood === undefined
-          ? row
-          : { ...row, value: answers.mood === null ? DASH : (labelOf('mood', String(answers.mood)) ?? DASH) };
-      case 'factors': {
-        if (answers.factors === undefined && !exceptionsChanged) return row;
-        const factors = answers.factors ?? initial.factors;
-        const names = [
-          ...factors.map((s) => stepOf(view, 'factors')?.options.find((o) => o.value === s)?.label ?? s),
-          ...exceptions.map((s) => stepOf(view, 'factors')?.exceptions.find((o) => o.value === s)?.label ?? s),
-        ];
-        return { ...row, value: names.length > 0 ? names.join(', ') : 'Nessuno' };
-      }
+        return answers.mood === null ? DASH : (optionLabel(view, 'mood', String(answers.mood)) ?? DASH);
+      case 'factors':
+        return factorsAll.length > 0 ? factorsAll.join(', ') : answers.factors !== null ? 'Nessuno' : DASH;
       case 'nap':
-        return answers.napMinutes === undefined
-          ? row
-          : { ...row, value: answers.napMinutes === null ? DASH : (labelOf('nap', String(answers.napMinutes)) ?? DASH) };
+        return answers.nap === null ? DASH : answers.nap === 0 ? 'Nessuno' : formatMinutes(answers.nap);
     }
-  });
+  };
+  return view.summary.rows.map((row) => ({ key: row.key, label: row.label, value: valueOf(row.key) }));
 }
 
-// --- Layout: telefono o PC --------------------------------------------------------------------
+type EveningStepKey = EveningStepView['key'];
 
-function subscribeWide(onChange: () => void): () => void {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return () => undefined;
-  const mq = window.matchMedia(WIDE_QUERY);
-  mq.addEventListener('change', onChange);
-  return () => mq.removeEventListener('change', onChange);
+type ActionFn = (input: unknown) => Promise<{ ok: boolean }>;
+
+export interface EveningActions {
+  saveCheck: ActionFn;
+  setExceptions: ActionFn;
 }
-const getWide = (): boolean =>
-  typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia(WIDE_QUERY).matches;
-const getServerWide = (): boolean => false;
 
-// --- Componente --------------------------------------------------------------------------------
+const DEFAULT_ACTIONS: EveningActions = { saveCheck: actionSaveEveningCheck, setExceptions: actionSetExceptions };
+
+/**
+ * Salva il check e, solo se l'utente le ha toccate, le eccezioni della notte di stasera.
+ * Riprovare è sicuro: entrambe le azioni sostituiscono, non accumulano.
+ */
+export async function submitEveningCheck(
+  args: { today: string; tonightNightDate: string; answers: EveningAnswers },
+  actions: EveningActions = DEFAULT_ACTIONS,
+): Promise<{ ok: boolean }> {
+  try {
+    const saved = await actions.saveCheck(toCheckInput(args.today, args.answers));
+    if (!saved.ok) return { ok: false };
+    const exceptions = toExceptionsInput(args.tonightNightDate, args.answers);
+    if (exceptions) {
+      const result = await actions.setExceptions(exceptions);
+      if (!result.ok) return { ok: false };
+    }
+    return { ok: true };
+  } catch {
+    return { ok: false };
+  }
+}
+
+// --- Controlli dei passi ---------------------------------------------------------------------
+
+interface Handlers {
+  tiredness: (score: Score) => void;
+  mood: (score: Score | null) => void;
+  factor: (slug: string, on: boolean) => void;
+  exception: (slug: string, on: boolean) => void;
+  nap: (minutes: number | null) => void;
+}
+
+function StepControl({
+  step,
+  answers,
+  exceptions,
+  handlers,
+  layout,
+}: {
+  step: EveningStepView;
+  answers: EveningAnswers;
+  exceptions: string[];
+  handlers: Handlers;
+  layout: 'phone' | 'desktop';
+}) {
+  switch (step.control) {
+    case 'moons':
+      return (
+        <MoonRating
+          kind="tired"
+          value={answers.tiredness}
+          onChange={handlers.tiredness}
+          size={layout === 'phone' ? 'lg' : 'md'}
+          spread={layout === 'phone'}
+        />
+      );
+    case 'chips':
+      return (
+        <div className="row">
+          {step.options.map((o) => (
+            <Chip
+              key={o.value}
+              variant="mood"
+              pressed={answers.mood === toScoreValue(o.value)}
+              onPressedChange={(next) => handlers.mood(next ? toScoreValue(o.value) : null)}
+            >
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+      );
+    case 'multi-chips': {
+      const picked = new Set(answers.factors ?? []);
+      return (
+        <div className={styles.block}>
+          <div className="row">
+            {step.options.map((o) => (
+              <Chip key={o.value} pressed={picked.has(o.value)} onPressedChange={(next) => handlers.factor(o.value, next)}>
+                {o.label}
+              </Chip>
+            ))}
+          </div>
+          <ExceptionChips
+            exceptions={step.exceptions.map((e) => ({ id: e.value, label: e.label }))}
+            active={exceptions}
+            onToggle={handlers.exception}
+            showNote={false}
+          />
+        </div>
+      );
+    }
+    case 'nap-chips':
+      return (
+        <div className="row">
+          {step.options.map((o) => (
+            <Chip
+              key={o.value}
+              variant="nap"
+              pressed={answers.nap !== null && answers.nap === toMinutes(o.value)}
+              onPressedChange={(next) => handlers.nap(next ? toMinutes(o.value) : null)}
+            >
+              {o.label}
+            </Chip>
+          ))}
+        </div>
+      );
+  }
+}
+
+function Summary({ view, answers }: { view: EveningView; answers: EveningAnswers }) {
+  return (
+    <div className={styles.summary}>
+      <h3 className={`eyebrow ${styles.summaryTitle}`}>{view.summary.title}</h3>
+      <dl className={styles.rows}>
+        {summaryRows(view, answers).map((row) => (
+          <div key={row.key} className={styles.rowItem}>
+            <dt className="body-sm muted">{row.label}</dt>
+            <dd className={`body ${styles.value}`}>{row.value}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+// --- Schermata -------------------------------------------------------------------------------
+
+type Status = 'idle' | 'saving' | 'done' | 'error';
 
 export interface EveningScreenProps {
-  /** Giorno locale 'YYYY-MM-DD'. */
+  /** Data locale di oggi: è la data del check. */
   today: string;
   /** Notte a cui si riferiscono le eccezioni. */
   tonightNightDate: string;
   view: EveningView;
-  /** Solo per i test: passo iniziale del telefono (da 1). */
+  /** Passo da mostrare su telefono (da 0). Predefinito il primo. */
   initialStep?: number;
-  /** Solo per i test: forza il layout; predefinito dalla larghezza (>= 60rem = scheda unica). */
-  layout?: 'phone' | 'wide';
 }
 
-type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+function clampStep(step: number, count: number): number {
+  const last = Math.max(0, count - 1);
+  return Number.isFinite(step) ? Math.min(Math.max(0, Math.trunc(step)), last) : 0;
+}
 
-export function EveningScreen({ today, tonightNightDate, view, initialStep = 1, layout }: EveningScreenProps) {
-  const initial = initialFromView(view);
-  const total = view.steps.length;
+export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }: EveningScreenProps) {
+  const [answers, setAnswers] = useState<EveningAnswers>(() => initialAnswers(view));
+  const [stepIndex, setStepIndex] = useState(() => clampStep(initialStep, view.steps.length));
+  const [status, setStatus] = useState<Status>('idle');
+  const sending = useRef(false);
+  const deskId = useId();
+  const hintId = useId();
 
-  const [step, setStep] = useState(() => Math.min(Math.max(1, Math.round(initialStep) || 1), Math.max(1, total)));
-  const [answers, setAnswers] = useState<EveningAnswers>({});
-  const [exceptions, setExceptions] = useState<string[]>(initial.exceptions);
-  const [exceptionError, setExceptionError] = useState(false);
-  const [status, setStatus] = useState<SaveStatus>('idle');
+  const exceptions = currentExceptions(view, answers);
+  const locked = status === 'saving' || status === 'done';
 
-  const confirmedExceptions = useRef<string[]>(initial.exceptions);
-  const exceptionQueue = useRef<Promise<void>>(Promise.resolve());
-  const saving = useRef(false);
+  const update = (patch: Partial<EveningAnswers>) => {
+    setAnswers((a) => ({ ...a, ...patch }));
+    setStatus((s) => (s === 'error' ? 'idle' : s));
+  };
 
-  const wideMatch = useSyncExternalStore(subscribeWide, getWide, getServerWide);
-  const wide = layout ? layout === 'wide' : wideMatch;
-
-  if (view.steps.length === 0) return null;
-
-  // Valori mostrati: la risposta toccata, altrimenti quella precompilata.
-  const tiredness = answers.tiredness !== undefined ? answers.tiredness : initial.tiredness;
-  const mood = answers.mood !== undefined ? answers.mood : initial.mood;
-  const factors = answers.factors ?? initial.factors;
-  const nap = answers.napMinutes !== undefined ? answers.napMinutes : initial.napMinutes;
-
-  const setAnswer = (patch: EveningAnswers) => setAnswers((prev) => ({ ...prev, ...patch }));
-
-  const toggleException = (id: string, next: boolean) => {
-    const list = next ? (exceptions.includes(id) ? exceptions : [...exceptions, id]) : exceptions.filter((s) => s !== id);
-    setExceptions(list);
-    setExceptionError(false);
-    // Una scrittura alla volta, nell'ordine dei tocchi: vale l'ultimo elenco inviato.
-    exceptionQueue.current = exceptionQueue.current.then(async () => {
-      try {
-        const result = await actionSetExceptions({ nightDate: tonightNightDate, slugs: list });
-        if (!result.ok) throw new Error('rifiutato');
-        confirmedExceptions.current = list;
-      } catch {
-        setExceptions(confirmedExceptions.current);
-        setExceptionError(true);
-      }
-    });
+  const handlers: Handlers = {
+    tiredness: (score) => update({ tiredness: score }),
+    mood: (score) => update({ mood: score }),
+    factor: (slug, on) => update({ factors: withSlug(answers.factors ?? [], slug, on) }),
+    exception: (slug, on) => update({ exceptions: withSlug(exceptions, slug, on) }),
+    nap: (minutes) => update({ nap: minutes, napTouched: true }),
   };
 
   const finish = async () => {
-    if (saving.current || status === 'saved') return;
-    saving.current = true;
+    if (sending.current || status === 'done') return;
+    sending.current = true;
     setStatus('saving');
-    try {
-      const result = await actionSaveEveningCheck(answersToActionInput(today, answers));
-      setStatus(result.ok ? 'saved' : 'error');
-    } catch {
-      setStatus('error');
-    } finally {
-      saving.current = false;
-    }
+    const result = await submitEveningCheck({ today, tonightNightDate, answers });
+    sending.current = false;
+    setStatus(result.ok ? 'done' : 'error');
   };
 
-  const saved = status === 'saved';
-  const errorNote =
+  const last = view.steps.length - 1;
+  const current = view.steps[stepIndex];
+  const problem =
     status === 'error' ? (
-      <p className={`body-sm ${styles.errorNote}`} role="alert">
-        {SAVE_ERROR_TEXT}
+      <p className={`body-sm ${styles.problem}`} role="alert">
+        {EVENING_ERROR_TEXT}
       </p>
     ) : null;
 
-  const controls = {
-    tiredness: (
-      <MoonRating
-        kind="tired"
-        size={wide ? 'md' : 'lg'}
-        spread={!wide}
-        value={tiredness}
-        onChange={(score) => setAnswer({ tiredness: score })}
-      />
-    ),
-    mood: (
-      <div className="row" role="group" aria-label="Umore di stasera">
-        {(stepOf(view, 'mood')?.options ?? []).map((o) => (
-          <Chip
-            key={o.value}
-            variant="mood"
-            pressed={mood === Number(o.value)}
-            onPressedChange={(next) => setAnswer({ mood: next ? toScore(Number(o.value)) : null })}
+  return (
+    <>
+      {/* Telefono: una domanda per schermata */}
+      <div className={styles.phone}>
+        {current ? (
+          <WizardStep
+            step={stepIndex + 1}
+            total={view.steps.length}
+            question={current.question}
+            kicker={view.kicker}
+            onNext={() => setStepIndex((i) => Math.min(i + 1, last))}
+            onBack={() => setStepIndex((i) => Math.max(i - 1, 0))}
+            onFinish={finish}
+            {...(status === 'done' ? { confirmation: view.summary.savedText } : {})}
           >
-            {o.label}
-          </Chip>
-        ))}
-      </div>
-    ),
-    factors: (
-      <div className="stack">
-        <div className="row" role="group" aria-label="Fattori di oggi">
-          {(stepOf(view, 'factors')?.options ?? []).map((o) => (
-            <Chip
-              key={o.value}
-              variant="factor"
-              pressed={factors.includes(o.value)}
-              onPressedChange={() => setAnswer({ factors: toggleSlug(factors, o.value) })}
-            >
-              {o.label}
-            </Chip>
-          ))}
-        </div>
-        <ExceptionChips
-          exceptions={(stepOf(view, 'factors')?.exceptions ?? []).map((e) => ({ id: e.value, label: e.label }))}
-          active={exceptions}
-          onToggle={toggleException}
-        />
-        {exceptionError ? (
-          <p className={`body-sm ${styles.errorNote}`} role="alert">
-            {EXCEPTION_ERROR_TEXT}
-          </p>
+            <fieldset className={styles.fieldset} disabled={locked}>
+              <div className={styles.stack}>
+                {stepIndex === 0 && view.emptyText ? <p className={`body-sm ${styles.note}`}>{view.emptyText}</p> : null}
+                <StepControl step={current} answers={answers} exceptions={exceptions} handlers={handlers} layout="phone" />
+                {current.note ? <p className={`caption ${styles.note}`}>{current.note}</p> : null}
+                {stepIndex === last ? <Summary view={view} answers={answers} /> : null}
+                {problem}
+              </div>
+            </fieldset>
+          </WizardStep>
         ) : null}
       </div>
-    ),
-    nap: (
-      <div className="stack">
-        <div className="row" role="group" aria-label="Sonnellino di oggi">
-          {(stepOf(view, 'nap')?.options ?? []).map((o) => (
-            <Chip
-              key={o.value}
-              variant="nap"
-              pressed={nap === Number(o.value)}
-              onPressedChange={(next) => setAnswer({ napMinutes: next ? Number(o.value) : null })}
-            >
-              {o.label}
-            </Chip>
-          ))}
-        </div>
-        {stepOf(view, 'nap')?.note ? <p className={`caption ${styles.note}`}>{stepOf(view, 'nap')?.note}</p> : null}
-      </div>
-    ),
-  } satisfies Record<EveningStepKey, ReactNode>;
 
-  if (wide) {
-    return (
-      <WideCard
-        view={view}
-        controls={controls}
-        saved={saved}
-        errorNote={errorNote}
-        onFinish={() => void finish()}
-      />
-    );
-  }
-
-  const current = view.steps[step - 1] ?? view.steps[0]!;
-  const isLast = current.isLast || step >= total;
-  const rows = summaryRows(view, answers, exceptions, initial);
-
-  return (
-    <WizardStep
-      step={step}
-      total={total}
-      question={current.question}
-      kicker={view.kicker}
-      onNext={() => setStep((s) => Math.min(s + 1, total))}
-      onBack={() => setStep((s) => Math.max(s - 1, 1))}
-      onFinish={() => void finish()}
-      confirmation={saved ? view.summary.savedText : undefined}
-    >
-      <div className={styles.body}>
-        {step === 1 && view.emptyText ? <p className={`body-sm ${styles.note}`}>{view.emptyText}</p> : null}
-        {controls[current.key]}
-        {current.key !== 'nap' && current.key !== 'factors' && current.note ? (
-          <p className={`caption ${styles.note}`}>{current.note}</p>
-        ) : null}
-        {isLast ? <Summary title={view.summary.title} rows={rows} /> : null}
-        {errorNote}
-      </div>
-    </WizardStep>
-  );
-}
-
-function Summary({ title, rows }: { title: string; rows: EveningSummaryRowView[] }) {
-  const id = useId();
-  return (
-    <section className={styles.summary} aria-labelledby={id}>
-      <div className="eyebrow" id={id}>
-        {title}
-      </div>
-      <dl className={`body-sm ${styles.summaryList}`}>
-        {rows.map((row) => (
-          <div key={row.key} className={styles.summaryRow}>
-            <dt>{row.label}</dt>
-            <dd>{row.value}</dd>
+      {/* PC: una scheda sola con tutti i passi */}
+      <section className={`card ${styles.desktop}`} aria-labelledby={`${deskId}-title`}>
+        <div className={styles.head}>
+          <div className="eyebrow">
+            {view.kicker} · {view.dateLabel}
           </div>
-        ))}
-      </dl>
-    </section>
-  );
-}
-
-function WideCard({
-  view,
-  controls,
-  saved,
-  errorNote,
-  onFinish,
-}: {
-  view: EveningView;
-  controls: Record<EveningStepKey, ReactNode>;
-  saved: boolean;
-  errorNote: ReactNode;
-  onFinish: () => void;
-}) {
-  const titleId = useId();
-  const hintId = useId();
-  return (
-    <section className={`card ${styles.wide}`} aria-labelledby={titleId}>
-      <div className={styles.wideHead}>
-        <div className="eyebrow">
-          {view.kicker} · {view.dateLabel}
+          <h2 id={`${deskId}-title`} className={`heading-lg ${styles.headTitle}`}>
+            {view.title}
+          </h2>
+          {view.emptyText ? <p className={`body ${styles.headNote}`}>{view.emptyText}</p> : null}
         </div>
-        <h2 id={titleId} className={`heading-lg ${styles.wideTitle}`}>
-          {view.title}
-        </h2>
-        {view.emptyText ? <p className={`body-sm ${styles.note}`}>{view.emptyText}</p> : null}
-      </div>
 
-      <div className={styles.grid}>
-        {view.steps.map((s) => (
-          <WideSection key={s.key} step={s}>
-            {controls[s.key]}
-          </WideSection>
-        ))}
-      </div>
+        <fieldset className={styles.fieldset} disabled={locked}>
+          <div className={styles.grid}>
+            {view.steps.map((step) => (
+              <section
+                key={step.key}
+                className={`${styles.block} ${step.key === 'factors' || step.key === 'nap' ? styles.wide : ''}`}
+                aria-labelledby={`${deskId}-${step.key}`}
+              >
+                <h3 id={`${deskId}-${step.key}`} className={`title ${styles.question}`}>
+                  {step.question}
+                </h3>
+                <StepControl step={step} answers={answers} exceptions={exceptions} handlers={handlers} layout="desktop" />
+                {step.note ? <p className={`caption ${styles.note}`}>{step.note}</p> : null}
+              </section>
+            ))}
+          </div>
+        </fieldset>
 
-      {saved ? (
-        <p className={`body-sm ${styles.done}`} role="status">
-          {view.summary.savedText}
-        </p>
-      ) : (
-        <div className={styles.footer}>
-          <button type="button" className="btn btn-primary btn-lg" onClick={onFinish} aria-describedby={hintId}>
-            {view.summary.sendLabel}
-          </button>
-          <p id={hintId} className={`caption ${styles.note}`}>
-            Salva il check e avvia il Comando che attiva Riposo.
+        {problem}
+        {status === 'done' ? (
+          <p className={`body-sm ${styles.done}`} role="status">
+            {view.summary.savedText}
           </p>
-          {errorNote}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function WideSection({ step, children }: { step: EveningStepView; children: ReactNode }) {
-  const id = useId();
-  return (
-    <div className={styles.section} role="group" aria-labelledby={id}>
-      <h3 id={id} className={`title ${styles.sectionTitle}`}>
-        {step.question}
-      </h3>
-      {children}
-    </div>
+        ) : (
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={`btn btn-primary btn-lg ${styles.send}`}
+              onClick={finish}
+              disabled={status === 'saving'}
+              aria-describedby={hintId}
+            >
+              {view.summary.sendLabel}
+            </button>
+            <p id={hintId} className={`caption ${styles.hint}`}>
+              {EVENING_SEND_HINT}
+            </p>
+          </div>
+        )}
+      </section>
+    </>
   );
 }
 
