@@ -1,0 +1,32 @@
+/* Titolo della pagina Sera. Su telefono il passo del wizard fa da titolo: l'<h1> resta per i lettori di schermo. */
+.heading {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.message {
+  margin: 0;
+  max-width: 36rem;
+  margin-inline: auto;
+  color: var(--ink-muted);
+}
+
+@media (min-width: 60rem) {
+  .heading {
+    position: static;
+    width: auto;
+    height: auto;
+    margin: 0 auto var(--space-4);
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    max-width: 64rem;
+    color: var(--ink-muted);
+  }
+}

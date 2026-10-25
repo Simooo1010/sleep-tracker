@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState, useSyncExternalStore } from 'react';
+import { useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import { actionSaveEveningCheck, actionSetExceptions } from '@/app/actions';
 import { Chip } from '@/components/Chip';
@@ -8,7 +8,13 @@ import { ExceptionChips } from '@/components/ExceptionChips';
 import { MoonRating, toScore } from '@/components/MoonRating';
 import { WizardStep } from '@/components/WizardStep';
 import type { Score } from '@/domain/types';
-import type { EveningOptionView, EveningStepView, EveningSummaryRowView, EveningView } from '@/server/views/evening';
+import type {
+  EveningOptionView,
+  EveningStepKey,
+  EveningStepView,
+  EveningSummaryRowView,
+  EveningView,
+} from '@/server/views/evening';
 import { DASH, formatScore } from '@/server/views/format';
 
 import styles from './EveningScreen.module.css';
@@ -78,7 +84,7 @@ export interface EveningInitial {
 }
 
 export function initialFromView(view: EveningView): EveningInitial {
-  const first = (key: EveningStepKey2): number | null => {
+  const first = (key: EveningStepKey): number | null => {
     const v = selectedValues(stepOf(view, key)?.options ?? [])[0];
     return v === undefined ? null : Number(v);
   };
@@ -90,7 +96,6 @@ export function initialFromView(view: EveningView): EveningInitial {
     napMinutes: first('nap'),
   };
 }
-type EveningStepKey2 = EveningStepView['key'];
 
 /** Righe del riepilogo aggiornate alle risposte date; i campi non toccati restano quelli di `view.summary`. */
 export function summaryRows(
@@ -99,7 +104,7 @@ export function summaryRows(
   exceptions: readonly string[],
   initial: EveningInitial,
 ): EveningSummaryRowView[] {
-  const labelOf = (key: EveningStepKey2, value: string): string | undefined =>
+  const labelOf = (key: EveningStepKey, value: string): string | undefined =>
     stepOf(view, key)?.options.find((o) => o.value === value)?.label;
   const exceptionsChanged =
     exceptions.length !== initial.exceptions.length || exceptions.some((s) => !initial.exceptions.includes(s));
@@ -290,7 +295,7 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 1, 
         {stepOf(view, 'nap')?.note ? <p className={`caption ${styles.note}`}>{stepOf(view, 'nap')?.note}</p> : null}
       </div>
     ),
-  } satisfies Record<EveningStepKey2, React.ReactNode>;
+  } satisfies Record<EveningStepKey, ReactNode>;
 
   if (wide) {
     return (
@@ -341,7 +346,7 @@ function Summary({ title, rows }: { title: string; rows: EveningSummaryRowView[]
       </div>
       <dl className={`body-sm ${styles.summaryList}`}>
         {rows.map((row) => (
-          <div key={row.key} style={{ display: 'contents' }}>
+          <div key={row.key} className={styles.summaryRow}>
             <dt>{row.label}</dt>
             <dd>{row.value}</dd>
           </div>
@@ -359,9 +364,9 @@ function WideCard({
   onFinish,
 }: {
   view: EveningView;
-  controls: Record<EveningStepKey2, React.ReactNode>;
+  controls: Record<EveningStepKey, ReactNode>;
   saved: boolean;
-  errorNote: React.ReactNode;
+  errorNote: ReactNode;
   onFinish: () => void;
 }) {
   const titleId = useId();
@@ -396,7 +401,7 @@ function WideCard({
             {view.summary.sendLabel}
           </button>
           <p id={hintId} className={`caption ${styles.note}`}>
-            Ogni risposta è facoltativa.
+            Salva il check e avvia il Comando che attiva Riposo.
           </p>
           {errorNote}
         </div>
@@ -405,7 +410,7 @@ function WideCard({
   );
 }
 
-function WideSection({ step, children }: { step: EveningStepView; children: React.ReactNode }) {
+function WideSection({ step, children }: { step: EveningStepView; children: ReactNode }) {
   const id = useId();
   return (
     <div className={styles.section} role="group" aria-labelledby={id}>
