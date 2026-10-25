@@ -147,8 +147,11 @@ test('etichetta vuota: errore calmo in role="alert", nessun token creato', async
   await openSection(page, testInfo, 'Token per i Comandi');
   await page.getByLabel('Etichetta').fill('   ');
   await page.getByRole('button', { name: 'Crea token' }).click();
-  await expect(page.getByRole('alert')).toBeVisible();
-  await expect(page.getByRole('alert')).not.toContainText(/undefined|null|NaN|Error/);
+  // Dentro `main`: Next inserisce fuori da `main` un proprio role="alert" (#__next-route-announcer__).
+  const alert = page.locator('main').getByRole('alert');
+  await expect(alert).toHaveCount(1);
+  await expect(alert).toBeVisible();
+  await expect(alert).not.toContainText(/undefined|null|NaN|Error/);
   await expect(page.locator('code[data-token]')).toHaveCount(0);
 });
 
@@ -158,7 +161,11 @@ test('sessione: pulsante secondario "Esci"', async ({ page }, testInfo) => {
   const exit = page.getByRole('button', { name: 'Esci', exact: true });
   await expect(exit).toBeVisible();
   await expect(exit).toHaveClass(/btn-secondary/);
-  await expect(page.locator('main .btn-primary:visible')).toHaveCount(0);
+  await expect(exit).not.toHaveClass(/btn-primary/);
+  // Un solo pulsante pieno per schermata: è "Crea token", non "Esci".
+  const filled = page.locator('main .btn-primary:visible');
+  await expect(filled).toHaveCount(1);
+  await expect(filled).toHaveText('Crea token');
 });
 
 test('telefono: una sezione per volta con "Indietro"; PC: sezioni affiancate', async ({ page }, testInfo) => {
