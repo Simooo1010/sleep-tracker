@@ -40,7 +40,7 @@ Browser/PWA ──(cookie di sessione firmato)──▶ Next.js 16 (Vercel) ─�
 - Test: `test/` (Vitest) ed `e2e/` (Playwright). `gateway/` è un progetto a parte, non modificato.
 
 ## 5. Comandi utili
-Da `app/` (Node 22; per **aggiungere dipendenze** usa `npx npm@11 install …`, npm 10 non riesce a creare il lockfile):
+Da `app/` (Node 26 in locale e CI; runtime Vercel 24.x, il massimo offerto da Vercel; per **aggiungere dipendenze** usa `npx npm@11 install …`, npm 10 non riesce a creare il lockfile):
 - `npm run check` = typecheck + lint (0 avvisi) + Vitest (≈1500 test).
 - `npm run build`.
 - `npx playwright test --reporter=line` — progetti `iphone` (390×844 DPR3, Chromium con emulazione: WebKit non è installato nel cloud), `desktop` (1280×800), `uhd` (3840×2160), `auth` (secondo server sulla porta 3101 con password di prova). `workers: 1` per via del repo in memoria condiviso. Avviare **un solo** Playwright/`next dev` alla volta nella stessa cartella.
