@@ -40,6 +40,49 @@ export interface Repo {
   saveNap(nap: Nap): Promise<void>;
   /** true se l'hash del token esiste ed è attivo. */
   tokenExists(tokenHash: string): Promise<boolean>;
+
+  // --- Aggiunte Slice 3 (scritture e letture della UI) ---
+  /**
+   * Scrittura ESPLICITA dell'utente: sostituisce la notte anche se era 'confermata'
+   * (Conferma, Correggi, Annulla). Diversa da upsertNight, che protegge le conferme.
+   */
+  overwriteNight(night: Night): Promise<void>;
+  /** Sonnellini con `date` in [fromDate, toDate], ordinati per start_at. */
+  listNaps(fromDate: string, toDate: string): Promise<Nap[]>;
+  /** Check serali con `date` in [fromDate, toDate], ordinati per data. */
+  listEveningChecks(fromDate: string, toDate: string): Promise<EveningCheck[]>;
+  /** Tipi di eccezione con contatore d'uso (per ordinare i chip). */
+  listExceptionTypes(): Promise<ExceptionTypeRow[]>;
+  /** Sostituisce le eccezioni di una notte e aggiorna `uses` (+1 per i nuovi slug, mai sotto 0). Slug sconosciuti vengono creati con label derivata. */
+  setNightExceptions(nightDate: string, slugs: string[]): Promise<void>;
+  /** Slug delle eccezioni di ciascuna notte in [fromDate, toDate]. */
+  listNightExceptions(fromDate: string, toDate: string): Promise<Record<string, string[]>>;
+  /** Registro delle domande poste (per il budget giornaliero). */
+  logQuestion(q: QuestionLogRow): Promise<void>;
+  listQuestions(fromDate: string, toDate: string): Promise<QuestionLogRow[]>;
+  /** Impostazione chiave/valore (es. 'target_sleep_minutes'); null se assente. */
+  getSetting<T = unknown>(key: string): Promise<T | null>;
+}
+
+export interface ExceptionTypeRow {
+  slug: string;
+  label: string;
+  uses: number;
+}
+
+export type QuestionKind =
+  | 'confirm_night'
+  | 'energy'
+  | 'quality'
+  | 'nap_today'
+  | 'exception'
+  | 'factors';
+
+export interface QuestionLogRow {
+  date: string;
+  kind: QuestionKind;
+  nightDate?: string;
+  answeredOrSkipped: boolean;
 }
 
 export type IngestResult =
