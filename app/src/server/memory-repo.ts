@@ -2,12 +2,14 @@
  * Repo in memoria per i test del livello server. Implementa il contratto `Repo`:
  * - `insertEvent` idempotente sulla idempotencyKey;
  * - `upsertNight` rifiuta in silenzio (false) la sovrascrittura di una notte 'confermata';
- * - `saveNap` sostituisce un sonnellino con stessa data e stesso inizio (nessun doppione).
+ * - `saveNap` sostituisce un sonnellino con stessa data e stesso inizio (nessun doppione);
+ * - `overwriteNight` è la scrittura esplicita dell'utente: sostituisce anche una notte 'confermata';
+ * - le eccezioni per notte aggiornano il contatore `uses` dei tipi (mai sotto 0, slug nuovi creati al volo).
  * I dati sono copiati in entrata e in uscita: i chiamanti non possono mutare lo stato interno.
  * I campi pubblici servono per ispezionare lo stato nei test (sono copie: modificarli non ha effetto).
  */
 import type { EveningCheck, Nap, Night, SignalEvent } from '../domain/types';
-import type { Repo, StoredEvent } from './types';
+import type { ExceptionTypeRow, QuestionLogRow, Repo, StoredEvent } from './types';
 
 const clone = <T>(v: T): T => structuredClone(v);
 
@@ -18,7 +20,21 @@ export interface MemoryRepoSeed {
   naps?: Nap[];
   /** Hash dei token attivi. */
   tokenHashes?: string[];
+  /** Impostazioni chiave/valore; se assente valgono i default (target 450 minuti, fuso Europe/Rome). */
+  settings?: Record<string, unknown>;
 }
+
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+const DEFAULT_EXCEPTION_TYPES: ExceptionTypeRow[] = [
+  { slug: 'malattia', label: 'malattia', uses: 0 },
+  { slug: 'viaggio', label: 'viaggio', uses: 0 },
+  { slug: 'festa', label: 'festa', uses: 0 },
+  { slug: 'notte-in-bianco', label: 'notte in bianco', uses: 0 },
+  { slug: 'alcol', label: 'alcol', uses: 0 },
+];
+
+const DEFAULT_SETTINGS: Record<string, unknown> = { target_sleep_minutes: 450, timezone: 'Europe/Rome' };
 
 export class MemoryRepo implements Repo {
   private readonly eventsByKey = new Map<string, StoredEvent>();
@@ -26,6 +42,10 @@ export class MemoryRepo implements Repo {
   private readonly checksByDate = new Map<string, EveningCheck>();
   private readonly napsByKey = new Map<string, Nap>();
   private readonly tokens = new Set<string>();
+  private readonly exceptionTypesBySlug = new Map<string, ExceptionTypeRow>();
+  private readonly exceptionsByNight = new Map<string, string[]>();
+  private readonly questionRows: QuestionLogRow[] = [];
+  private readonly settingsByKey = new Map<string, unknown>();
 
   constructor(seed: MemoryRepoSeed = {}) {
     for (const e of seed.events ?? []) this.eventsByKey.set(e.idempotencyKey, clone(e));
@@ -33,6 +53,8 @@ export class MemoryRepo implements Repo {
     for (const c of seed.checks ?? []) this.checksByDate.set(c.date, clone(c));
     for (const n of seed.naps ?? []) this.napsByKey.set(`${n.date}|${n.startAt}`, clone(n));
     for (const t of seed.tokenHashes ?? []) this.tokens.add(t);
+    for (const t of DEFAULT_EXCEPTION_TYPES) this.exceptionTypesBySlug.set(t.slug, clone(t));
+    for (const [k, v] of Object.entries(seed.settings ?? DEFAULT_SETTINGS)) this.settingsByKey.set(k, clone(v));
   }
 
   /** Tutti gli eventi salvati, ordinati per ts. */
@@ -52,6 +74,28 @@ export class MemoryRepo implements Repo {
   /** Tutti i sonnellini, ordinati per inizio. */
   get naps(): Nap[] {
     return [...this.napsByKey.values()].map(clone).sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
+  }
+
+  /** Registro delle domande, in ordine di inserimento. */
+  get questions(): QuestionLogRow[] {
+    return this.questionRows.map(clone);
+  }
+
+  /** Eccezioni per notte (slug in ordine alfabetico), solo le notti che ne hanno almeno una. */
+  get exceptions(): Record<string, string[]> {
+    return this.listNightExceptionsSync('0000-00-00', '9999-99-99');
+  }
+
+  /** Tipi di eccezione nello stesso ordine di `listExceptionTypes`. */
+  get exceptionTypes(): ExceptionTypeRow[] {
+    return [...this.exceptionTypesBySlug.values()]
+      .map(clone)
+      .sort((a, b) => b.uses - a.uses || a.label.localeCompare(b.label));
+  }
+
+  /** Tutte le impostazioni. */
+  get settings(): Record<string, unknown> {
+    return clone(Object.fromEntries(this.settingsByKey));
   }
 
   addToken(tokenHash: string): void {
@@ -105,5 +149,64 @@ export class MemoryRepo implements Repo {
 
   async tokenExists(tokenHash: string): Promise<boolean> {
     return this.tokens.has(tokenHash);
+  }
+
+  async overwriteNight(night: Night): Promise<void> {
+    this.nightsByDate.set(night.nightDate, clone(night));
+  }
+
+  async listNaps(fromDate: string, toDate: string): Promise<Nap[]> {
+    return this.naps.filter((n) => n.date >= fromDate && n.date <= toDate);
+  }
+
+  async listEveningChecks(fromDate: string, toDate: string): Promise<EveningCheck[]> {
+    return this.checks.filter((c) => c.date >= fromDate && c.date <= toDate);
+  }
+
+  async listExceptionTypes(): Promise<ExceptionTypeRow[]> {
+    return this.exceptionTypes;
+  }
+
+  async setNightExceptions(nightDate: string, slugs: string[]): Promise<void> {
+    for (const s of slugs) if (!SLUG_RE.test(s)) throw new Error('Slug non valido.');
+    const next = new Set(slugs);
+    const prev = new Set(this.exceptionsByNight.get(nightDate) ?? []);
+    for (const slug of next) {
+      if (prev.has(slug)) continue;
+      const row = this.exceptionTypesBySlug.get(slug);
+      if (row) row.uses += 1;
+      else this.exceptionTypesBySlug.set(slug, { slug, label: slug.replace(/-/g, ' '), uses: 1 });
+    }
+    for (const slug of prev) {
+      if (next.has(slug)) continue;
+      const row = this.exceptionTypesBySlug.get(slug);
+      if (row) row.uses = Math.max(0, row.uses - 1);
+    }
+    if (next.size === 0) this.exceptionsByNight.delete(nightDate);
+    else this.exceptionsByNight.set(nightDate, [...next].sort());
+  }
+
+  async listNightExceptions(fromDate: string, toDate: string): Promise<Record<string, string[]>> {
+    return this.listNightExceptionsSync(fromDate, toDate);
+  }
+
+  private listNightExceptionsSync(fromDate: string, toDate: string): Record<string, string[]> {
+    const out: Record<string, string[]> = {};
+    for (const [date, slugs] of [...this.exceptionsByNight.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+      if (date >= fromDate && date <= toDate && slugs.length > 0) out[date] = [...slugs];
+    }
+    return out;
+  }
+
+  async logQuestion(q: QuestionLogRow): Promise<void> {
+    this.questionRows.push(clone(q));
+  }
+
+  async listQuestions(fromDate: string, toDate: string): Promise<QuestionLogRow[]> {
+    return this.questionRows.filter((q) => q.date >= fromDate && q.date <= toDate).map(clone);
+  }
+
+  async getSetting<T = unknown>(key: string): Promise<T | null> {
+    return this.settingsByKey.has(key) ? clone(this.settingsByKey.get(key) as T) : null;
   }
 }

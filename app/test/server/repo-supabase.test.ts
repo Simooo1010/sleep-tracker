@@ -24,6 +24,8 @@ const UNIQUE: Record<string, string> = {
   naps: 'start_at',
   evening_checks: 'date',
   api_tokens: 'token_hash',
+  exception_types: 'slug',
+  settings: 'key',
 };
 
 interface FakeOpts {
@@ -40,6 +42,10 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
     naps: [],
     evening_checks: [],
     api_tokens: [],
+    exception_types: [],
+    night_exceptions: [],
+    questions_log: [],
+    settings: [],
     ...tables,
   };
   const calls: Call[] = [];
@@ -50,10 +56,11 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
     const rows = db[call.table]!;
     const key = UNIQUE[call.table]!;
     const find = (m: string) => call.ops.filter((o) => o.method === m);
-    const filters = call.ops.filter((o) => ['eq', 'neq', 'gte', 'lte'].includes(o.method));
+    const filters = call.ops.filter((o) => ['eq', 'neq', 'gte', 'lte', 'in'].includes(o.method));
     const match = (r: Row) =>
       filters.every(({ method, args: [col, v] }) => {
         const x = r[col as string] as string | number | boolean;
+        if (method === 'in') return (v as unknown[]).includes(x);
         const y = v as string | number | boolean;
         if (method === 'eq') return x === y;
         if (method === 'neq') return x !== y;
@@ -78,6 +85,22 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
       return { data: wantsSelect ? affected.map((r) => ({ ...r })) : null, error: null };
     }
 
+    const insert = find('insert')[0];
+    if (insert) {
+      const values = ([] as Row[]).concat(insert.args[0] as Row | Row[]);
+      const added = values.map((v) =>
+        call.table === 'questions_log' ? { id: rows.length + 1, ...v } : { ...v },
+      );
+      rows.push(...added);
+      return { data: wantsSelect ? added.map((r) => ({ ...r })) : null, error: null };
+    }
+
+    if (find('delete').length) {
+      const removed = rows.filter(match);
+      for (const r of removed) rows.splice(rows.indexOf(r), 1);
+      return { data: wantsSelect ? removed.map((r) => ({ ...r })) : null, error: null };
+    }
+
     const update = find('update')[0];
     if (update) {
       const affected = rows.filter(match);
@@ -86,10 +109,22 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
     }
 
     const out = rows.filter(match).map((r) => ({ ...r }));
-    const order = find('order')[0];
-    if (order) {
-      const col = order.args[0] as string;
-      out.sort((a, b) => String(a[col]).localeCompare(String(b[col])));
+    const orders = find('order');
+    if (orders.length) {
+      out.sort((a, b) => {
+        for (const { args } of orders) {
+          const col = args[0] as string;
+          const dir = (args[1] as { ascending?: boolean } | undefined)?.ascending === false ? -1 : 1;
+          const x = a[col];
+          const y = b[col];
+          const c =
+            typeof x === 'number' && typeof y === 'number'
+              ? x - y
+              : String(x).localeCompare(String(y));
+          if (c !== 0) return c * dir;
+        }
+        return 0;
+      });
     }
     if (find('maybeSingle').length) return { data: out[0] ?? null, error: null };
     return { data: out, error: null };
@@ -104,10 +139,12 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
       'insert',
       'upsert',
       'update',
+      'delete',
       'eq',
       'neq',
       'gte',
       'lte',
+      'in',
       'order',
       'maybeSingle',
     ]) {

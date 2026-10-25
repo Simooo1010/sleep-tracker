@@ -21,7 +21,7 @@ import type {
   SignalType,
   Tracked,
 } from '../domain/types';
-import type { Repo, StoredEvent } from './types';
+import type { ExceptionTypeRow, QuestionKind, QuestionLogRow, Repo, StoredEvent } from './types';
 
 // ---------- Righe del DB (schema della migration) ----------
 
@@ -70,6 +70,20 @@ export interface EveningCheckRow {
   saved_at?: string;
 }
 
+export interface ExceptionTypeDbRow {
+  slug: string;
+  label: string;
+  uses: number;
+}
+
+export interface QuestionDbRow {
+  id?: string | number;
+  date: string;
+  kind: string;
+  night_date: string | null;
+  answered_or_skipped: boolean;
+}
+
 // ---------- Validazione / normalizzazione ----------
 
 const PROVENANCES: readonly Provenance[] = ['automatico', 'confermato', 'stimato', 'mancante'];
@@ -83,6 +97,15 @@ const SIGNAL_TYPES: readonly SignalType[] = [
   'app_open',
 ];
 const SOURCES: readonly SignalEvent['source'][] = ['comandi', 'app', 'stima'];
+const QUESTION_KINDS: readonly QuestionKind[] = [
+  'confirm_night',
+  'energy',
+  'quality',
+  'nap_today',
+  'exception',
+  'factors',
+];
+const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 function invalid(table: string): Error {
   return new Error(`Dato non valido letto da ${table}`);
@@ -220,6 +243,46 @@ export function napToRow(n: Nap): NapRow {
   return { date: n.date, start_at: n.startAt, minutes: n.minutes, provenance: n.provenance };
 }
 
+export function rowToNap(r: NapRow): Nap {
+  const T = 'naps';
+  if (typeof r.date !== 'string') throw invalid(T);
+  if (typeof r.minutes !== 'number' || !Number.isFinite(r.minutes)) throw invalid(T);
+  return {
+    date: r.date,
+    startAt: toIso(r.start_at, T),
+    minutes: r.minutes,
+    provenance: oneOf(r.provenance, PROVENANCES, T),
+  };
+}
+
+export function rowToExceptionType(r: ExceptionTypeDbRow): ExceptionTypeRow {
+  const T = 'exception_types';
+  if (typeof r.slug !== 'string' || typeof r.label !== 'string') throw invalid(T);
+  if (typeof r.uses !== 'number' || !Number.isFinite(r.uses)) throw invalid(T);
+  return { slug: r.slug, label: r.label, uses: r.uses };
+}
+
+export function questionToRow(q: QuestionLogRow): QuestionDbRow {
+  return {
+    date: q.date,
+    kind: q.kind,
+    night_date: q.nightDate ?? null,
+    answered_or_skipped: q.answeredOrSkipped,
+  };
+}
+
+export function rowToQuestion(r: QuestionDbRow): QuestionLogRow {
+  const T = 'questions_log';
+  if (typeof r.date !== 'string') throw invalid(T);
+  const q: QuestionLogRow = {
+    date: r.date,
+    kind: oneOf(r.kind, QUESTION_KINDS, T),
+    answeredOrSkipped: r.answered_or_skipped === true,
+  };
+  if (typeof r.night_date === 'string') q.nightDate = r.night_date;
+  return q;
+}
+
 // ---------- Repo ----------
 
 export function createSupabaseRepo(
@@ -336,6 +399,163 @@ export function createSupabaseRepo(
         // ignorato di proposito
       }
       return true;
+    },
+
+    // --- Aggiunte Slice 3 ---
+
+    /** Scrittura esplicita dell'utente: upsert su night_date SENZA filtro sullo status. */
+    async overwriteNight(night) {
+      const { error } = await client
+        .from('nights')
+        .upsert(nightToRow(night, now().toISOString()), { onConflict: 'night_date' });
+      if (error) throw dbError('sovrascrittura notte', error);
+    },
+
+    async listNaps(fromDate, toDate) {
+      const { data, error } = await client
+        .from('naps')
+        .select('date, start_at, minutes, provenance')
+        .gte('date', fromDate)
+        .lte('date', toDate)
+        .order('start_at', { ascending: true });
+      if (error) throw dbError('lettura sonnellini', error);
+      return ((data ?? []) as NapRow[]).map(rowToNap);
+    },
+
+    async listEveningChecks(fromDate, toDate) {
+      const { data, error } = await client
+        .from('evening_checks')
+        .select('*')
+        .gte('date', fromDate)
+        .lte('date', toDate)
+        .order('date', { ascending: true });
+      if (error) throw dbError('lettura check serali', error);
+      return ((data ?? []) as EveningCheckRow[]).map(rowToEveningCheck);
+    },
+
+    async listExceptionTypes() {
+      const { data, error } = await client
+        .from('exception_types')
+        .select('slug, label, uses')
+        .order('uses', { ascending: false })
+        .order('label', { ascending: true });
+      if (error) throw dbError('lettura tipi di eccezione', error);
+      return ((data ?? []) as ExceptionTypeDbRow[]).map(rowToExceptionType);
+    },
+
+    /**
+     * Sequenza (non transazionale: il client REST non ha transazioni):
+     * valida+deduplica, verifica la notte, legge gli slug attuali e il catalogo,
+     * crea i tipi sconosciuti, cancella i rimossi, inserisce i nuovi, poi aggiorna `uses`.
+     */
+    async setNightExceptions(nightDate, slugs) {
+      for (const s of slugs) {
+        if (typeof s !== 'string' || !SLUG_RE.test(s)) throw new Error('Slug non valido.');
+      }
+      const wanted = [...new Set(slugs)];
+
+      const nightRes = await client
+        .from('nights')
+        .select('night_date')
+        .eq('night_date', nightDate)
+        .maybeSingle();
+      if (nightRes.error) throw dbError('lettura notte', nightRes.error);
+      if (!nightRes.data) throw new Error('Notte non trovata.');
+
+      const curRes = await client
+        .from('night_exceptions')
+        .select('slug')
+        .eq('night_date', nightDate);
+      if (curRes.error) throw dbError('lettura eccezioni della notte', curRes.error);
+      const current = new Set(((curRes.data ?? []) as { slug: string }[]).map((r) => r.slug));
+
+      const catRes = await client.from('exception_types').select('slug, uses');
+      if (catRes.error) throw dbError('lettura tipi di eccezione', catRes.error);
+      const uses = new Map(
+        ((catRes.data ?? []) as { slug: string; uses: number }[]).map((r) => [r.slug, r.uses]),
+      );
+
+      const added = wanted.filter((s) => !current.has(s));
+      const removed = [...current].filter((s) => !wanted.includes(s));
+
+      const unknown = added.filter((s) => !uses.has(s));
+      if (unknown.length > 0) {
+        const { error } = await client
+          .from('exception_types')
+          .upsert(
+            unknown.map((slug) => ({ slug, label: slug.replace(/-/g, ' '), uses: 0 })),
+            { onConflict: 'slug', ignoreDuplicates: true },
+          );
+        if (error) throw dbError('creazione tipo di eccezione', error);
+        for (const s of unknown) uses.set(s, 0);
+      }
+
+      if (removed.length > 0) {
+        const { error } = await client
+          .from('night_exceptions')
+          .delete()
+          .eq('night_date', nightDate)
+          .in('slug', removed);
+        if (error) throw dbError('rimozione eccezioni', error);
+      }
+      if (added.length > 0) {
+        const { error } = await client
+          .from('night_exceptions')
+          .insert(added.map((slug) => ({ night_date: nightDate, slug })));
+        if (error) throw dbError('inserimento eccezioni', error);
+      }
+
+      const deltas: [string, number][] = [
+        ...added.map((s): [string, number] => [s, 1]),
+        ...removed.map((s): [string, number] => [s, -1]),
+      ];
+      for (const [slug, delta] of deltas) {
+        const next = Math.max(0, (uses.get(slug) ?? 0) + delta);
+        const { error } = await client.from('exception_types').update({ uses: next }).eq('slug', slug);
+        if (error) throw dbError('aggiornamento contatore eccezioni', error);
+      }
+    },
+
+    async listNightExceptions(fromDate, toDate) {
+      const { data, error } = await client
+        .from('night_exceptions')
+        .select('night_date, slug')
+        .gte('night_date', fromDate)
+        .lte('night_date', toDate);
+      if (error) throw dbError('lettura eccezioni', error);
+      const out: Record<string, string[]> = {};
+      for (const r of (data ?? []) as { night_date: string; slug: string }[]) {
+        (out[r.night_date] ??= []).push(r.slug);
+      }
+      for (const list of Object.values(out)) list.sort();
+      return out;
+    },
+
+    async logQuestion(q) {
+      const { error } = await client.from('questions_log').insert(questionToRow(q));
+      if (error) throw dbError('registrazione domanda', error);
+    },
+
+    async listQuestions(fromDate, toDate) {
+      const { data, error } = await client
+        .from('questions_log')
+        .select('date, kind, night_date, answered_or_skipped')
+        .gte('date', fromDate)
+        .lte('date', toDate)
+        .order('id', { ascending: true });
+      if (error) throw dbError('lettura domande', error);
+      return ((data ?? []) as QuestionDbRow[]).map(rowToQuestion);
+    },
+
+    async getSetting<T = unknown>(key: string): Promise<T | null> {
+      const { data, error } = await client
+        .from('settings')
+        .select('value')
+        .eq('key', key)
+        .maybeSingle();
+      if (error) throw dbError('lettura impostazione', error);
+      if (!data) return null;
+      return ((data as { value: unknown }).value ?? null) as T | null;
     },
   };
 }
