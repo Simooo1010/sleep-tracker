@@ -41,10 +41,20 @@ describe('pagina di accesso', () => {
     expect(html).not.toContain('role="alert"');
   });
 
+  it('il campo password ha il pulsante "Mostra" (non pieno) e il campo resta di tipo password', async () => {
+    const html = await render();
+    expect(html).toMatch(/<input[^>]*id="password"[^>]*type="password"/);
+    expect(html).toMatch(/<button[^>]*type="button"[^>]*aria-pressed="false"[^>]*aria-controls="password"[^>]*>Mostra<\/button>/);
+    expect(html).toContain('aria-label="Mostra password"');
+    expect(html.match(/btn-primary/g)).toHaveLength(1);
+  });
+
   it('errore: messaggio calmo in role="alert"', async () => {
     const html = await render({ errore: '1' });
     expect(html).toContain('role="alert"');
     expect(html).toContain('Password non corretta.');
+    expect(html).toMatch(/<input[^>]*aria-invalid="true"/);
+    expect(html).toMatch(/<input[^>]*aria-describedby="login-errore"/);
   });
 
   it('next ostile viene sanitizzato nel campo nascosto', async () => {
