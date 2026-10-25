@@ -21,7 +21,7 @@ import type {
   SignalType,
   Tracked,
 } from '../domain/types';
-import type { ExceptionTypeRow, QuestionKind, QuestionLogRow, Repo, StoredEvent } from './types';
+import type { ApiTokenInfo, ExceptionTypeRow, QuestionKind, QuestionLogRow, Repo, StoredEvent } from './types';
 
 // ---------- Righe del DB (schema della migration) ----------
 
@@ -83,6 +83,16 @@ export interface QuestionDbRow {
   night_date: string | null;
   answered_or_skipped: boolean;
 }
+
+export interface ApiTokenDbRow {
+  id: number | string;
+  label: string;
+  active: boolean;
+  created_at: string;
+  last_used_at: string | null;
+}
+
+const TOKEN_COLUMNS = 'id, label, active, created_at, last_used_at';
 
 // ---------- Validazione / normalizzazione ----------
 
@@ -260,6 +270,19 @@ export function rowToExceptionType(r: ExceptionTypeDbRow): ExceptionTypeRow {
   if (typeof r.slug !== 'string' || typeof r.label !== 'string') throw invalid(T);
   if (typeof r.uses !== 'number' || !Number.isFinite(r.uses)) throw invalid(T);
   return { slug: r.slug, label: r.label, uses: r.uses };
+}
+
+export function rowToApiToken(r: ApiTokenDbRow): ApiTokenInfo {
+  const T = 'api_tokens';
+  const id = Number(r.id);
+  if (!Number.isSafeInteger(id) || id <= 0 || typeof r.label !== 'string') throw invalid(T);
+  return {
+    id,
+    label: r.label,
+    active: r.active === true,
+    createdAt: toIso(r.created_at, T),
+    lastUsedAt: r.last_used_at === null || r.last_used_at === undefined ? null : toIso(r.last_used_at, T),
+  };
 }
 
 export function questionToRow(q: QuestionLogRow): QuestionDbRow {
@@ -556,6 +579,42 @@ export function createSupabaseRepo(
       if (error) throw dbError('lettura impostazione', error);
       if (!data) return null;
       return ((data as { value: unknown }).value ?? null) as T | null;
+    },
+
+    // --- Token API (Impostazioni): l'hash si scrive soltanto, non si legge mai ---
+
+    async createToken({ tokenHash, label }) {
+      const clean = typeof label === 'string' ? label.trim() : '';
+      if (clean.length < 1 || clean.length > 40) throw new Error('Etichetta non valida.');
+      const { data, error } = await client
+        .from('api_tokens')
+        .insert({ token_hash: tokenHash, label: clean, active: true })
+        .select(TOKEN_COLUMNS);
+      if (error) throw dbError('creazione token', error);
+      const row = Array.isArray(data) ? data[0] : null;
+      if (!row) throw dbError('creazione token', null);
+      return rowToApiToken(row as ApiTokenDbRow);
+    },
+
+    async listTokens() {
+      const { data, error } = await client
+        .from('api_tokens')
+        .select(TOKEN_COLUMNS)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
+      if (error) throw dbError('lettura token', error);
+      return ((data ?? []) as ApiTokenDbRow[]).map(rowToApiToken);
+    },
+
+    async revokeToken(id) {
+      if (!Number.isSafeInteger(id) || id <= 0) return false;
+      const { data, error } = await client
+        .from('api_tokens')
+        .update({ active: false })
+        .eq('id', id)
+        .select('id');
+      if (error) throw dbError('revoca token', error);
+      return Array.isArray(data) && data.length > 0;
     },
   };
 }

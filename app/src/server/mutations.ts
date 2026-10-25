@@ -7,7 +7,8 @@ import { napFromCheck } from "../domain/naps";
 import { durationMinutes } from "../domain/time";
 import type { EveningCheck, Night, Score, Tracked } from "../domain/types";
 import { ingestEvent } from "./ingest";
-import type { QuestionLogRow, Repo } from "./types";
+import { generateToken, hashToken } from "./token";
+import type { ApiTokenInfo, QuestionLogRow, Repo } from "./types";
 
 export type MutationResult<T = undefined> =
   | { ok: true; value: T }
@@ -239,6 +240,51 @@ export async function napFromUi(
     );
     if (!result.ok) return fail(result.error);
     return { ok: true, value: { nightDate: result.nightDate } };
+  } catch {
+    return genericFail();
+  }
+}
+
+/** Massimo di token attivi contemporaneamente (un uso personale: pochi Comandi). */
+export const MAX_ACTIVE_TOKENS = 10;
+const MAX_LABEL_LENGTH = 40;
+
+/**
+ * Crea un token per i Comandi: lo genera, salva SOLO l'hash (con il pepper) e restituisce il token in chiaro
+ * una volta sola, insieme ai metadati. Il chiaro non viene mai scritto nel repo né registrato.
+ */
+export async function createApiToken(
+  repo: Repo,
+  input: { label: string },
+  pepper: string,
+): Promise<MutationResult<{ token: string; info: ApiTokenInfo }>> {
+  const label = typeof input.label === "string" ? input.label.trim() : "";
+  if (label.length < 1 || label.length > MAX_LABEL_LENGTH)
+    return fail("Etichetta non valida.");
+  try {
+    const active = (await repo.listTokens()).filter((t) => t.active).length;
+    if (active >= MAX_ACTIVE_TOKENS)
+      return fail("Hai già troppi token attivi. Revocane uno.");
+    const token = generateToken();
+    const info = await repo.createToken({
+      tokenHash: hashToken(token, pepper),
+      label,
+    });
+    return { ok: true, value: { token, info } };
+  } catch {
+    return genericFail();
+  }
+}
+
+/** Revoca un token (active=false): da quel momento i Comandi che lo usano ricevono 401. */
+export async function revokeApiToken(
+  repo: Repo,
+  id: number,
+): Promise<MutationResult> {
+  if (!Number.isSafeInteger(id) || id <= 0) return fail("Token non trovato.");
+  try {
+    if (!(await repo.revokeToken(id))) return fail("Token non trovato.");
+    return { ok: true, value: undefined };
   } catch {
     return genericFail();
   }

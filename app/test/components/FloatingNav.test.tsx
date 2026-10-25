@@ -19,14 +19,18 @@ describe('FloatingNav', () => {
     expect(html.match(/aria-label="Principale"/g)).toHaveLength(2);
   });
 
-  it('ha cinque voci sul telefono e sei sul PC, come link', () => {
+  it('ha cinque voci sul telefono e sette sul PC, come link', () => {
     expect(pill.match(/<a /g)).toHaveLength(5);
-    expect(side.match(/<a /g)).toHaveLength(6);
+    expect(side.match(/<a /g)).toHaveLength(7);
     expect(text(pill)).toBe('NotteRegolaritàGraficiStoricoSera');
     expect(text(side)).toContain('Segnali');
+    expect(text(side)).toContain('Impostazioni');
     expect(pill).not.toContain('Segnali');
+    expect(pill).not.toContain('Impostazioni');
     expect(pill).toContain('href="/"');
     expect(side).toContain('href="/segnali"');
+    expect(side).toContain('href="/impostazioni"');
+    expect(text(side).indexOf('Impostazioni')).toBeGreaterThan(text(side).indexOf('Segnali'));
   });
 
   it('segna solo la voce attiva con aria-current="page"', () => {
@@ -45,8 +49,8 @@ describe('FloatingNav', () => {
   });
 
   it('nasconde le icone ai lettori di schermo', () => {
-    expect(html.match(/<svg/g)).toHaveLength(11);
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(11);
+    expect(html.match(/<svg/g)).toHaveLength(12);
+    expect(html.match(/aria-hidden="true"/g)).toHaveLength(12);
   });
 
   it('senza riepilogo scrive una frase e mai valori vuoti', () => {
@@ -57,6 +61,16 @@ describe('FloatingNav', () => {
     const [p = '', s = ''] = navs(empty);
     expect(p).not.toContain('aria-current');
     expect(s.match(/aria-current="page"/g)).toHaveLength(1);
+  });
+});
+
+describe('FloatingNav su Impostazioni', () => {
+  it('segna Impostazioni nella barra laterale e nessuna voce nella pillola', () => {
+    const html = renderToStaticMarkup(<FloatingNav pathname="/impostazioni" />);
+    const [pill = '', side = ''] = navs(html);
+    expect(pill).not.toContain('aria-current');
+    expect(side.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(side).toMatch(/<a [^>]*aria-current="page"[^>]*href="\/impostazioni"/);
   });
 });
 
@@ -71,7 +85,7 @@ describe('isNavActive', () => {
     expect(isNavActive('/', '')).toBe(true);
   });
 
-  it('ha sei voci con chiavi uniche', () => {
-    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(6);
+  it('ha sette voci con chiavi uniche', () => {
+    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(7);
   });
 });

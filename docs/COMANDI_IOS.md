@@ -9,8 +9,14 @@ Cinque Comandi sull'iPhone. Dopo, la notte si registra da sola. Ci vogliono circ
 Ti servono tre cose.
 
 1. **iPhone con l'app Comandi** (c'è già di serie) e iOS aggiornato.
-2. **`<URL_APP>`**: l'indirizzo dell'app, senza barra finale. Te lo dà Claude dopo il deploy. Nei Comandi userai `<URL_APP>/api/events`.
-3. **`<TOKEN>`**: la chiave che fa entrare i tuoi Comandi. Comincia con `st_`. La genera Claude e te la mostra **una sola volta**. Il server ne conserva solo un'impronta, quindi non si può rileggere: se la perdi, se ne genera una nuova.
+2. **`<URL_APP>`**: l'indirizzo dell'app, senza barra finale (quello che usi per aprirla in Safari). Nei Comandi userai `<URL_APP>/api/events`. Dopo aver creato il token, **Impostazioni** ti mostra l'indirizzo completo già pronto.
+3. **`<TOKEN>`**: la chiave che fa entrare i tuoi Comandi. Comincia con `st_`. Lo crei tu dall'app, in pochi secondi:
+   1. Apri l'app e accedi con la tua password.
+   2. Tocca **Impostazioni** (in alto su telefono, nella barra laterale su PC) e apri **Token per i Comandi**.
+   3. Lascia l'etichetta `iPhone` (o scrivine una tua) e tocca **Crea token**.
+   4. Tocca **Copia** e incollalo subito nelle Note o in un gestore di password. L'app lo mostra **una sola volta**: il server ne conserva solo un'impronta, quindi non si può rileggere.
+
+   Se lo perdi, o pensi che qualcuno l'abbia visto, apri di nuovo Impostazioni: **Revoca** (due tocchi: **Revoca** e **Conferma revoca**) e crea un token nuovo. I Comandi che usavano il vecchio smettono di funzionare subito, quindi sostituiscilo anche nei Comandi.
 
 Dove tenere il token:
 
@@ -245,7 +251,7 @@ Prova un Comando alla volta.
 ```
 
    `duplicate: true` vuol dire che esisteva già un evento con la stessa chiave. Non è un errore.
-4. Apri l'app → pulsante **Segnali** in alto. Nel registro degli ultimi eventi trovi quello appena inviato. Anche la riga della sua automazione deve passare a `Attivo`.
+4. Apri l'app → pulsante **Segnali** in alto (o la voce **Segnali** nella barra laterale). Nel registro degli ultimi eventi trovi quello appena inviato. Anche la riga della sua automazione deve passare a `Attivo`.
 5. Le automazioni (sveglia, Riposo, apertura app) provale **dal vivo**: ferma una sveglia, attiva Riposo, apri l'app. Poi guarda di nuovo Segnali.
 
 Attenzione: **una prova è un dato vero**. Finisce nei calcoli della notte. Meglio provare nei momenti reali, oppure dire a Claude di togliere le prove.
@@ -253,7 +259,7 @@ Attenzione: **una prova è un dato vero**. Finisce nei calcoli della notte. Megl
 ## Problemi comuni
 
 - **L'automazione chiede conferma ogni volta.** Apri l'automazione e seleziona **Esegui subito**. Spegni **Chiedi prima di eseguire**. Se vedi ancora una notifica, spegni anche **Notifica quando viene eseguita**.
-- **Errore 401 "Non autorizzato".** Il token è sbagliato. Controlla `Bearer`, uno spazio, poi il token. Niente virgolette, niente spazi o a capo alla fine. Se sei in dubbio, chiedi a Claude un token nuovo e sostituiscilo.
+- **Errore 401 "Non autorizzato".** Il token è sbagliato. Controlla `Bearer`, uno spazio, poi il token. Niente virgolette, niente spazi o a capo alla fine. Se sei in dubbio, apri Impostazioni, revoca il token e creane uno nuovo, poi sostituiscilo nei Comandi. In Impostazioni vedi anche l'ultimo uso di ogni token: **Mai usato** vuol dire che nessuna richiesta è arrivata con quello.
 - **Errore 400.** Il messaggio `error` è in italiano e dice quale campo non va. Cause tipiche: `type` sbagliato, `ts` senza fuso orario, chiave troppo corta, orologio del telefono avanti di oltre 5 minuti.
 - **Errore 503 o 500.** Il problema è sul server, non sul telefono. Riprova dopo un minuto. Se resta, dillo a Claude.
 - **Nessuna connessione.** iOS non garantisce un nuovo tentativo automatico: il Comando può fermarsi con un errore. Rilancialo a mano appena torna la rete. È sicuro: la chiave impedisce i doppioni. Attenzione: se rilanci, `Ts` è la nuova ora, non quella originale. Per la sveglia va bene lo stesso, perché è comunque una stima.
@@ -279,7 +285,7 @@ Su iPhone le notifiche delle PWA funzionano solo dopo l'aggiunta alla Home e sol
 
 ## Riepilogo veloce
 
-1. Salva `<URL_APP>` e `<TOKEN>`.
+1. Crea il token da **Impostazioni** e salva `<URL_APP>` e `<TOKEN>`.
 2. Crea "Sveglia" e la sua automazione. Duplicalo per gli altri.
 3. Crea "Riposo" e la sua automazione.
 4. Crea "Sera" e mettilo nella Home.

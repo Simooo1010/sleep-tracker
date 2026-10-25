@@ -7,7 +7,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  globalIgnores(['.next/**', 'node_modules/**', 'test-results/**', 'playwright-report/**', 'next-env.d.ts']),
+  globalIgnores(['.next/**', '.next-auth/**', 'node_modules/**', 'test-results/**', 'playwright-report/**', 'next-env.d.ts']),
   js.configs.recommended,
   tseslint.configs.recommended,
   nextPlugin.configs['core-web-vitals'],

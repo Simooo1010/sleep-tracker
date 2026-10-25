@@ -9,7 +9,7 @@
  * I campi pubblici servono per ispezionare lo stato nei test (sono copie: modificarli non ha effetto).
  */
 import type { EveningCheck, Nap, Night, SignalEvent } from '../domain/types';
-import type { ExceptionTypeRow, QuestionLogRow, Repo, StoredEvent } from './types';
+import type { ApiTokenInfo, ExceptionTypeRow, QuestionLogRow, Repo, StoredEvent } from './types';
 
 const clone = <T>(v: T): T => structuredClone(v);
 
@@ -22,6 +22,17 @@ export interface MemoryRepoSeed {
   tokenHashes?: string[];
   /** Impostazioni chiave/valore; se assente valgono i default (target 450 minuti, fuso Europe/Rome). */
   settings?: Record<string, unknown>;
+  /** Orologio per createdAt/lastUsedAt dei token (default: ora reale). */
+  now?: () => Date;
+}
+
+interface TokenRecord extends ApiTokenInfo {
+  hash: string;
+}
+
+/** Solo i metadati: l'hash non esce dal repo. */
+function toInfo(t: TokenRecord): ApiTokenInfo {
+  return { id: t.id, label: t.label, active: t.active, createdAt: t.createdAt, lastUsedAt: t.lastUsedAt };
 }
 
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -41,18 +52,21 @@ export class MemoryRepo implements Repo {
   private readonly nightsByDate = new Map<string, Night>();
   private readonly checksByDate = new Map<string, EveningCheck>();
   private readonly napsByKey = new Map<string, Nap>();
-  private readonly tokens = new Set<string>();
+  private readonly tokens = new Map<string, TokenRecord>();
+  private nextTokenId = 1;
+  private readonly now: () => Date;
   private readonly exceptionTypesBySlug = new Map<string, ExceptionTypeRow>();
   private readonly exceptionsByNight = new Map<string, string[]>();
   private readonly questionRows: QuestionLogRow[] = [];
   private readonly settingsByKey = new Map<string, unknown>();
 
   constructor(seed: MemoryRepoSeed = {}) {
+    this.now = seed.now ?? (() => new Date());
     for (const e of seed.events ?? []) this.eventsByKey.set(e.idempotencyKey, clone(e));
     for (const n of seed.nights ?? []) this.nightsByDate.set(n.nightDate, clone(n));
     for (const c of seed.checks ?? []) this.checksByDate.set(c.date, clone(c));
     for (const n of seed.naps ?? []) this.napsByKey.set(`${n.date}|${n.startAt}`, clone(n));
-    for (const t of seed.tokenHashes ?? []) this.tokens.add(t);
+    for (const t of seed.tokenHashes ?? []) this.addToken(t);
     for (const t of DEFAULT_EXCEPTION_TYPES) this.exceptionTypesBySlug.set(t.slug, clone(t));
     for (const [k, v] of Object.entries(seed.settings ?? DEFAULT_SETTINGS)) this.settingsByKey.set(k, clone(v));
   }
@@ -98,8 +112,22 @@ export class MemoryRepo implements Repo {
     return clone(Object.fromEntries(this.settingsByKey));
   }
 
-  addToken(tokenHash: string): void {
-    this.tokens.add(tokenHash);
+  /** Hash di tutti i token (attivi e revocati): serve ai test per verificare che il chiaro non sia mai salvato. */
+  get tokenHashes(): string[] {
+    return [...this.tokens.keys()];
+  }
+
+  /** Registra un token attivo dato il suo hash (seed, token di prova). Idempotente sull'hash. */
+  addToken(tokenHash: string, label = 'Token'): void {
+    if (this.tokens.has(tokenHash)) return;
+    this.tokens.set(tokenHash, {
+      hash: tokenHash,
+      id: this.nextTokenId++,
+      label,
+      active: true,
+      createdAt: this.now().toISOString(),
+      lastUsedAt: null,
+    });
   }
 
   async insertEvent(e: StoredEvent): Promise<{ inserted: boolean }> {
@@ -148,7 +176,31 @@ export class MemoryRepo implements Repo {
   }
 
   async tokenExists(tokenHash: string): Promise<boolean> {
-    return this.tokens.has(tokenHash);
+    const t = this.tokens.get(tokenHash);
+    if (!t || !t.active) return false;
+    t.lastUsedAt = this.now().toISOString();
+    return true;
+  }
+
+  async createToken(input: { tokenHash: string; label: string }): Promise<ApiTokenInfo> {
+    const label = typeof input.label === 'string' ? input.label.trim() : '';
+    if (label.length < 1 || label.length > 40) throw new Error('Etichetta non valida.');
+    if (this.tokens.has(input.tokenHash)) throw new Error('Token già presente.');
+    this.addToken(input.tokenHash, label);
+    return toInfo(this.tokens.get(input.tokenHash)!);
+  }
+
+  async listTokens(): Promise<ApiTokenInfo[]> {
+    return [...this.tokens.values()]
+      .sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt) || b.id - a.id)
+      .map(toInfo);
+  }
+
+  async revokeToken(id: number): Promise<boolean> {
+    const t = [...this.tokens.values()].find((x) => x.id === id);
+    if (!t) return false;
+    t.active = false;
+    return true;
   }
 
   async overwriteNight(night: Night): Promise<void> {

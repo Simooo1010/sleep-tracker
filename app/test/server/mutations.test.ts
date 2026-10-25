@@ -2,14 +2,18 @@ import { describe, expect, it, vi } from "vitest";
 import type { Night } from "../../src/domain/types";
 import { MemoryRepo } from "../../src/server/memory-repo";
 import {
+  MAX_ACTIVE_TOKENS,
   confirmNight,
+  createApiToken,
   napFromUi,
   rateNight,
   recordQuestion,
+  revokeApiToken,
   saveEveningCheckFromUi,
   setExceptions,
   undoConfirmNight,
 } from "../../src/server/mutations";
+import { authenticate, hashToken } from "../../src/server/token";
 
 const MISSING = { value: null, provenance: "mancante" } as const;
 const GENERIC = "Errore nel salvataggio. Riprova.";
@@ -520,5 +524,111 @@ describe("napFromUi", () => {
     expect(
       await napFromUi(repo, "start", new Date("2026-10-24T12:00:00Z")),
     ).toEqual({ ok: false, error: GENERIC });
+  });
+});
+
+const PEPPER = "pepper-di-prova-abbastanza-lungo";
+
+describe("createApiToken", () => {
+  it("restituisce il token in chiaro una volta; nel repo c'è solo l'hash, coerente con authenticate", async () => {
+    const repo = new MemoryRepo();
+    const res = await createApiToken(repo, { label: "  iPhone " }, PEPPER);
+    if (!res.ok) throw new Error(res.error);
+    const { token, info } = res.value;
+    expect(token).toMatch(/^st_[A-Za-z0-9_-]{43}$/);
+    expect(info).toMatchObject({ label: "iPhone", active: true, lastUsedAt: null });
+
+    // Il chiaro non compare mai: né nell'elenco né nello stato del repo.
+    const listed = JSON.stringify(await repo.listTokens());
+    const state = JSON.stringify({
+      tokenHashes: repo.tokenHashes,
+      events: repo.events,
+      nights: repo.nights,
+      checks: repo.checks,
+      naps: repo.naps,
+      questions: repo.questions,
+      settings: repo.settings,
+    });
+    expect(listed).not.toContain(token);
+    expect(state).not.toContain(token);
+    expect(repo.tokenHashes).toEqual([hashToken(token, PEPPER)]);
+    expect(listed).not.toContain(hashToken(token, PEPPER));
+
+    // Il token funziona come bearer; con un altro pepper o un token diverso no.
+    const ok = (t: string, pepper = PEPPER) => authenticate(`Bearer ${t}`, pepper, (h) => repo.tokenExists(h));
+    expect(await ok(token)).toBe(true);
+    expect(await ok(token, "un-altro-pepper-molto-lungo")).toBe(false);
+    expect(await ok(`${token.slice(0, -1)}${token.endsWith("A") ? "B" : "A"}`)).toBe(false);
+  });
+
+  it("due token creati sono diversi", async () => {
+    const repo = new MemoryRepo();
+    const a = await createApiToken(repo, { label: "A" }, PEPPER);
+    const b = await createApiToken(repo, { label: "B" }, PEPPER);
+    expect(a.ok && b.ok && a.value.token !== b.value.token).toBe(true);
+    expect(await repo.listTokens()).toHaveLength(2);
+  });
+
+  it("etichetta vuota, di soli spazi o oltre 40 caratteri → errore calmo, nessun token", async () => {
+    const repo = new MemoryRepo();
+    for (const label of ["", "   ", "x".repeat(41)]) {
+      expect(await createApiToken(repo, { label }, PEPPER)).toEqual({ ok: false, error: "Etichetta non valida." });
+    }
+    expect(await repo.listTokens()).toEqual([]);
+  });
+
+  it("massimo 10 token attivi; un token revocato libera un posto", async () => {
+    const repo = new MemoryRepo();
+    for (let i = 0; i < MAX_ACTIVE_TOKENS; i += 1) {
+      expect((await createApiToken(repo, { label: `t${i}` }, PEPPER)).ok).toBe(true);
+    }
+    expect(await createApiToken(repo, { label: "uno di troppo" }, PEPPER)).toEqual({
+      ok: false,
+      error: "Hai già troppi token attivi. Revocane uno.",
+    });
+    expect(await repo.listTokens()).toHaveLength(MAX_ACTIVE_TOKENS);
+
+    const first = (await repo.listTokens())[0]!;
+    expect(await revokeApiToken(repo, first.id)).toEqual({ ok: true, value: undefined });
+    expect((await createApiToken(repo, { label: "nuovo" }, PEPPER)).ok).toBe(true);
+  });
+
+  it("pepper troppo corto o repo che lancia → errore generico senza dettagli", async () => {
+    const repo = new MemoryRepo();
+    expect(await createApiToken(repo, { label: "iPhone" }, "corto")).toEqual({ ok: false, error: GENERIC });
+    expect(await repo.listTokens()).toEqual([]);
+
+    vi.spyOn(repo, "createToken").mockRejectedValueOnce(new Error("hash duplicato st_segreto"));
+    const res = await createApiToken(repo, { label: "iPhone" }, PEPPER);
+    expect(res).toEqual({ ok: false, error: GENERIC });
+    vi.spyOn(repo, "listTokens").mockRejectedValueOnce(new Error("db giù"));
+    expect(await createApiToken(repo, { label: "iPhone" }, PEPPER)).toEqual({ ok: false, error: GENERIC });
+  });
+});
+
+describe("revokeApiToken", () => {
+  it("revoca: il token non autentica più e resta nell'elenco come revocato", async () => {
+    const repo = new MemoryRepo();
+    const created = await createApiToken(repo, { label: "iPhone" }, PEPPER);
+    if (!created.ok) throw new Error(created.error);
+    const header = `Bearer ${created.value.token}`;
+    expect(await authenticate(header, PEPPER, (h) => repo.tokenExists(h))).toBe(true);
+
+    expect(await revokeApiToken(repo, created.value.info.id)).toEqual({ ok: true, value: undefined });
+    expect(await authenticate(header, PEPPER, (h) => repo.tokenExists(h))).toBe(false);
+    expect(await repo.listTokens()).toMatchObject([{ id: created.value.info.id, active: false }]);
+  });
+
+  it("id inesistente o non valido → 'Token non trovato.'", async () => {
+    const repo = new MemoryRepo();
+    for (const id of [42, 0, -1, 1.5, Number.NaN]) {
+      expect(await revokeApiToken(repo, id)).toEqual({ ok: false, error: "Token non trovato." });
+    }
+  });
+
+  it("repo che lancia → errore generico", async () => {
+    const repo = new MemoryRepo();
+    vi.spyOn(repo, "revokeToken").mockRejectedValueOnce(new Error("db giù"));
+    expect(await revokeApiToken(repo, 1)).toEqual({ ok: false, error: GENERIC });
   });
 });

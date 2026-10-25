@@ -5,6 +5,7 @@ import type { EveningCheck, Nap, Night } from '../../src/domain/types';
 import {
   createServiceClient,
   createSupabaseRepo,
+  rowToApiToken,
   rowToNight,
   type NightRow,
 } from '../../src/server/repo-supabase';
@@ -90,9 +91,16 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
     const insert = find('insert')[0];
     if (insert) {
       const values = ([] as Row[]).concat(insert.args[0] as Row | Row[]);
-      const added = values.map((v) =>
-        call.table === 'questions_log' ? { id: rows.length + 1, ...v } : { ...v },
-      );
+      const added = values.map((v) => {
+        if (call.table === 'questions_log') return { id: rows.length + 1, ...v };
+        if (call.table === 'api_tokens') {
+          // Default della tabella: identity, active=true, created_at crescente (un minuto per riga), last_used_at nullo.
+          const id = rows.length + 1;
+          const created_at = new Date(Date.UTC(2026, 9, 24, 8, id)).toISOString();
+          return { id, active: true, created_at, last_used_at: null, ...v };
+        }
+        return { ...v };
+      });
       rows.push(...added);
       return { data: wantsSelect ? added.map((r) => ({ ...r })) : null, error: null };
     }
@@ -440,6 +448,103 @@ describe('createSupabaseRepo: token', () => {
     await expect(createSupabaseRepo(client, fixedNow).tokenExists('h-ok')).rejects.toThrow(
       'Supabase: verifica token non riuscita',
     );
+  });
+});
+
+describe('createSupabaseRepo: gestione token', () => {
+  const stored = () => [
+    { id: 1, token_hash: 'h-1', label: 'vecchio', active: false, created_at: '2026-10-20T08:00:00+00:00', last_used_at: '2026-10-21T07:00:00+00:00' },
+    { id: 2, token_hash: 'h-2', label: 'iPhone', active: true, created_at: '2026-10-22T08:00:00+00:00', last_used_at: null },
+  ];
+
+  it('createToken salva l\'hash, trimma l\'etichetta e restituisce i metadati senza hash', async () => {
+    const { client, db } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    const info = await repo.createToken({ tokenHash: 'hash-segreto', label: '  iPhone  ' });
+    expect(info).toEqual({
+      id: 1,
+      label: 'iPhone',
+      active: true,
+      createdAt: '2026-10-24T08:01:00.000Z',
+      lastUsedAt: null,
+    });
+    expect(JSON.stringify(info)).not.toContain('hash-segreto');
+    expect(db.api_tokens).toHaveLength(1);
+    expect(db.api_tokens![0]).toMatchObject({ token_hash: 'hash-segreto', label: 'iPhone', active: true });
+  });
+
+  it('createToken: etichetta vuota, solo spazi o oltre 40 caratteri → Error senza toccare il DB', async () => {
+    const { client, db, calls } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    for (const label of ['', '   ', 'x'.repeat(41)]) {
+      await expect(repo.createToken({ tokenHash: 'h', label })).rejects.toThrow('Etichetta non valida.');
+    }
+    await expect(repo.createToken({ tokenHash: 'h', label: 'x'.repeat(40) })).resolves.toMatchObject({ label: 'x'.repeat(40) });
+    expect(db.api_tokens).toHaveLength(1);
+    expect(calls).toHaveLength(1);
+  });
+
+  it('createToken: errore del DB → Error breve senza hash né etichetta', async () => {
+    const { client } = fakeClient({}, { failWhen: () => ({ code: '23505', message: 'duplicate key h-segreto' }) });
+    const err = await createSupabaseRepo(client, fixedNow)
+      .createToken({ tokenHash: 'h-segreto', label: 'iPhone' })
+      .catch((e: Error) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).toBe('Supabase: creazione token non riuscita (23505)');
+    expect((err as Error).message).not.toContain('h-segreto');
+  });
+
+  it('listTokens: dal più recente, attivi e revocati, mai l\'hash', async () => {
+    const { client, calls } = fakeClient({ api_tokens: stored() });
+    const list = await createSupabaseRepo(client, fixedNow).listTokens();
+    expect(list).toEqual([
+      { id: 2, label: 'iPhone', active: true, createdAt: '2026-10-22T08:00:00.000Z', lastUsedAt: null },
+      { id: 1, label: 'vecchio', active: false, createdAt: '2026-10-20T08:00:00.000Z', lastUsedAt: '2026-10-21T07:00:00.000Z' },
+    ]);
+    expect(JSON.stringify(list)).not.toMatch(/h-1|h-2|token_hash|tokenHash/);
+    const select = calls[0]!.ops.find((o) => o.method === 'select')!;
+    expect(String(select.args[0])).not.toContain('token_hash');
+    expect(calls[0]!.ops.filter((o) => o.method === 'order')[0]!.args).toEqual(['created_at', { ascending: false }]);
+  });
+
+  it('listTokens: errore del DB e riga non valida', async () => {
+    const failing = fakeClient({}, { failWhen: () => ({ message: 'boom' }) });
+    await expect(createSupabaseRepo(failing.client, fixedNow).listTokens()).rejects.toThrow('Supabase: lettura token non riuscita');
+    const bad = fakeClient({ api_tokens: [{ id: 1, token_hash: 'h', label: 'x', active: true, created_at: 'ieri', last_used_at: null }] });
+    await expect(createSupabaseRepo(bad.client, fixedNow).listTokens()).rejects.toThrow('Dato non valido letto da api_tokens');
+  });
+
+  it('revokeToken imposta active=false (anche se già revocato), false se non esiste o id non valido', async () => {
+    const { client, db, calls } = fakeClient({ api_tokens: stored() });
+    const repo = createSupabaseRepo(client, fixedNow);
+    expect(await repo.revokeToken(2)).toBe(true);
+    expect(db.api_tokens![1]!.active).toBe(false);
+    expect(await repo.revokeToken(1)).toBe(true);
+    expect(await repo.revokeToken(99)).toBe(false);
+    const before = calls.length;
+    for (const bad of [0, -1, 1.5, Number.NaN]) expect(await repo.revokeToken(bad)).toBe(false);
+    expect(calls).toHaveLength(before);
+    await expect(
+      createSupabaseRepo(fakeClient({ api_tokens: stored() }, { failWhen: () => ({ message: 'x' }) }).client, fixedNow).revokeToken(1),
+    ).rejects.toThrow('Supabase: revoca token non riuscita');
+  });
+
+  it('un token revocato non autentica più (tokenExists) e non aggiorna last_used_at', async () => {
+    const { client, db } = fakeClient({ api_tokens: stored() });
+    const repo = createSupabaseRepo(client, fixedNow);
+    expect(await repo.tokenExists('h-2')).toBe(true);
+    await repo.revokeToken(2);
+    expect(await repo.tokenExists('h-2')).toBe(false);
+    expect(await repo.tokenExists('h-1')).toBe(false);
+    expect(db.api_tokens![1]!.last_used_at).toBe(NOW.toISOString());
+    expect(db.api_tokens![0]!.last_used_at).toBe('2026-10-21T07:00:00+00:00');
+  });
+
+  it('rowToApiToken accetta id numerici come stringa e rifiuta id o etichette non valide', () => {
+    const row = { id: '7', label: 'iPhone', active: true, created_at: '2026-10-24T08:00:00+00:00', last_used_at: null };
+    expect(rowToApiToken(row).id).toBe(7);
+    expect(() => rowToApiToken({ ...row, id: 'x' })).toThrow('Dato non valido');
+    expect(() => rowToApiToken({ ...row, label: 3 as unknown as string })).toThrow('Dato non valido');
   });
 });
 

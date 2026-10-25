@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Night } from '@/domain/types';
 
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
+vi.mock('@/lib/auth-server', () => ({ isAuthorized: vi.fn() }));
+vi.mock('@/lib/auth', () => ({ getPepper: vi.fn() }));
 vi.mock('@/server/repo-factory', () => ({ getRepo: vi.fn() }));
 vi.mock('@/server/mutations', () => ({
   confirmNight: vi.fn(),
@@ -12,24 +14,34 @@ vi.mock('@/server/mutations', () => ({
   saveEveningCheckFromUi: vi.fn(),
   recordQuestion: vi.fn(),
   napFromUi: vi.fn(),
+  createApiToken: vi.fn(),
+  revokeApiToken: vi.fn(),
 }));
 
 import { revalidatePath } from 'next/cache';
 
 import {
   actionConfirmNight,
+  actionCreateApiToken,
   actionNap,
   actionRateNight,
   actionRecordQuestion,
+  actionRevokeApiToken,
   actionSaveEveningCheck,
   actionSetExceptions,
   actionUndoConfirmNight,
 } from '@/app/actions';
+import { getPepper } from '@/lib/auth';
+import { isAuthorized } from '@/lib/auth-server';
 import * as mutations from '@/server/mutations';
 import { getRepo } from '@/server/repo-factory';
 
 const fakeRepo = { fake: true };
 const INVALID = { ok: false, error: 'Dati non validi.' };
+const UNAUTHORIZED = { ok: false, error: 'Accesso richiesto.' };
+const PEPPER = 'pepper-di-prova-abbastanza-lungo';
+const TOKEN = 'st_' + 'A'.repeat(43);
+const tokenInfo = { id: 3, label: 'iPhone', active: true, createdAt: '2026-10-25T08:00:00.000Z', lastUsedAt: null };
 
 const night: Night = {
   nightDate: '2026-10-25',
@@ -137,14 +149,53 @@ const cases: Case[] = [
       { date: '2026-10-25', kind: 'energy', answeredOrSkipped: 'si' },
     ],
   },
+  {
+    name: 'actionCreateApiToken',
+    action: actionCreateApiToken,
+    mutation: vi.mocked(mutations.createApiToken),
+    valid: { label: '  iPhone  ' },
+    expectedArgs: [{ label: 'iPhone' }, PEPPER],
+    success: { token: TOKEN, info: tokenInfo },
+    expectedValue: { token: TOKEN, info: tokenInfo },
+    invalid: [
+      null,
+      {},
+      { label: '' },
+      { label: '   ' },
+      { label: 'x'.repeat(41) },
+      { label: 5 },
+      { label: 'iPhone', extra: 1 },
+    ],
+  },
+  {
+    name: 'actionRevokeApiToken',
+    action: actionRevokeApiToken,
+    mutation: vi.mocked(mutations.revokeApiToken),
+    valid: { id: 3 },
+    expectedArgs: [3],
+    success: undefined,
+    invalid: [null, {}, { id: 0 }, { id: -2 }, { id: 1.5 }, { id: '3' }, { id: 3, extra: 1 }],
+  },
 ];
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(isAuthorized).mockResolvedValue(true);
+  vi.mocked(getPepper).mockResolvedValue(PEPPER);
   vi.mocked(getRepo).mockReturnValue(fakeRepo as never);
 });
 
 describe.each(cases)('$name', (c) => {
+  it('non autorizzato: "Accesso richiesto." senza toccare repo, mutation né cache', async () => {
+    vi.mocked(isAuthorized).mockResolvedValue(false);
+    for (const input of [c.valid, ...c.invalid]) {
+      expect(await c.action(input)).toEqual(UNAUTHORIZED);
+    }
+    expect(getRepo).not.toHaveBeenCalled();
+    expect(c.mutation).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
   it('input invalido: "Dati non validi." senza chiamare la mutation', async () => {
     for (const bad of c.invalid) {
       expect(await c.action(bad)).toEqual(INVALID);
@@ -211,6 +262,15 @@ describe('actionUndoConfirmNight con previous null', () => {
 });
 
 describe('actionNap', () => {
+  it('non autorizzato: "Accesso richiesto." senza toccare repo, mutation né cache', async () => {
+    vi.mocked(isAuthorized).mockResolvedValue(false);
+    expect(await actionNap({ action: 'start' })).toEqual(UNAUTHORIZED);
+    expect(await actionNap({})).toEqual(UNAUTHORIZED);
+    expect(getRepo).not.toHaveBeenCalled();
+    expect(mutations.napFromUi).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
   it('input invalido: "Dati non validi."', async () => {
     for (const bad of [{}, { action: 'pause' }, { action: 'start', extra: 1 }, null]) {
       expect(await actionNap(bad)).toEqual(INVALID);
@@ -249,5 +309,43 @@ describe('actionNap', () => {
       throw new Error('x');
     });
     expect(await actionNap({ action: 'start' })).toEqual({ ok: false, error: 'Servizio non configurato.' });
+  });
+});
+
+describe('actionCreateApiToken', () => {
+  it('senza pepper: "Accesso non configurato." e nessun token creato', async () => {
+    vi.mocked(getPepper).mockResolvedValue(null);
+    const res = await actionCreateApiToken({ label: 'iPhone' });
+    expect(res).toEqual({ ok: false, error: 'Accesso non configurato.' });
+    expect(mutations.createApiToken).not.toHaveBeenCalled();
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('il token in chiaro esce solo dalla creazione e la risposta non rivela il pepper', async () => {
+    vi.mocked(mutations.createApiToken).mockResolvedValue({ ok: true, value: { token: TOKEN, info: tokenInfo } });
+    const res = await actionCreateApiToken({ label: 'iPhone' });
+    expect(res).toEqual({ ok: true, value: { token: TOKEN, info: tokenInfo } });
+    expect(JSON.stringify(res)).not.toContain(PEPPER);
+
+    vi.mocked(mutations.revokeApiToken).mockResolvedValue({ ok: true, value: undefined });
+    const revoked = await actionRevokeApiToken({ id: 3 });
+    expect(revoked).toEqual({ ok: true });
+    expect(JSON.stringify(revoked)).not.toContain('st_');
+  });
+
+  it('errore calmo per troppi token attivi', async () => {
+    vi.mocked(mutations.createApiToken).mockResolvedValue({ ok: false, error: 'Hai già troppi token attivi. Revocane uno.' });
+    expect(await actionCreateApiToken({ label: 'iPhone' })).toEqual({
+      ok: false,
+      error: 'Hai già troppi token attivi. Revocane uno.',
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('getPepper che lancia diventa un errore generico senza dettagli', async () => {
+    vi.mocked(getPepper).mockRejectedValue(new Error('segreto-interno'));
+    const res = await actionCreateApiToken({ label: 'iPhone' });
+    expect(res).toEqual({ ok: false, error: 'Operazione non riuscita.' });
+    expect(JSON.stringify(res)).not.toContain('segreto');
   });
 });

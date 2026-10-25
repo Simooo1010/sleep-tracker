@@ -5,11 +5,11 @@ import styles from './FloatingNav.module.css';
 /**
  * FloatingNav: navigazione principale (docs/design/system/components/FloatingNav).
  * Telefono: pillola flottante `navpill` con cinque voci. PC (da 60rem): barra laterale `side`
- * di 240px con sei voci, riepilogo di oggi e interruttore del tema. Il CSS mostra l'una o l'altra.
+ * di 240px con sette voci, riepilogo di oggi e interruttore del tema. Il CSS mostra l'una o l'altra.
  * Il percorso attivo arriva come prop: nessun hook di routing qui dentro.
  */
 
-export type NavKey = 'notte' | 'regolarita' | 'grafici' | 'storico' | 'sera' | 'segnali';
+export type NavKey = 'notte' | 'regolarita' | 'grafici' | 'storico' | 'sera' | 'segnali' | 'impostazioni';
 
 export interface NavItem {
   key: NavKey;
@@ -17,7 +17,7 @@ export interface NavItem {
   href: string;
   /** Tracciato SVG su griglia 24px, tratto 1.6px. */
   icon: string;
-  /** Solo su PC: su telefono Segnali si apre da un pulsante in alto. */
+  /** Solo su PC: su telefono Segnali e Impostazioni si aprono da pulsanti in alto. */
   desktopOnly?: boolean;
 }
 
@@ -32,6 +32,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
     label: 'Segnali',
     href: '/segnali',
     icon: 'M4 9a12 12 0 0 1 16 0M7 12.5a8 8 0 0 1 10 0M10 16a4 4 0 0 1 4 0M12 19.5v.01',
+    desktopOnly: true,
+  },
+  {
+    key: 'impostazioni',
+    label: 'Impostazioni',
+    href: '/impostazioni',
+    icon: 'M4 7h10M18 7h2M4 17h2M10 17h10M16 4v6M8 14v6',
     desktopOnly: true,
   },
 ];

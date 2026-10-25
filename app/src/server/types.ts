@@ -62,6 +62,26 @@ export interface Repo {
   listQuestions(fromDate: string, toDate: string): Promise<QuestionLogRow[]>;
   /** Impostazione chiave/valore (es. 'target_sleep_minutes'); null se assente. */
   getSetting<T = unknown>(key: string): Promise<T | null>;
+
+  // --- Token API dei Comandi (gestiti dalla pagina Impostazioni) ---
+  /**
+   * Salva l'hash di un nuovo token (attivo). `label`: 1–40 caratteri dopo il trim, altrimenti Error('Etichetta non valida.').
+   * Restituisce i metadati, mai l'hash.
+   */
+  createToken(input: { tokenHash: string; label: string }): Promise<ApiTokenInfo>;
+  /** Tutti i token (attivi e revocati), dal più recente. MAI l'hash. */
+  listTokens(): Promise<ApiTokenInfo[]>;
+  /** Imposta active=false; false se il token non esiste. */
+  revokeToken(id: number): Promise<boolean>;
+}
+
+/** Metadati di un token API: l'hash non esce mai dal repo. */
+export interface ApiTokenInfo {
+  id: number;
+  label: string;
+  active: boolean;
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 export interface ExceptionTypeRow {

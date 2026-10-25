@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { EveningCheck, Nap, Night } from '../../src/domain/types';
 import { MemoryRepo } from '../../src/server/memory-repo';
 import type { QuestionLogRow } from '../../src/server/types';
+import { hashToken } from '../../src/server/token';
 
 const MISSING = { value: null, provenance: 'mancante' } as const;
 
@@ -284,5 +285,81 @@ describe('MemoryRepo.getSetting', () => {
     const got = await repo.getSetting<{ a: number[] }>('custom');
     got!.a.push(9);
     expect(await repo.getSetting('custom')).toEqual({ a: [1, 2] });
+  });
+});
+
+describe('MemoryRepo: gestione token', () => {
+  let tick = 0;
+  const clock = () => new Date(Date.UTC(2026, 9, 24, 8, tick++));
+
+  it('createToken: trimma l\'etichetta, restituisce i metadati senza hash e autentica', async () => {
+    const repo = new MemoryRepo({ now: clock });
+    const info = await repo.createToken({ tokenHash: 'h-1', label: '  iPhone ' });
+    expect(info).toEqual({ id: 1, label: 'iPhone', active: true, createdAt: '2026-10-24T08:00:00.000Z', lastUsedAt: null });
+    expect(JSON.stringify(info)).not.toContain('h-1');
+    expect(await repo.tokenExists('h-1')).toBe(true);
+    expect(repo.tokenHashes).toEqual(['h-1']);
+  });
+
+  it('createToken: etichetta non valida → Error; hash duplicato → Error', async () => {
+    const repo = new MemoryRepo();
+    for (const label of ['', '  ', 'x'.repeat(41)]) {
+      await expect(repo.createToken({ tokenHash: 'h', label })).rejects.toThrow('Etichetta non valida.');
+    }
+    await repo.createToken({ tokenHash: 'h', label: 'x'.repeat(40) });
+    await expect(repo.createToken({ tokenHash: 'h', label: 'altro' })).rejects.toThrow();
+    expect(await repo.listTokens()).toHaveLength(1);
+  });
+
+  it('listTokens: dal più recente, con attivi e revocati, senza hash', async () => {
+    tick = 0;
+    const repo = new MemoryRepo({ now: clock });
+    const a = await repo.createToken({ tokenHash: 'h-a', label: 'A' });
+    const b = await repo.createToken({ tokenHash: 'h-b', label: 'B' });
+    await repo.revokeToken(a.id);
+    const list = await repo.listTokens();
+    expect(list.map((t) => [t.label, t.active])).toEqual([
+      ['B', true],
+      ['A', false],
+    ]);
+    expect(list[0]!.id).toBe(b.id);
+    expect(JSON.stringify(list)).not.toMatch(/h-a|h-b|hash/i);
+  });
+
+  it('listTokens restituisce copie: modificarle non cambia lo stato', async () => {
+    const repo = new MemoryRepo();
+    await repo.createToken({ tokenHash: 'h', label: 'iPhone' });
+    (await repo.listTokens())[0]!.active = false;
+    expect((await repo.listTokens())[0]!.active).toBe(true);
+  });
+
+  it('revokeToken: true se esiste (anche se già revocato), false altrimenti; il token revocato non autentica', async () => {
+    const repo = new MemoryRepo();
+    const info = await repo.createToken({ tokenHash: 'h', label: 'iPhone' });
+    expect(await repo.revokeToken(info.id)).toBe(true);
+    expect(await repo.revokeToken(info.id)).toBe(true);
+    expect(await repo.revokeToken(999)).toBe(false);
+    expect(await repo.tokenExists('h')).toBe(false);
+    expect((await repo.listTokens())[0]).toMatchObject({ active: false });
+  });
+
+  it('tokenExists ignora i revocati, non aggiorna lastUsedAt e lo imposta per gli attivi', async () => {
+    tick = 0;
+    const repo = new MemoryRepo({ now: clock });
+    const live = await repo.createToken({ tokenHash: 'h-live', label: 'live' });
+    const dead = await repo.createToken({ tokenHash: 'h-dead', label: 'dead' });
+    await repo.revokeToken(dead.id);
+    expect(await repo.tokenExists('h-dead')).toBe(false);
+    expect(await repo.tokenExists('nessuno')).toBe(false);
+    expect(await repo.tokenExists('h-live')).toBe(true);
+    const list = await repo.listTokens();
+    expect(list.find((t) => t.id === live.id)!.lastUsedAt).not.toBeNull();
+    expect(list.find((t) => t.id === dead.id)!.lastUsedAt).toBeNull();
+  });
+
+  it('i token del seed (solo hash) sono attivi e compaiono nell\'elenco con etichetta di default', async () => {
+    const repo = new MemoryRepo({ tokenHashes: [hashToken('st_x', 'pepper-lungo-abbastanza')] });
+    expect(await repo.tokenExists(hashToken('st_x', 'pepper-lungo-abbastanza'))).toBe(true);
+    expect(await repo.listTokens()).toHaveLength(1);
   });
 });

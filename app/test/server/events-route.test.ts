@@ -10,6 +10,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { derivePepper } from '../../src/lib/auth';
 import type { MemoryRepo } from '../../src/server/memory-repo';
 import { generateToken, hashToken } from '../../src/server/token';
 
@@ -27,6 +28,7 @@ let token: string;
 /** Route e MemoryRepo nuovi: registry dei moduli azzerato e alias `@/` ri-mappati ogni volta. */
 async function load(): Promise<void> {
   vi.resetModules();
+  vi.doMock('@/lib/auth', () => import('../../src/lib/auth'));
   vi.doMock('@/server/events-schema', () => import('../../src/server/events-schema'));
   vi.doMock('@/server/ingest', () => import('../../src/server/ingest'));
   vi.doMock('@/server/repo-factory', () => import('../../src/server/repo-factory'));
@@ -74,6 +76,7 @@ beforeEach(async () => {
   vi.setSystemTime(NOW);
   vi.stubEnv('APP_DATA_MODE', 'memory');
   vi.stubEnv('INGEST_TOKEN_PEPPER', PEPPER);
+  vi.stubEnv('APP_LOGIN_PASSWORD', undefined);
   vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', undefined);
   vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', undefined);
   await load();
@@ -149,6 +152,43 @@ describe('POST /api/events — autenticazione', () => {
     expect(r.status).toBe(503);
     expectSafe(r);
     expect(r.text).not.toContain('corto');
+  });
+
+  describe('pepper derivato dalla password di accesso', () => {
+    const PASSWORD = 'password-di-accesso-di-prova-1234';
+
+    it('senza INGEST_TOKEN_PEPPER usa il pepper derivato: token creato con quel pepper → 200', async () => {
+      vi.stubEnv('INGEST_TOKEN_PEPPER', undefined);
+      vi.stubEnv('APP_LOGIN_PASSWORD', PASSWORD);
+      const derived = await derivePepper(PASSWORD);
+      repo.addToken(hashToken(token, derived));
+      const r = await send({ type: 'wake', ts: '2026-10-24T05:30:00Z' });
+      expect(r.status).toBe(200);
+      expectSafe(r);
+      expect(r.text).not.toContain(derived);
+    });
+
+    it('pepper troppo corto + password → usa il derivato (token hashato con il pepper corto → 401)', async () => {
+      vi.stubEnv('INGEST_TOKEN_PEPPER', 'corto');
+      vi.stubEnv('APP_LOGIN_PASSWORD', PASSWORD);
+      const r = await send({ type: 'wake' });
+      expect(r.status).toBe(401);
+      expectSafe(r);
+    });
+
+    it('il pepper esplicito vince sul derivato', async () => {
+      vi.stubEnv('APP_LOGIN_PASSWORD', PASSWORD);
+      const r = await send({ type: 'wake', ts: '2026-10-24T05:30:00Z' });
+      expect(r.status).toBe(200);
+    });
+
+    it('password troppo corta e nessun pepper → 503', async () => {
+      vi.stubEnv('INGEST_TOKEN_PEPPER', undefined);
+      vi.stubEnv('APP_LOGIN_PASSWORD', 'breve');
+      const r = await send({ type: 'wake' });
+      expect(r.status).toBe(503);
+      expectSafe(r);
+    });
   });
 
   it('pepper diverso da quello usato per l’hash → 401', async () => {

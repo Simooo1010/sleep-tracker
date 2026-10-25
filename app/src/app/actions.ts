@@ -2,7 +2,7 @@
 
 /**
  * Server Actions della UI: wrapper sottili sulle mutation di `@/server/mutations`.
- * Ogni azione valida l'input (`unknown`) con Zod, ottiene il repo, chiama la mutation e,
+ * Ogni azione verifica prima la sessione (`isAuthorized`), poi valida l'input (`unknown`) con Zod, ottiene il repo, chiama la mutation e,
  * solo in caso di successo, invalida la cache. L'output è sempre JSON-serializzabile
  * (mai Error, mai Date) e gli errori non riportano mai l'input ricevuto.
  * Regola Next per 'use server': si esportano solo funzioni async (e tipi).
@@ -11,24 +11,30 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
 import type { Night } from '@/domain/types';
+import { getPepper } from '@/lib/auth';
+import { isAuthorized } from '@/lib/auth-server';
 import { getRepo } from '@/server/repo-factory';
 import {
   confirmNight,
+  createApiToken,
   napFromUi,
   rateNight,
   recordQuestion,
+  revokeApiToken,
   saveEveningCheckFromUi,
   setExceptions,
   undoConfirmNight,
   type MutationResult,
 } from '@/server/mutations';
-import type { Repo } from '@/server/types';
+import type { ApiTokenInfo, Repo } from '@/server/types';
 
 export type ActionResult<T = undefined> = { ok: true; value?: T } | { ok: false; error: string };
 
 const INVALID = 'Dati non validi.';
 const NOT_CONFIGURED = 'Servizio non configurato.';
 const FAILED = 'Operazione non riuscita.';
+const UNAUTHORIZED = 'Accesso richiesto.';
+const ACCESS_NOT_CONFIGURED = 'Accesso non configurato.';
 
 // --- Schemi ---------------------------------------------------------------------------------
 
@@ -90,6 +96,10 @@ const questionSchema = z.strictObject({
 
 const napSchema = z.strictObject({ action: z.enum(['start', 'stop']) });
 
+const createTokenSchema = z.strictObject({ label: z.string().trim().min(1).max(40) });
+
+const revokeTokenSchema = z.strictObject({ id: z.int().positive() });
+
 // --- Esecuzione comune ----------------------------------------------------------------------
 
 /** Rimuove le chiavi `undefined` (exactOptionalPropertyTypes-safe e payload più pulito). */
@@ -102,6 +112,9 @@ async function run<S extends z.ZodType, V>(
   input: unknown,
   mutate: (repo: Repo, data: z.output<S>) => Promise<MutationResult<V>>,
 ): Promise<ActionResult<V>> {
+  // Difesa in profondità (il proxy filtra già): ogni azione passa da qui e rilegge la sessione per prima cosa.
+  if (!(await isAuthorized())) return { ok: false, error: UNAUTHORIZED };
+
   const parsed = schema.safeParse(input);
   if (!parsed.success) return { ok: false, error: INVALID };
 
@@ -154,4 +167,22 @@ export async function actionRecordQuestion(input: unknown): Promise<ActionResult
 
 export async function actionNap(input: unknown): Promise<ActionResult<{ nightDate: string | null }>> {
   return run(napSchema, input, (repo, d) => napFromUi(repo, d.action, new Date()));
+}
+
+/**
+ * Crea un token per i Comandi. È l'UNICA azione che restituisce il token in chiaro (una volta sola):
+ * nel repo finisce solo l'hash calcolato con il pepper (`getPepper`).
+ */
+export async function actionCreateApiToken(
+  input: unknown,
+): Promise<ActionResult<{ token: string; info: ApiTokenInfo }>> {
+  return run(createTokenSchema, input, async (repo, d) => {
+    const pepper = await getPepper(process.env);
+    if (pepper === null) return { ok: false, error: ACCESS_NOT_CONFIGURED };
+    return createApiToken(repo, d, pepper);
+  });
+}
+
+export async function actionRevokeApiToken(input: unknown): Promise<ActionResult> {
+  return run(revokeTokenSchema, input, (repo, d) => revokeApiToken(repo, d.id));
 }

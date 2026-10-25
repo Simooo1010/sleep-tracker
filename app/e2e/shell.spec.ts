@@ -18,8 +18,9 @@ test('telefono: pillola visibile, barra laterale no; PC il contrario', async ({ 
     await expect(side).toBeHidden();
     await expect(navs).toHaveCount(1); // la barra nascosta non è esposta ai lettori di schermo
     await expect(pill.getByRole('link')).toHaveCount(5);
-    // Segnali: pulsante nella riga in alto, titolo della sezione.
+    // Segnali e Impostazioni: pulsanti nella riga in alto, titolo della sezione.
     await expect(page.getByRole('link', { name: 'Segnali' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Impostazioni' })).toBeVisible();
     await expect(page.getByText('Notte', { exact: true }).first()).toBeVisible();
     // La pillola sta staccata dai bordi (14px laterali) e in fondo.
     const box = await pill.boundingBox();
@@ -30,7 +31,7 @@ test('telefono: pillola visibile, barra laterale no; PC il contrario', async ({ 
     await expect(side).toBeVisible();
     await expect(pill).toBeHidden();
     await expect(navs).toHaveCount(1);
-    await expect(side.getByRole('link')).toHaveCount(6);
+    await expect(side.getByRole('link')).toHaveCount(7);
     const sideBox = await side.boundingBox();
     expect(sideBox!.width).toBeGreaterThanOrEqual(239);
     expect(sideBox!.width).toBeLessThanOrEqual(241);

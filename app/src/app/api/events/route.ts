@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { getPepper } from '@/lib/auth';
 import { parseIncomingEvent } from '@/server/events-schema';
 import { ingestEvent } from '@/server/ingest';
 import { getRepo } from '@/server/repo-factory';
@@ -14,7 +15,6 @@ const json = (status: number, body: Record<string, unknown>) =>
 
 /** Endpoint dei Comandi iOS: POST /api/events con `Authorization: Bearer st_…`. */
 export async function POST(request: Request): Promise<Response> {
-  const pepper = process.env.INGEST_TOKEN_PEPPER ?? '';
   let repo;
   try {
     repo = getRepo();
@@ -24,6 +24,9 @@ export async function POST(request: Request): Promise<Response> {
 
   let authorized: boolean;
   try {
+    // Pepper esplicito (INGEST_TOKEN_PEPPER) oppure derivato dalla password di accesso; nessuno dei due → 503.
+    const pepper = await getPepper(process.env);
+    if (pepper === null) return json(503, { ok: false, error: 'Servizio non configurato.' });
     authorized = await authenticate(request.headers.get('authorization'), pepper, (hash) =>
       repo.tokenExists(hash),
     );
