@@ -216,35 +216,38 @@ export function NightBars(props: NightBarsProps) {
         </li>
       </ul>
 
-      <table className={styles.srOnly}>
-        <caption>{title}: orari e scarti dalla mediana per notte</caption>
-        <thead>
-          <tr>
-            <th scope="col">Notte</th>
-            <th scope="col">Orari</th>
-            <th scope="col">Provenienza</th>
-            <th scope="col">Scarto letto</th>
-            <th scope="col">Scarto sveglia</th>
-            <th scope="col">Esito</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nights.map((n, i) => {
-            const span = n.provenance === 'mancante' ? null : nightSpan(n.bedMin, n.wakeMin);
-            const missing = span === null;
-            return (
-              <tr key={`${n.label}-${i}`}>
-                <th scope="row">{n.fullLabel ?? n.label}</th>
-                <td>{missing ? 'Mancante' : `${formatBedClock(n.bedMin)} → ${formatClock(n.wakeMin)}`}</td>
-                <td>{missing ? 'Mancante' : PROVENIENZA_NOTTE[n.provenance]}</td>
-                <td>{missing ? 'Mancante' : (formatSigned(n.bedDevMin) ?? 'Mancante')}</td>
-                <td>{missing ? 'Mancante' : (formatSigned(n.wakeDevMin) ?? 'Mancante')}</td>
-                <td>{missing ? 'Mancante' : VERDICT_WORD[nightVerdict(n, tol)]}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* Il wrapper (non la tabella) è nascosto: una <table> con white-space nowrap sborda lo stesso e allarga la pagina. */}
+      <div className={styles.srOnly}>
+        <table>
+          <caption>{title}: orari e scarti dalla mediana per notte</caption>
+          <thead>
+            <tr>
+              <th scope="col">Notte</th>
+              <th scope="col">Orari</th>
+              <th scope="col">Provenienza</th>
+              <th scope="col">Scarto letto</th>
+              <th scope="col">Scarto sveglia</th>
+              <th scope="col">Esito</th>
+            </tr>
+          </thead>
+          <tbody>
+            {nights.map((n, i) => {
+              const span = n.provenance === 'mancante' ? null : nightSpan(n.bedMin, n.wakeMin);
+              const missing = span === null;
+              return (
+                <tr key={`${n.label}-${i}`}>
+                  <th scope="row">{n.fullLabel ?? n.label}</th>
+                  <td>{missing ? 'Mancante' : `${formatBedClock(n.bedMin)} → ${formatClock(n.wakeMin)}`}</td>
+                  <td>{missing ? 'Mancante' : PROVENIENZA_NOTTE[n.provenance]}</td>
+                  <td>{missing ? 'Mancante' : (formatSigned(n.bedDevMin) ?? 'Mancante')}</td>
+                  <td>{missing ? 'Mancante' : (formatSigned(n.wakeDevMin) ?? 'Mancante')}</td>
+                  <td>{missing ? 'Mancante' : VERDICT_WORD[nightVerdict(n, tol)]}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

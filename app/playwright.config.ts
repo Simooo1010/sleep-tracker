@@ -38,6 +38,10 @@ export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
   fullyParallel: true,
+  // Un solo worker: il repo in memoria è un singleton del server di sviluppo e i test che scrivono (Conferma,
+  // Correggi orari, Segna...) lo modificano per qualche istante prima di ripristinarlo. Con più worker un altro
+  // test leggerebbe la notte a metà (es. "Stimata" già "Confermata") e fallirebbe a caso.
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['list'], ['html', { open: 'never' }]] : 'list',

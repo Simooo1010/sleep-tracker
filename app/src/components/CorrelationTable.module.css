@@ -9,6 +9,9 @@
 }
 
 .scroll {
+  /* Contenitore di posizionamento: i testi `.srOnly` (position: absolute) restano dentro l'area che scorre,
+     altrimenti, non essendo ritagliati da `overflow`, allargano la pagina oltre lo schermo. */
+  position: relative;
   overflow-x: auto;
   border-radius: var(--radius-sm);
 }

@@ -91,3 +91,62 @@ test('nessuno scorrimento orizzontale, anche con ogni sezione aperta', async ({ 
     }
   }
 });
+
+// Confronto tra notti (NightBars) su telefono molto stretto: iPhone SE a 320×640. Il viewport si fissa alla
+// creazione del contesto, così l'emulazione mobile allarga il layout viewport se il contenuto sborda.
+test.describe('320 px', () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  test('telefono: "Confronto tra notti" sta in 320 px, senza scroll e con le ore dell’asse leggibili', async ({ page }, testInfo) => {
+    test.skip(!isPhone(testInfo.project.name), 'solo telefono');
+    await page.goto('/regolarita');
+    await page.getByRole('button', { name: /Confronto tra notti/ }).click();
+
+    const chart = page.getByRole('img', { name: /^Ultime 14 notti e stanotte: 15 notti/ });
+    await expect(chart).toBeVisible();
+
+    const o = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      inner: window.innerWidth,
+    }));
+    expect(o.inner).toBe(320);
+    expect(o.scroll).toBeLessThanOrEqual(320);
+
+    // Nulla esce dalla scheda: righe, scarti e badge sono tutti dentro la figura (nessun contenuto tagliato).
+    const geometry = await chart.evaluate((grid) => {
+      const fig = grid.closest('figure')!.getBoundingClientRect();
+      const outside = Array.from(grid.querySelectorAll('*'))
+        .filter((el) => {
+          const b = el.getBoundingClientRect();
+          return b.width > 0 && (b.left < fig.left - 0.5 || b.right > fig.right + 0.5);
+        })
+        .map((el) => el.tagName);
+      // Ore dell'asse (aria-hidden): leggibili, cioè senza sovrapporsi tra loro.
+      const ticks = Array.from(grid.querySelectorAll('[aria-hidden="true"] > span')).filter((s) =>
+        /^\d\d$/.test(s.textContent ?? ''),
+      );
+      const boxes = ticks.map((t) => t.getBoundingClientRect());
+      const gaps = boxes.slice(1).map((b, i) => b.left - boxes[i]!.right);
+      return { outside, labels: ticks.map((t) => t.textContent), gaps };
+    });
+    expect(geometry.outside).toEqual([]);
+    expect(geometry.labels).toEqual(['21', '00', '03', '06', '09']);
+    for (const gap of geometry.gaps) expect(gap).toBeGreaterThanOrEqual(4);
+
+    // Le 14 notti più stanotte hanno tutte il loro esito a parole (la tabella accessibile resta completa).
+    await expect(page.getByRole('table', { name: /^Ultime 14 notti e stanotte/ })).toHaveCount(1);
+    await expect(chart.locator('.badge')).toHaveCount(15);
+  });
+
+  test('nessuno scorrimento orizzontale a 320 px, con ogni sezione aperta', async ({ page }, testInfo) => {
+    test.skip(!isPhone(testInfo.project.name), 'solo telefono');
+    await page.goto('/regolarita');
+    for (const title of ['Confronto tra notti', 'Cinque indicatori', 'Deriva del letto', 'Feriali e weekend']) {
+      await page.getByRole('button', { name: new RegExp(title) }).click();
+      const o = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, inner: window.innerWidth }));
+      expect(o.scroll, title).toBeLessThanOrEqual(320);
+      expect(o.inner, title).toBe(320);
+      await page.getByRole('button', { name: 'Indietro' }).click();
+    }
+  });
+});

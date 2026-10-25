@@ -131,28 +131,31 @@ export function DurationChart(props: DurationChartProps) {
         tratteggiato = stimata · punti = mancante
       </p>
 
-      <table className={styles.srOnly}>
-        <caption>{title}: durata per notte</caption>
-        <thead>
-          <tr>
-            <th scope="col">Notte</th>
-            <th scope="col">Durata</th>
-            <th scope="col">Provenienza</th>
-          </tr>
-        </thead>
-        <tbody>
-          {nights.map((n, i) => {
-            const missing = isMissingNight(n);
-            return (
-              <tr key={`${n.label}-${i}`}>
-                <th scope="row">{n.fullLabel ?? n.label}</th>
-                <td>{missing ? 'Mancante' : formatDuration(n.durationMin)}</td>
-                <td>{missing ? 'Mancante' : PROVENIENZA_NOTTE[n.provenance]}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+      {/* Il wrapper (non la tabella) è nascosto: una <table> con white-space nowrap sborda lo stesso e allarga la pagina. */}
+      <div className={styles.srOnly}>
+        <table>
+          <caption>{title}: durata per notte</caption>
+          <thead>
+            <tr>
+              <th scope="col">Notte</th>
+              <th scope="col">Durata</th>
+              <th scope="col">Provenienza</th>
+            </tr>
+          </thead>
+          <tbody>
+            {nights.map((n, i) => {
+              const missing = isMissingNight(n);
+              return (
+                <tr key={`${n.label}-${i}`}>
+                  <th scope="row">{n.fullLabel ?? n.label}</th>
+                  <td>{missing ? 'Mancante' : formatDuration(n.durationMin)}</td>
+                  <td>{missing ? 'Mancante' : PROVENIENZA_NOTTE[n.provenance]}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }

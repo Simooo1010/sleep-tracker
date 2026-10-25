@@ -86,6 +86,27 @@
   font-size: 0.6875rem;
 }
 
+/* Schermi molto stretti (iPhone SE 320px, Android 360px): la pista resta leggibile se si stringono padding,
+   colonna delle etichette, distanze e scarti; nessun dato viene tolto (scarti, badge e ore dell'asse restano). */
+@media (max-width: 23.75rem) {
+  .root {
+    padding: var(--space-4);
+  }
+
+  .grid {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    column-gap: var(--space-1);
+  }
+
+  .devs {
+    gap: var(--space-1);
+  }
+
+  .badge {
+    padding: 0 var(--space-1);
+  }
+}
+
 /* Provenienza automatica: solo contorno azzurro, nessun riempimento. */
 .auto.auto {
   background: transparent;

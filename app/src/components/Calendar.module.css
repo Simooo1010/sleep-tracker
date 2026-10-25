@@ -4,13 +4,21 @@
  * Solo variabili di tokens.css.
  */
 
-/* Su telefono il padding della scheda si riduce perché sette celle da 44px stiano in 390px. */
+/* Telefono: sette colonne da tap-min (44px) più distanze e padding stanno da 24rem (384px) in su.
+   Sotto (iPhone SE a 320px, Android a 360px) il padding laterale e la distanza si riducono al minimo e le
+   colonne si stringono (minmax(0, 1fr)): a 360px restano da 44px, a 320px da circa 38px (alte comunque 48px). */
 .root:global(.card) {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   min-width: 0;
-  padding: var(--space-4) var(--space-2);
+  padding: var(--space-4) var(--space-1);
+}
+
+@media (min-width: 24rem) {
+  .root:global(.card) {
+    padding: var(--space-4) var(--space-2);
+  }
 }
 
 @media (min-width: 40rem) {
@@ -50,8 +58,15 @@
 
 .row {
   display: grid;
-  grid-template-columns: repeat(7, minmax(var(--tap-min), 1fr));
-  gap: var(--space-1);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: calc(var(--space-1) / 2);
+}
+
+@media (min-width: 24rem) {
+  .row {
+    grid-template-columns: repeat(7, minmax(var(--tap-min), 1fr));
+    gap: var(--space-1);
+  }
 }
 
 .weekday {
@@ -68,7 +83,7 @@
 
 :global(.cell).day {
   width: 100%;
-  min-width: var(--tap-min);
+  min-width: 0;
   height: 3rem;
   padding: 0;
   flex-direction: column;
@@ -81,6 +96,12 @@
 .future {
   color: var(--ink-muted);
   background: transparent;
+}
+
+@media (min-width: 24rem) {
+  :global(.cell).day {
+    min-width: var(--tap-min);
+  }
 }
 
 /* Bordo di 2px ink come contorno esterno, per non coprire il tratteggio o i punti dello stato. */
