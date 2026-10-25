@@ -50,7 +50,7 @@ export function appliedTheme(): Theme {
   if (typeof document === 'undefined') return 'chiaro';
   const attr = document.documentElement.getAttribute('data-theme');
   if (isTheme(attr)) return attr;
-  let dark = false;
+  let dark: boolean;
   try {
     dark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
   } catch {
