@@ -1,26 +1,29 @@
 import { getNow } from '@/lib/clock';
-import { getRepo } from '@/server/repo-factory';
 import { loadEveningPage, type EveningPageData } from '@/server/pages/evening';
+import { getRepo } from '@/server/repo-factory';
 
 import { EveningScreen } from './EveningScreen';
-import styles from './EveningScreen.module.css';
+import styles from './page.module.css';
 
 // Legge dal repo a ogni richiesta e dipende dall'ora: mai prerenderizzata.
 export const dynamic = 'force-dynamic';
 
 const LOAD_ERROR_TEXT = 'Il check serale non si apre in questo momento. Riprova tra poco.';
 
-export default async function SeraPage() {
-  let data: EveningPageData | null = null;
+async function load(): Promise<EveningPageData | null> {
   try {
-    data = await loadEveningPage(getRepo(), getNow());
+    return await loadEveningPage(getRepo(), getNow());
   } catch {
-    data = null;
+    return null;
   }
+}
+
+export default async function SeraPage() {
+  const data = await load();
 
   return (
-    <div className={styles.page}>
-      <h1 className={`eyebrow ${styles.pageTitle}`}>Check serale</h1>
+    <>
+      <h1 className={`eyebrow ${styles.heading}`}>Check serale</h1>
       {data ? (
         <EveningScreen today={data.today} tonightNightDate={data.tonightNightDate} view={data.view} />
       ) : (
@@ -28,6 +31,6 @@ export default async function SeraPage() {
           {LOAD_ERROR_TEXT}
         </p>
       )}
-    </div>
+    </>
   );
 }
