@@ -205,6 +205,11 @@
     display: flex;
   }
 
+  /* Token a sinistra su due righe; a destra, una sopra l'altra, Aspetto e Sessione */
+  .wide {
+    grid-row: span 2;
+  }
+
   .back {
     display: none;
   }

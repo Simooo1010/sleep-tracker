@@ -2,6 +2,12 @@
  * Stili propri dell'app (layout). Usano solo le variabili di tokens.css; misure in rem.
  * tokens.css e bundle.css sono copie della sorgente in docs/design/: non modificarli qui.
  */
+/* Zone sicure dell'iPhone (isola/barra di stato in alto, indicatore home in basso); 0 dove non esistono. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 html {
   background: var(--ground);
 }

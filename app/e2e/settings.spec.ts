@@ -177,12 +177,14 @@ test('telefono: una sezione per volta con "Indietro"; PC: sezioni affiancate', a
   await page.goto('/impostazioni');
   const tokens = page.getByRole('heading', { level: 2, name: 'Token per i Comandi' });
   const session = page.getByRole('heading', { level: 2, name: 'Sessione' });
+  const appearance = page.getByRole('heading', { level: 2, name: 'Aspetto' });
 
   if (isPhone(testInfo.project.name)) {
     const rows = page.locator('main button.list-row:visible');
-    await expect(rows).toHaveCount(2);
+    await expect(rows).toHaveCount(3);
     await expect(tokens).toBeHidden();
     await expect(session).toBeHidden();
+    await expect(appearance).toBeHidden();
 
     await rows.filter({ hasText: 'Token per i Comandi' }).click();
     await expect(tokens).toBeVisible();
@@ -190,7 +192,7 @@ test('telefono: una sezione per volta con "Indietro"; PC: sezioni affiancate', a
     await expect(page.locator('main button.list-row:visible')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Indietro' }).click();
-    await expect(page.locator('main button.list-row:visible')).toHaveCount(2);
+    await expect(page.locator('main button.list-row:visible')).toHaveCount(3);
     await expect(tokens).toBeHidden();
 
     await rows.filter({ hasText: 'Sessione' }).click();
@@ -200,11 +202,16 @@ test('telefono: una sezione per volta con "Indietro"; PC: sezioni affiancate', a
     await expect(page.locator('main button.list-row:visible')).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Indietro' })).toHaveCount(0);
     const a = await tokens.boundingBox();
-    const b = await session.boundingBox();
+    const b = await appearance.boundingBox();
+    const c = await session.boundingBox();
     expect(a).not.toBeNull();
     expect(b).not.toBeNull();
+    expect(c).not.toBeNull();
+    // Aspetto sta accanto ai token (a destra), Sessione sotto Aspetto nella stessa colonna.
     expect(b!.x).toBeGreaterThan(a!.x + 100);
     expect(Math.abs(b!.y - a!.y)).toBeLessThan(4);
+    expect(Math.abs(c!.x - b!.x)).toBeLessThan(4);
+    expect(c!.y).toBeGreaterThan(b!.y);
   }
 });
 

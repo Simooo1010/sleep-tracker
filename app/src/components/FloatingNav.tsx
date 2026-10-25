@@ -5,7 +5,7 @@ import styles from './FloatingNav.module.css';
 /**
  * FloatingNav: navigazione principale (docs/design/system/components/FloatingNav).
  * Telefono: pillola flottante `navpill` con cinque voci. PC (da 60rem): barra laterale `side`
- * di 240px con sette voci, riepilogo di oggi e interruttore del tema. Il CSS mostra l'una o l'altra.
+ * di 240px con sette voci e riepilogo di oggi. Il CSS mostra l'una o l'altra.
  * Il percorso attivo arriva come prop: nessun hook di routing qui dentro.
  */
 
@@ -43,16 +43,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   },
 ];
 
-export type Theme = 'chiaro' | 'scuro';
-
 export interface FloatingNavProps {
   /** Percorso corrente (es. da usePathname nel genitore). */
   pathname: string;
   /** Righe del riepilogo di oggi nella barra laterale, es. "Sveglia 07:20 · Primo uso 08:52". */
   today?: readonly string[];
-  /** Tema in uso, mostrato a parole nell'interruttore. */
-  theme?: Theme;
-  onToggleTheme?: () => void;
   /** Chiamata al tocco di una voce: permette di evidenziarla subito, prima che la pagina arrivi. */
   onNavigate?: (href: string) => void;
 }
@@ -77,10 +72,9 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTheme, onNavigate }: FloatingNavProps) {
+export function FloatingNav({ pathname, today = [], onNavigate }: FloatingNavProps) {
   const phoneItems = NAV_ITEMS.filter((item) => !item.desktopOnly);
   const lines = today.filter((line) => line.trim().length > 0);
-  const other: Theme = theme === 'scuro' ? 'chiaro' : 'scuro';
 
   return (
     <>
@@ -135,14 +129,6 @@ export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTh
                 <span className={`body-sm ${styles.todayLine}`}>Ancora nessun segnale.</span>
               )}
             </section>
-            <button
-              type="button"
-              className={`btn btn-secondary ${styles.theme}`}
-              aria-label={`Tema ${theme}, passa al tema ${other}`}
-              onClick={onToggleTheme}
-            >
-              Tema {theme}
-            </button>
           </div>
         </nav>
       </div>

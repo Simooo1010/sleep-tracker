@@ -23,7 +23,7 @@ export default async function ImpostazioniPage() {
     <div className={styles.page}>
       <header className={styles.header}>
         <h1 className="serif display-md">Impostazioni</h1>
-        <p className="body muted">Qui gestisci l&apos;accesso dei Comandi dell&apos;iPhone e la sessione.</p>
+        <p className="body muted">Qui gestisci l&apos;accesso dei Comandi dell&apos;iPhone, l&apos;aspetto e la sessione.</p>
       </header>
 
       {data ? (

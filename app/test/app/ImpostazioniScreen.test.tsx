@@ -73,12 +73,13 @@ describe('ImpostazioniScreen (markup)', () => {
     expect(form![0]).not.toContain('btn-primary');
   });
 
-  it('telefono: due voci ListRow con sintesi e due sezioni chiuse con "Indietro"', () => {
-    expect(html.match(/class="list-row/g)).toHaveLength(2);
+  it('telefono: tre voci ListRow con sintesi e tre sezioni chiuse con "Indietro"', () => {
+    expect(html.match(/class="list-row/g)).toHaveLength(3);
+    expect(html).toContain('Automatico, segue il sistema');
     expect(html).toContain('2 token attivi');
     expect(html).toContain('Esci da questo dispositivo');
-    expect(html.match(/>Indietro</g)).toHaveLength(2);
-    expect(html.match(/data-open="false"/g)).toHaveLength(2);
+    expect(html.match(/>Indietro</g)).toHaveLength(3);
+    expect(html.match(/data-open="false"/g)).toHaveLength(3);
     expect(html).not.toContain('data-open="true"');
   });
 

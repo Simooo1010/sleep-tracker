@@ -92,10 +92,10 @@ describe('AppShell', () => {
     expect(top).not.toMatch(/aria-current="page"[^>]*href="\/segnali"/);
   });
 
-  it('ha l\'interruttore del tema, chiaro sul server, che nomina l\'altro tema', () => {
+  it('non ha più l\'interruttore del tema (sta in Impostazioni): il tema è automatico', () => {
     const html = render('/');
-    const buttons = html.match(/<button [^>]*aria-label="Tema chiaro, passa al tema scuro"[^>]*>Tema chiaro<\/button>/g);
-    expect(buttons).toHaveLength(2); // riga in alto (telefono) e barra laterale (PC)
+    expect(html).not.toContain('Tema ');
+    expect(html).not.toContain('<button');
   });
 
   it('mette il titolo e i comandi prima della navigazione e questa prima del contenuto', () => {
