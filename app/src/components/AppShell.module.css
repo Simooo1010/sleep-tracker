@@ -44,7 +44,8 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-3);
-  padding-block: var(--space-3) var(--space-2);
+  /* Sotto la barra di stato / isola dell'iPhone: con viewport-fit=cover il contenuto parte dal bordo vero dello schermo. */
+  padding-block: calc(var(--space-3) + var(--safe-top)) var(--space-2);
   padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
 }
 

@@ -26,7 +26,7 @@ test('telefono: pillola visibile, barra laterale no; PC il contrario', async ({ 
     const box = await pill.boundingBox();
     expect(box).not.toBeNull();
     expect(box!.x).toBeGreaterThanOrEqual(14 - 1);
-    expect(box!.y + box!.height).toBeLessThanOrEqual(844 - 16 + 1);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844 - 14 + 1);
   } else {
     await expect(side).toBeVisible();
     await expect(pill).toBeHidden();
@@ -58,45 +58,47 @@ test('il contenuto lascia 120px in fondo su telefono e la pillola non lo copre',
   expect(padding).toBeCloseTo(7.5, 1);
 });
 
-test('l\'interruttore del tema cambia data-theme e lo ricorda dopo il ricaricamento', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/');
-  expect(await dataTheme(page)).toBe('chiaro');
+// Il tema è automatico (segue il sistema); la scelta manuale sta in Impostazioni.
+async function openAppearance(page: Page, testInfo: { project: { name: string } }) {
+  await page.goto('/impostazioni');
+  if (isPhone(testInfo.project.name)) await page.locator('main button.list-row').filter({ hasText: 'Aspetto' }).click();
+  await expect(page.getByRole('heading', { level: 2, name: 'Aspetto' })).toBeVisible();
+}
 
-  const toggle = page.getByRole('button', { name: /^Tema chiaro, passa al tema scuro/ });
-  await expect(toggle).toBeVisible();
-  await toggle.click();
+test('nessun interruttore del tema nel guscio: né in alto né nella barra laterale', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('button', { name: /^Tema/ })).toHaveCount(0);
+});
+
+test('il tema è automatico: segue il sistema e ne segue i cambi', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
-  await expect(page.getByRole('button', { name: /^Tema scuro, passa al tema chiaro/ })).toBeVisible();
   expect(await page.evaluate(() => getComputedStyle(document.body).backgroundColor)).toBe('rgb(22, 26, 34)');
-
-  // Persiste al ricaricamento, anche se il sistema è chiaro, e senza flash (applicato prima del paint).
-  await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
-  await expect(page.getByRole('button', { name: /^Tema scuro, passa al tema chiaro/ })).toBeVisible();
-
-  // Si può tornare indietro e anche questo è ricordato.
-  await page.getByRole('button', { name: /^Tema scuro, passa al tema chiaro/ }).click();
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'chiaro');
-  await page.reload();
+  await page.emulateMedia({ colorScheme: 'light' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'chiaro');
 });
 
-test('senza scelta manuale il tema segue il sistema, con la scelta no', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'dark' });
-  await page.goto('/');
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
+test('Impostazioni > Aspetto: scelta fissa ricordata dopo il ricaricamento; Automatico riprende il sistema', async ({ page }, testInfo) => {
   await page.emulateMedia({ colorScheme: 'light' });
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'chiaro');
+  await openAppearance(page, testInfo);
+  const auto = page.getByRole('button', { name: 'Automatico', exact: true });
+  await expect(auto).toHaveAttribute('aria-pressed', 'true');
 
-  await page.getByRole('button', { name: /^Tema chiaro, passa al tema scuro/ }).click();
+  await page.getByRole('button', { name: 'Scuro', exact: true }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
+  await expect(page.getByRole('button', { name: 'Scuro', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.reload();
+  expect(await dataTheme(page)).toBe('scuro'); // persiste, anche con sistema chiaro
+
+  await openAppearance(page, testInfo);
+  await page.getByRole('button', { name: 'Automatico', exact: true }).click();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'chiaro');
   await page.emulateMedia({ colorScheme: 'dark' });
-  await page.emulateMedia({ colorScheme: 'light' });
-  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro'); // di nuovo adattivo
 });
 
-test('con localStorage che lancia la pagina si apre e il tema si cambia comunque', async ({ page }) => {
+test('con localStorage che lancia la pagina si apre e il tema segue il sistema', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(window, 'localStorage', {
       get() {
@@ -109,7 +111,7 @@ test('con localStorage che lancia la pagina si apre e il tema si cambia comunque
   page.on('pageerror', (e) => errors.push(e.message));
   await page.goto('/');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'chiaro');
-  await page.getByRole('button', { name: /^Tema chiaro, passa al tema scuro/ }).click();
+  await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'scuro');
   expect(errors).toEqual([]);
 });
@@ -145,11 +147,11 @@ test('ordine di Tab: salta al contenuto, poi navigazione', async ({ page }, test
   await expect(next).toBeFocused();
 });
 
-test('telefono: Segnali, Impostazioni e Tema stanno su una sola riga (barra in alto compatta)', async ({ page }, testInfo) => {
+test('telefono: Segnali e Impostazioni stanno su una sola riga (barra in alto compatta)', async ({ page }, testInfo) => {
   test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
   await page.goto('/');
   const tops = await Promise.all(
-    [page.getByRole('link', { name: 'Segnali' }), page.getByRole('link', { name: 'Impostazioni' }), page.getByRole('button', { name: /^Tema/ })].map(
+    [page.getByRole('link', { name: 'Segnali' }), page.getByRole('link', { name: 'Impostazioni' })].map(
       async (l) => Math.round((await l.first().boundingBox())?.y ?? -1),
     ),
   );
@@ -168,4 +170,21 @@ test('la voce di navigazione si evidenzia subito al tocco, prima che arrivi la p
   const link = page.locator('nav.navpill').getByRole('link', { name: 'Grafici' });
   await link.click();
   await expect(link).toHaveAttribute('aria-current', 'page', { timeout: 500 });
+});
+
+test('telefono: il titolo sta sotto la barra di stato e la pillola è a 14px dal fondo come ai lati', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
+  await page.goto('/');
+  // Chromium non emula env(safe-area-inset-*): si impone il valore di un iPhone con isola (47px) e indicatore home (34px).
+  await page.addStyleTag({ content: ':root{--safe-top:47px!important;--safe-bottom:34px!important}' });
+  const title = await page.locator('main').evaluate(() => document.querySelector('p.title')!.getBoundingClientRect().top);
+  expect(title).toBeGreaterThanOrEqual(47);
+  const vh = page.viewportSize()!.height;
+  const pill = (await page.locator('nav.navpill').boundingBox())!;
+  expect(Math.round(vh - (pill.y + pill.height))).toBe(14);
+  expect(Math.round(pill.x)).toBe(14);
+  // Senza zone sicure (altri telefoni, Android, PC) il margine resta 14px.
+  await page.addStyleTag({ content: ':root{--safe-top:0px!important;--safe-bottom:0px!important}' });
+  const pill0 = (await page.locator('nav.navpill').boundingBox())!;
+  expect(Math.round(vh - (pill0.y + pill0.height))).toBe(14);
 });

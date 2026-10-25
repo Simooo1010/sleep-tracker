@@ -55,3 +55,5 @@
 | 2026-10-25 | Test finale profondo dell'app eseguito dall'utente in un'altra chat | confermata |
 | 2026-10-25 | Velocità percepita: nav ottimistica, `loading.tsx` con skeleton, `staleTimes` (dynamic 30 s, static 180 s; le Server Actions invalidano con `revalidatePath`); accettato che un evento dai Comandi compaia con fino a 30 s di ritardo | confermata |
 | 2026-10-25 | I dati di prova del collaudo si scrivono su produzione con date nel passato recente e si eliminano a fine lavoro con DELETE mirati (mai DROP/TRUNCATE) | confermata |
+| 2026-10-25 | iPhone: titolo sotto la barra di stato (`--safe-top`), pillola a 14px dal fondo come ai lati (`--safe-bottom`, concentrica agli angoli dello schermo) | confermata |
+| 2026-10-25 | Tema automatico (segue il sistema, anche dal vivo); niente interruttore nel guscio: la scelta manuale (Automatico/Chiaro/Scuro) sta in Impostazioni > Aspetto | confermata |

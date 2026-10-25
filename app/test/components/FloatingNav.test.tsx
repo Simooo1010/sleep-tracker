@@ -39,13 +39,12 @@ describe('FloatingNav', () => {
     expect(pill).toMatch(/<a [^>]*aria-current="page"[^>]*href="\/regolarita"/);
   });
 
-  it('mostra marchio, riepilogo di oggi e interruttore del tema su PC', () => {
+  it('mostra marchio e riepilogo di oggi su PC, senza interruttore del tema', () => {
     expect(side).toContain('class="brand">Sleep Tracker</div>');
     expect(text(side)).toContain('Oggi');
     expect(text(side)).toContain('Riposo attivato alle 23:48');
-    expect(side).toContain('class="btn btn-secondary');
-    expect(side).toContain('aria-label="Tema chiaro, passa al tema scuro"');
-    expect(text(side)).toContain('Tema chiaro');
+    expect(side).not.toContain('<button');
+    expect(text(side)).not.toContain('Tema');
   });
 
   it('nasconde le icone ai lettori di schermo', () => {
@@ -54,9 +53,8 @@ describe('FloatingNav', () => {
   });
 
   it('senza riepilogo scrive una frase e mai valori vuoti', () => {
-    const empty = renderToStaticMarkup(<FloatingNav pathname="/segnali" theme="scuro" />);
+    const empty = renderToStaticMarkup(<FloatingNav pathname="/segnali" />);
     expect(text(empty)).toContain('Ancora nessun segnale.');
-    expect(text(empty)).toContain('Tema scuro');
     expect(empty).not.toMatch(/NaN|undefined|null/);
     const [p = '', s = ''] = navs(empty);
     expect(p).not.toContain('aria-current');
