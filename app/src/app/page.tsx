@@ -1,15 +1,46 @@
-import Image from 'next/image';
+import { NightScreen } from '@/app/NightScreen';
+import { getNow } from '@/lib/clock';
+import { getRepo } from '@/server/repo-factory';
+import { loadNightPage, type NightPageData } from '@/server/pages/night';
 
-export default function HomePage() {
+import styles from './NightScreen.module.css';
+
+// I dati cambiano a ogni conferma e dipendono dall'ora: mai in cache.
+export const dynamic = 'force-dynamic';
+
+// Next consente alle pagine solo alcune esportazioni: il testo resta locale.
+const UNREACHABLE_TEXT = 'Il servizio dati non è raggiungibile. Riprova tra poco.';
+
+async function load(): Promise<NightPageData | null> {
+  try {
+    return await loadNightPage(getRepo(), getNow());
+  } catch {
+    // Nessun dettaglio all'utente: l'errore tecnico non lo aiuta e può contenere dati interni.
+    return null;
+  }
+}
+
+export default async function NightPage() {
+  const data = await load();
+
+  if (data === null) {
+    return (
+      <>
+        <h1 className={`title ${styles.pageTitle}`}>Notte</h1>
+        <section className="card" aria-label="Servizio non raggiungibile">
+          <p className="body muted" role="status">
+            {UNREACHABLE_TEXT}
+          </p>
+        </section>
+      </>
+    );
+  }
+
+  const { today, view } = data;
   return (
-    <main className="shell home">
-      <div className="home-card">
-        <div className="icon-tile home-logo">
-          <Image src="/icon-512.png" alt="Icona di Sleep Tracker: una nuvola con una luna" width={512} height={512} priority unoptimized />
-        </div>
-        <h1 className="serif display-md home-title">Sleep Tracker</h1>
-        <p className="body muted home-note">Stima da sola. Chiede solo una conferma.</p>
-      </div>
-    </main>
+    <>
+      <h1 className={`title ${styles.pageTitle}`}>{`Notte di ${view.dateLabel}`}</h1>
+      <NightScreen view={view} todayDate={today} />
+    </>
   );
 }

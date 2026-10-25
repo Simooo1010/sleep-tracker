@@ -1,0 +1,177 @@
+/* NightSections: griglia delle sezioni della pagina Notte (parte B). Solo variabili di tokens.css, misure in rem.
+   Telefono (< 60rem): domande in cima, poi un elenco di voci; una sezione per volta, con "Indietro" in alto.
+   PC (>= 60rem): tutte le sezioni visibili in griglia, mai più larghe di content-max. */
+
+.root {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.error {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.note {
+  margin: 0;
+  max-width: 65ch;
+}
+
+/* Domande rapide */
+.questions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--space-4);
+}
+
+.flush {
+  margin: 0;
+}
+
+.skip {
+  border-color: transparent;
+  color: var(--ink-muted);
+}
+
+/* Elenco delle voci (solo telefono) */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list[data-hidden='true'] {
+  display: none;
+}
+
+.list:focus-visible {
+  outline: none;
+}
+
+/* Sezioni: su telefono se ne vede una sola, quella aperta */
+.sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-5);
+}
+
+.section {
+  display: none;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.section[data-open='true'] {
+  display: flex;
+}
+
+.section .back {
+  align-self: flex-start;
+}
+
+.heading {
+  margin: 0;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* Sonnellino: il solo pulsante pieno della schermata è Conferma; qui i comandi sono secondari. */
+.nap :global(.btn.btn-primary:not([disabled])) {
+  background: transparent;
+  color: var(--ink);
+  border: var(--hairline) solid var(--line-strong);
+}
+
+/* Confronto con il solito */
+.cmpList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cmpRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.cmpLabel {
+  font-weight: 600;
+}
+
+.cmpText {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+
+.track {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 0.75rem;
+  margin-top: var(--space-1);
+}
+
+.usual {
+  position: absolute;
+  top: -0.25rem;
+  bottom: -0.25rem;
+  width: 0;
+  border-left: 0.125rem dashed var(--ink);
+}
+
+/* Quattro tessere */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+  gap: var(--space-3);
+}
+
+.tileCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+@media (min-width: 60rem) {
+  .list {
+    display: none;
+  }
+
+  .sections {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr));
+    align-items: start;
+  }
+
+  .section {
+    display: flex;
+  }
+
+  .section .back {
+    display: none;
+  }
+
+  .stats {
+    grid-column: 1 / -1;
+  }
+}
