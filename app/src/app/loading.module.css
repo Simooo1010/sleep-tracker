@@ -1,0 +1,21 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.title,
+.card {
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  opacity: 0.7;
+}
+
+.title {
+  height: 2rem;
+  width: 60%;
+}
+
+.card {
+  height: 9rem;
+}

@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // L'app vive in `app/` dentro un repo con altri progetti (gateway/): la root di tracciamento resta questa cartella.
   outputFileTracingRoot: import.meta.dirname,
+  // Cache del router lato client: tornare su una sezione appena vista è istantaneo. Le Server Actions invalidano con revalidatePath.
+  experimental: { staleTimes: { dynamic: 30, static: 180 } },
   turbopack: { root: import.meta.dirname },
   async headers() {
     return [

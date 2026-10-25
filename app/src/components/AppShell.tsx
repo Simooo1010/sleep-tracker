@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useCallback, useSyncExternalStore, type ReactNode } from 'react';
+import { useCallback, useState, useSyncExternalStore, type ReactNode } from 'react';
 
 import { appliedTheme, applyTheme, nextTheme, storeTheme, type Theme } from '@/lib/theme';
 
@@ -41,7 +41,11 @@ function subscribeTheme(onChange: () => void): () => void {
 const serverTheme = (): Theme => 'chiaro';
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname() ?? '/';
+  const currentPath = usePathname() ?? '/';
+  // Evidenziazione ottimistica: al tocco la voce si accende subito; vale finché il percorso reale non cambia.
+  const [pending, setPending] = useState<{ from: string; to: string } | null>(null);
+  const pathname = pending !== null && pending.from === currentPath ? pending.to : currentPath;
+  const onNavigate = useCallback((to: string) => setPending({ from: currentPath, to }), [currentPath]);
   const theme = useSyncExternalStore(subscribeTheme, appliedTheme, serverTheme);
 
   const toggleTheme = useCallback(() => {
@@ -70,6 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             href="/segnali"
             className={`btn btn-secondary ${styles.action}`}
             aria-current={segnaliActive ? 'page' : undefined}
+            onClick={() => onNavigate('/segnali')}
           >
             Segnali
           </Link>
@@ -77,6 +82,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             href="/impostazioni"
             className={`btn btn-secondary ${styles.action}`}
             aria-current={impostazioniActive ? 'page' : undefined}
+            onClick={() => onNavigate('/impostazioni')}
           >
             Impostazioni
           </Link>
@@ -92,7 +98,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </div>
 
       <div className={styles.navSlot}>
-        <FloatingNav pathname={pathname} theme={theme} onToggleTheme={toggleTheme} />
+        <FloatingNav pathname={pathname} theme={theme} onToggleTheme={toggleTheme} onNavigate={onNavigate} />
       </div>
 
       <main id={MAIN_ID} tabIndex={-1} className={styles.main}>

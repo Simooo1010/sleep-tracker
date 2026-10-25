@@ -53,6 +53,8 @@ export interface FloatingNavProps {
   /** Tema in uso, mostrato a parole nell'interruttore. */
   theme?: Theme;
   onToggleTheme?: () => void;
+  /** Chiamata al tocco di una voce: permette di evidenziarla subito, prima che la pagina arrivi. */
+  onNavigate?: (href: string) => void;
 }
 
 function normalize(path: string): string {
@@ -75,7 +77,7 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTheme }: FloatingNavProps) {
+export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTheme, onNavigate }: FloatingNavProps) {
   const phoneItems = NAV_ITEMS.filter((item) => !item.desktopOnly);
   const lines = today.filter((line) => line.trim().length > 0);
   const other: Theme = theme === 'scuro' ? 'chiaro' : 'scuro';
@@ -92,6 +94,7 @@ export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTh
                 href={item.href}
                 className={styles.pillLink}
                 aria-current={active ? 'page' : undefined}
+                onClick={() => onNavigate?.(item.href)}
               >
                 <Icon d={item.icon} />
                 {item.label}
@@ -112,6 +115,7 @@ export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTh
                 href={item.href}
                 className={styles.sideLink}
                 aria-current={active ? 'page' : undefined}
+                onClick={() => onNavigate?.(item.href)}
               >
                 <Icon d={item.icon} />
                 {item.label}
