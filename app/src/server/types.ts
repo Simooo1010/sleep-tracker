@@ -18,6 +18,8 @@ export interface IncomingEvent {
     mood?: 1 | 2 | 3 | 4 | 5;
     factors?: string[];
     napMinutesToday?: number;
+    /** Descrizione libera della giornata (facoltativa, max DAY_NOTE_MAX caratteri). */
+    dayNote?: string | null;
   };
 }
 
@@ -53,8 +55,12 @@ export interface Repo {
   listEveningChecks(fromDate: string, toDate: string): Promise<EveningCheck[]>;
   /** Tipi di eccezione con contatore d'uso (per ordinare i chip). */
   listExceptionTypes(): Promise<ExceptionTypeRow[]>;
-  /** Sostituisce le eccezioni di una notte e aggiorna `uses` (+1 per i nuovi slug, mai sotto 0). Slug sconosciuti vengono creati con label derivata. */
-  setNightExceptions(nightDate: string, slugs: string[]): Promise<void>;
+  /**
+   * Sostituisce le eccezioni di una notte e aggiorna `uses` (+1 per i nuovi slug, mai sotto 0).
+   * Slug sconosciuti vengono creati con l'etichetta in `labels[slug]` se presente, altrimenti con label derivata.
+   * `labels` è facoltativo: i chiamanti esistenti (solo slug) restano validi.
+   */
+  setNightExceptions(nightDate: string, slugs: string[], labels?: Record<string, string>): Promise<void>;
   /** Slug delle eccezioni di ciascuna notte in [fromDate, toDate]. */
   listNightExceptions(fromDate: string, toDate: string): Promise<Record<string, string[]>>;
   /** Registro delle domande poste (per il budget giornaliero). */

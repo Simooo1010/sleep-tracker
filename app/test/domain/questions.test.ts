@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_EXCEPTIONS,
+  DAY_CONTEXT_MAX_DAYS,
+  DAY_CONTEXT_TEXT_MAX,
+  DAY_NOTE_MAX,
   DEFAULT_FACTORS,
+  EXCEPTION_LABEL_MAX,
+  EXCEPTION_SLUG_MAX,
+  EXCEPTION_SLUG_RE,
+  normalizeExceptionLabel,
   orderExceptionChips,
+  slugifyExceptionLabel,
   selectQuestions,
   type AskedQuestion,
   type QuestionContext,
@@ -229,5 +237,100 @@ describe('default', () => {
     ]);
     for (const s of [...DEFAULT_EXCEPTIONS, ...DEFAULT_FACTORS]) expect(s).toMatch(/^[a-z]+(-[a-z]+)*$/);
     expect(DEFAULT_FACTORS.some((s) => s.includes('caff'))).toBe(false);
+  });
+});
+
+describe('slugifyExceptionLabel', () => {
+  const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+  const samples = [
+    'Cena fuori',
+    '  Caffè   tardi  ',
+    'Perché sì!',
+    'Notte in bianco 🎉',
+    '🎉🎉',
+    '!!! ??? ...',
+    'Àèìòù ÇÑ',
+    'a--b__c',
+    'x'.repeat(100),
+    `${'ab '.repeat(30)}`,
+    'Festa di compleanno di mia cugina a Milano',
+    '',
+    '   ',
+  ];
+
+  it('minuscolo, senza accenti, kebab', () => {
+    expect(slugifyExceptionLabel('Cena fuori')).toBe('cena-fuori');
+    expect(slugifyExceptionLabel('  Caffè   tardi  ')).toBe('caffe-tardi');
+    expect(slugifyExceptionLabel('Perché sì!')).toBe('perche-si');
+    expect(slugifyExceptionLabel('Àèìòù ÇÑ')).toBe('aeiou-cn');
+    expect(slugifyExceptionLabel('a--b__c')).toBe('a-b-c');
+  });
+
+  it('emoji ignorate; solo simboli o vuoto → stringa vuota', () => {
+    expect(slugifyExceptionLabel('Notte in bianco 🎉')).toBe('notte-in-bianco');
+    expect(slugifyExceptionLabel('🎉🎉')).toBe('');
+    expect(slugifyExceptionLabel('!!! ??? ...')).toBe('');
+    expect(slugifyExceptionLabel('')).toBe('');
+    expect(slugifyExceptionLabel('   ')).toBe('');
+  });
+
+  it('tronca a 40 caratteri senza trattino finale', () => {
+    expect(slugifyExceptionLabel('x'.repeat(100))).toBe('x'.repeat(40));
+    // 39 caratteri + spazio: il taglio cadrebbe su un trattino.
+    const s = slugifyExceptionLabel(`${'a'.repeat(39)} bcd`);
+    expect(s).toBe('a'.repeat(39));
+    expect(slugifyExceptionLabel('Festa di compleanno di mia cugina a Milano').length).toBeLessThanOrEqual(
+      EXCEPTION_SLUG_MAX,
+    );
+  });
+
+  it('idempotente e sempre valido (o vuoto)', () => {
+    for (const label of samples) {
+      const s = slugifyExceptionLabel(label);
+      expect(slugifyExceptionLabel(s)).toBe(s);
+      expect(s.length).toBeLessThanOrEqual(EXCEPTION_SLUG_MAX);
+      if (s !== '') {
+        expect(s).toMatch(SLUG_RE);
+        expect(s).toMatch(EXCEPTION_SLUG_RE);
+      }
+    }
+  });
+
+  it('gli slug predefiniti restano invariati', () => {
+    for (const slug of [...DEFAULT_EXCEPTIONS, ...DEFAULT_FACTORS]) expect(slugifyExceptionLabel(slug)).toBe(slug);
+  });
+});
+
+describe('normalizeExceptionLabel', () => {
+  it('trim e spazi collassati', () => {
+    expect(normalizeExceptionLabel('  Cena   fuori\t\n ')).toBe('Cena fuori');
+    expect(normalizeExceptionLabel('   ')).toBe('');
+  });
+
+  it(`tronca a EXCEPTION_LABEL_MAX (${EXCEPTION_LABEL_MAX}) senza spazio finale`, () => {
+    expect(normalizeExceptionLabel('x'.repeat(50))).toBe('x'.repeat(EXCEPTION_LABEL_MAX));
+    expect(normalizeExceptionLabel(`${'a'.repeat(29)} bcd`)).toBe('a'.repeat(29));
+  });
+
+  it('non spezza le emoji (conta per code point)', () => {
+    const out = normalizeExceptionLabel('🎉'.repeat(40));
+    expect(Array.from(out)).toHaveLength(EXCEPTION_LABEL_MAX);
+    expect(out).toBe('🎉'.repeat(EXCEPTION_LABEL_MAX));
+  });
+
+  it('idempotente', () => {
+    for (const l of ['  Cena   fuori ', 'x'.repeat(50), `${'a'.repeat(29)} bcd`, '🎉'.repeat(40)]) {
+      const n = normalizeExceptionLabel(l);
+      expect(normalizeExceptionLabel(n)).toBe(n);
+    }
+  });
+});
+
+describe('costanti imprevisti/giornata', () => {
+  it('valori del contratto', () => {
+    expect(EXCEPTION_LABEL_MAX).toBe(30);
+    expect(DAY_NOTE_MAX).toBe(280);
+    expect(DAY_CONTEXT_TEXT_MAX).toBe(140);
+    expect(DAY_CONTEXT_MAX_DAYS).toBe(10);
   });
 });
