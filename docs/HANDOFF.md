@@ -96,6 +96,19 @@ Progetto `sleep-tracker-app`, ambiente Production:
 - La CI non gira sulle PR in bozza; per attivarla segna la PR "Ready for review". Anteprime Vercel disattivate (solo produzione da `main`).
 - Possibili miglioramenti: notifiche di recupero; persistenza di `questions_log` per il budget oltre il giorno; cache insight (`insights_cache` esiste ma non è usata); routine settimanale di controllo (vedi §11).
 
+## 9b. PRESTAZIONI — priorità del collaudo (segnalato dall'utente)
+L'utente riferisce che **cambiare sezione è lento**: dopo il tocco la nuova schermata compare dopo 1–2 secondi, l'app sembra poco reattiva. Obiettivi del collaudo: **massima velocità percepita e massima risoluzione/nitidezza, senza ridurre sicurezza ed efficienza.** Misurare prima e dopo ogni ottimizzazione.
+Cause già individuate (non ancora corrette nel codice):
+- Tutte le pagine sono `force-dynamic` (render del server a ogni navigazione) e **non esiste nessun `loading.tsx`**: nessuna schermata di attesa né prefetch utile per le rotte dinamiche → il tocco non dà feedback finché non arriva tutto.
+- La voce di navigazione si evidenzia solo a navigazione finita (nessuno stato "in attesa" ottimistico).
+- Nessuna cache del router lato client (`experimental.staleTimes` non impostato): tornare su una sezione appena vista rifà il giro completo.
+- I loader in `app/src/server/pages/*.ts` fanno letture al database **in sequenza** (da parallelizzare con `Promise.all`).
+- Regione delle funzioni: era `iad1` (Washington) con il database a Francoforte (`eu-central-1`). **Già cambiata** nel progetto Vercel a `fra1` (impostazione `resourceConfig.functionDefaultRegions`, vale dal deploy successivo): verificare nei log che le funzioni girino davvero a `fra1`.
+- Da controllare: peso del JavaScript per pagina (tabella `next build`), client component grandi caricabili in differita, `font-display`, `touch-action: manipulation` e stato `:active` immediato sugli elementi interattivi, transizioni lunghe sulla navigazione, lavoro del `proxy.ts` per ogni richiesta.
+- Idee per la risposta al tocco: scheletri di caricamento per rotta (`loading.tsx`) nello stile del design system, voce di navigazione attiva subito, `staleTimes` (con `revalidatePath` già presente nelle Server Actions per invalidare dopo le scritture), prefetch dei link, aggiornamenti ottimistici sulle azioni.
+- Obiettivi indicativi: feedback al tocco < 100 ms, contenuto della nuova sezione < ~300 ms con dati in cache regionale, pagina interattiva < 1 s su 4G; Lighthouse/Web Vitals (INP, LCP, CLS) su emulazione iPhone.
+- Alta risoluzione: tutto vettoriale, icone/logo SVG, icone PWA 180/192/512, testo in `rem`, linee da 1 px, screenshot a 390×844 DPR3, 1280×800 DPR2, 3840×2160 in entrambi i temi, ingrandendo i dettagli.
+
 ## 10. Regole di processo (vedi `CLAUDE.md`)
 - Piano → design system → UI → codice → test → deploy; MEMORY.md e `docs/` sono la fonte di verità: aggiornali.
 - Subagent: attività piccole, file disgiunti, in parallelo; contratto/tipi definiti prima. **Per la chat di costruzione l'utente ha chiesto: Sonnet costruisce quando l'obiettivo è definito, Opus solo per compiti di altissimo livello; sforzo massimo `high` (Opus `low`/`medium`).** Un solo agente alla volta usa Playwright.
