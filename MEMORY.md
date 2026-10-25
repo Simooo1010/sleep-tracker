@@ -30,6 +30,23 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - **Prossimo step**: build principale (4) — partire da schema Supabase + endpoint di ingestione, poi logica di stima/statistiche, poi app Next.js/PWA in `app/` con progetto Vercel separato (il progetto `sleep-tracker` ha root `gateway`). Il layer AI si usa solo via gateway: `CLAUDE.md` § Layer AI e `docs/AI_GATEWAY.md` §13.
 - Roadmap (confermata): 1) design system ✅ → 2) AI gateway ✅ (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI ✅ (prototipi D1/D2 approvati) → 4) codice + test + fix → 5) deploy → 6) routine settimanale di controllo.
 
+## Build app (in corso, branch claude/clever-hawking-s5b26t, PR #11 in bozza)
+- ✅ Slice 0–3: scaffolding, dominio (12 moduli), ingestione `/api/events`, 25 componenti, view model, mutazioni, server actions, guscio con navigazione e tema.
+- ✅ Slice 4–7: pagine Notte, Sera, Regolarità, Grafici (+ insight via gateway con riserva a regole), Storico, Segnali. Test: 1300+ unit, 118 E2E (iphone/desktop/uhd) verdi.
+- In corso: accesso con password fail-closed (`APP_LOGIN_PASSWORD`, cookie firmato, chiavi derivate dalla password), pagina `/impostazioni` con token API generati dall'app, poi deploy.
+- Vercel: progetto app `sleep-tracker-app` (`prj_yi8lBL7dwpuncrSxYxSr5m7a5Zgd`, root `app`, anteprime disattivate); env pubbliche già impostate. La CI GitHub non gira sulle PR in bozza (evita email sui WIP): parte quando la PR è pronta.
+- Il test finale profondo lo fa l'utente in un'altra chat (decisione 2026-10-25).
+- Regole utente per questa chat: attività piccole in parallelo; Sonnet costruisce, Opus solo altissimo livello; sforzo max high (Opus low/medium).
+- Dati reali: Supabase `sleep-tracker` ha lo schema applicato (10 tabelle, RLS senza policy: accesso solo server con service role).
+
+## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
+- Vercel (progetto `sleep-tracker-app`): incollare `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API; i tool MCP non possono leggerla) e scegliere `APP_LOGIN_PASSWORD` (almeno 12 caratteri: è la password di accesso all'app). Poi rideploy.
+- Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).
+- Opzionale (insight AI): stesso `GATEWAY_SECRET` nuovo su entrambi i progetti Vercel (gateway e app) e rideploy; senza, gli insight sono a regole.
+- iPhone: creare i Comandi/automazioni (guida in `docs/COMANDI_IOS.md`, da scrivere) e aggiungere la PWA alla Home.
+- Primo login nell'app.
+- Opzionale: modalità Auto del menu permessi, o `.claude/settings.json` con `permissions.allow` per ridurre i prompt.
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.

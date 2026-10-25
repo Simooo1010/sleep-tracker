@@ -1,0 +1,10 @@
+/* QuickQuestion: integrazioni locali a .card.qq di bundle.css. Solo variabili di tokens.css. */
+.flush {
+  margin: 0;
+}
+
+/* Salta: stessa area toccabile dei chip, senza contorno e in testo attenuato */
+.skip {
+  border-color: transparent;
+  color: var(--ink-muted);
+}

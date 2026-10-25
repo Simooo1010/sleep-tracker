@@ -1,0 +1,165 @@
+/* Regolarità: solo variabili di tokens.css, misure in rem.
+   Telefono: un dato per volta (elenco di voci). PC (da 60rem, come il guscio): viste larghe insieme. */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.title {
+  margin: 0;
+}
+
+.title:focus,
+.sectionTitle:focus {
+  outline: none;
+}
+
+.title:focus-visible,
+.sectionTitle:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.sectionTitle {
+  margin: 0;
+}
+
+.phone,
+.desktop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.desktop {
+  display: none;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.headline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.headline > * {
+  margin: 0;
+}
+
+.back {
+  align-self: flex-start;
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.block > p {
+  margin: 0;
+}
+
+.note {
+  margin: 0;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.weekend {
+  margin: 0;
+  min-width: 0;
+}
+
+.tableWrap {
+  overflow-wrap: anywhere;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.table th,
+.table td {
+  padding: var(--space-2) var(--space-1);
+  text-align: right;
+  border-bottom: var(--hairline) solid var(--line);
+  font-size: 0.9375rem;
+}
+
+.table thead th {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.table th[scope='row'],
+.table thead th:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 60rem) {
+  .root {
+    gap: var(--space-5);
+    padding-top: 0;
+  }
+
+  .phone {
+    display: none;
+  }
+
+  .desktop {
+    display: flex;
+    gap: var(--space-5);
+  }
+
+  .tiles {
+    grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  }
+
+  .pair {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+  }
+}

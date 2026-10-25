@@ -28,8 +28,9 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
 ## Regole sui subagent
 - **Haiku / Sonnet**: ricerca, lettura, attività read-only, task leggere o a basso rischio; Sonnet esegue quando l'obiettivo è già chiaro.
 - **Opus (o Fable se disponibile)**: pianificazione, chiarimento, architettura, implementazione, fix, test, verifica — tutto ciò che richiede precisione.
-- Sforzo massimo: **high**. Mai max/ultra.
+- Sforzo: massimo **high** per qualsiasi modello (mai max/ultra); per Opus bastano **low** o **medium**.
 - Subagent indipendenti → in parallelo nello stesso turno.
+- **Granularità (regola dell'utente, 2026-10-24):** ogni obiettivo si spezza in attività sempre più piccole, ognuna con file propri (nessuna sovrapposizione), contratto/tipi condivisi definiti prima, e affidata a un subagent dedicato. Più agenti piccoli in parallelo battono pochi agenti grandi. L'orchestratore integra, lancia i controlli e committa; i fix vanno a un agente per problema.
 
 ## Automazione e accessi
 - Obiettivo: zero azioni manuali per l'utente su GitHub, Vercel, Supabase.

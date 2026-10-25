@@ -1,0 +1,14 @@
+/* InsightCard: reset dei margini e misura di lettura. Solo variabili di tokens.css, misure in rem. */
+.root {
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.body {
+  margin: 0;
+  max-width: 65ch;
+}

@@ -1,0 +1,189 @@
+/*
+ * Calendar: celle alte 48px (3rem) su telefono e 66px (4.125rem) quando c'è spazio, distanza 4px,
+ * area toccabile mai sotto tap-min. Durata compatta (7h32) sotto i 30rem di griglia, estesa (7h 32m) sopra.
+ * Solo variabili di tokens.css.
+ */
+
+/* Telefono: sette colonne da tap-min (44px) più distanze e padding stanno da 24rem (384px) in su.
+   Sotto (iPhone SE a 320px, Android a 360px) il padding laterale e la distanza si riducono al minimo e le
+   colonne si stringono (minmax(0, 1fr)): a 360px restano da 44px, a 320px da circa 38px (alte comunque 48px). */
+.root:global(.card) {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4) var(--space-1);
+}
+
+@media (min-width: 24rem) {
+  .root:global(.card) {
+    padding: var(--space-4) var(--space-2);
+  }
+}
+
+@media (min-width: 40rem) {
+  .root:global(.card) {
+    padding: var(--space-6);
+  }
+}
+
+.title {
+  margin: 0;
+  font-weight: 300;
+  font-size: 1.875rem;
+  line-height: 2.125rem;
+}
+
+.layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  align-items: flex-start;
+}
+
+.month {
+  flex: 2 1 20rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  container-type: inline-size;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: calc(var(--space-1) / 2);
+}
+
+@media (min-width: 24rem) {
+  .row {
+    grid-template-columns: repeat(7, minmax(var(--tap-min), 1fr));
+    gap: var(--space-1);
+  }
+}
+
+.weekday {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  text-align: center;
+  color: var(--ink-muted);
+}
+
+.slot,
+.empty {
+  min-width: 0;
+}
+
+:global(.cell).day {
+  width: 100%;
+  min-width: 0;
+  height: 3rem;
+  padding: 0;
+  flex-direction: column;
+  gap: 0;
+  border-radius: var(--radius-md);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+}
+
+.future {
+  color: var(--ink-muted);
+  background: transparent;
+}
+
+@media (min-width: 24rem) {
+  :global(.cell).day {
+    min-width: var(--tap-min);
+  }
+}
+
+/* Bordo di 2px ink come contorno esterno, per non coprire il tratteggio o i punti dello stato. */
+:global(.cell).day.isSelected {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+
+.num {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  font-weight: 400;
+}
+
+.dur {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+}
+
+.durFull {
+  display: none;
+}
+
+@container (min-width: 30rem) {
+  :global(.cell).day {
+    height: 4.125rem;
+  }
+
+  .num {
+    font-size: 0.75rem;
+  }
+
+  .dur {
+    font-size: 0.75rem;
+  }
+
+  .durFull {
+    display: inline;
+  }
+
+  .durShort {
+    display: none;
+  }
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail {
+  flex: 1 1 16rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.detailDate {
+  margin: 0;
+}
+
+.detailValue {
+  font-size: 3.375rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.interval {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.note {
+  margin: 0;
+}

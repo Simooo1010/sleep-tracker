@@ -1,0 +1,71 @@
+/* Segnali: un'unica colonna su telefono; da 60rem righe a sinistra e registro a destra. Solo variabili di tokens.css. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.panel {
+  min-width: 0;
+}
+
+.list,
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panelTitle,
+.text {
+  margin: 0;
+}
+
+.note {
+  margin: 0;
+}
+
+.logItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) 0;
+  border-bottom: var(--hairline) solid var(--line);
+  min-width: 0;
+}
+
+.logItem:last-child {
+  border-bottom: 0;
+}
+
+.logHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.logWhen {
+  margin: 0;
+}
+
+.logWhat {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 60rem) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-6);
+  }
+}

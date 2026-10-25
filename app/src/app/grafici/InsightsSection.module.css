@@ -1,0 +1,18 @@
+/* InsightsSection: elenco di InsightCard. Solo variabili di tokens.css, misure in rem. */
+.list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.text {
+  margin: 0;
+}
+
+@media (min-width: 60rem) {
+  .list {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+    gap: var(--space-4);
+  }
+}

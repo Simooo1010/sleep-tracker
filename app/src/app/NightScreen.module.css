@@ -1,0 +1,87 @@
+/* NightScreen: layout della pagina Notte. Solo variabili di tokens.css, misure in rem.
+   Telefono: una colonna, la scheda Stanotte in cima. PC (da 60rem): due colonne. */
+
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+  padding-top: var(--space-2);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+/* Telefono: con una sezione aperta a tutto schermo (data-section-open) la scheda Stanotte non si vede;
+   "Indietro" la riporta. Su PC (da 60rem) le sezioni stanno in griglia e la scheda resta sempre. */
+.page[data-section-open='true'] > .primary {
+  display: none;
+}
+
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.text {
+  margin: 0;
+}
+
+.error {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+/* Titolo della pagina: su telefono la riga in alto del guscio mostra già "Notte", quindi il <h1>
+   resta per i lettori di schermo; su PC (barra in alto nascosta) è visibile. */
+.pageTitle {
+  margin: 0;
+  position: absolute;
+  width: var(--hairline);
+  height: var(--hairline);
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 60rem) {
+  .page[data-section-open='true'] > .primary {
+    display: flex;
+  }
+
+  .pageTitle {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    white-space: normal;
+    padding-bottom: var(--space-2);
+  }
+
+  .page {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-6);
+  }
+
+  .column {
+    gap: var(--space-6);
+  }
+}

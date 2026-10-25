@@ -1,0 +1,123 @@
+/* AppShell: griglia del guscio. Solo variabili di tokens.css, misure in rem.
+   Telefono: riga in alto, contenuto con 7.5rem (120px) in fondo per la pillola flottante.
+   PC (da 60rem): barra laterale a sinistra, contenuto centrato con content-max. */
+
+.root {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas:
+    'top'
+    'main';
+  grid-template-rows: auto 1fr;
+}
+
+/* Link "Salta al contenuto": primo elemento focalizzabile, visibile solo con il focus */
+.skip {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 20;
+  min-height: var(--tap-min);
+  padding: 0 var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink);
+  border: var(--hairline) solid var(--line-strong);
+  font-weight: 600;
+  text-decoration: none;
+  transform: translateY(-300%);
+}
+
+.skip:focus-visible {
+  transform: none;
+}
+
+/* Riga in alto (telefono) */
+.topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
+  padding-block: var(--space-3) var(--space-2);
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+}
+
+.sectionTitle {
+  margin: 0;
+  min-width: 0;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.action {
+  min-height: var(--tap-min);
+  padding: 0 var(--space-3);
+  font-size: 0.875rem;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.action[aria-current='page'] {
+  background: var(--blue-soft);
+  color: var(--blue-ink);
+  font-weight: 600;
+}
+
+/* Su telefono la navigazione è fissa (pillola): il contenitore non occupa spazio */
+.navSlot {
+  display: contents;
+}
+
+.main {
+  grid-area: main;
+  min-width: 0;
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+  padding-bottom: 7.5rem;
+}
+
+.main:focus {
+  outline: none;
+}
+
+.main:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+@media (min-width: 60rem) {
+  .root {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    grid-template-areas: 'nav main';
+  }
+
+  .topbar {
+    display: none;
+  }
+
+  .navSlot {
+    display: block;
+    grid-area: nav;
+  }
+
+  .main {
+    padding-block: var(--space-4);
+    padding-inline: var(--space-6) max(var(--space-6), env(safe-area-inset-right));
+  }
+}

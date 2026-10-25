@@ -1,0 +1,48 @@
+/* EnergyCard: dettagli della scheda gialla (salvia nel tema scuro). Solo variabili di tokens.css, misure in rem. */
+.root {
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.root .heading {
+  margin: 0;
+  color: inherit;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+  max-width: 65ch;
+}
+
+.meta {
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.big {
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Lune piccole della previsione: 36px, fondo surface se non evidenziate. */
+.moons > .moon {
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.moons > .off {
+  background: var(--surface);
+}
+
+.moons > .moon svg {
+  width: 1.375rem;
+  height: 1.375rem;
+}

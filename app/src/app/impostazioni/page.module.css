@@ -1,0 +1,22 @@
+/* Pagina Impostazioni: titolo, introduzione e contenuto in colonna. Solo variabili di tokens.css. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.header h1,
+.header p {
+  margin: 0;
+}
+
+.page > p {
+  margin: 0;
+}

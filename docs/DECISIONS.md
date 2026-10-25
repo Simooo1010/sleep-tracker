@@ -45,3 +45,11 @@
 | 2026-10-24 | Gateway deployato su Vercel (root `gateway`), Vercel Authentication disattivata: l'accesso è protetto dal bearer `GATEWAY_SECRET` | confermata |
 | 2026-10-24 | Test reale su Groq eseguito da Claude ruotando `GATEWAY_SECRET` (valore di test poi invalidato con una seconda rotazione) | confermata |
 | 2026-10-24 | Mistral disattivato (chiave non ottenibile senza piano a pagamento); OpenRouter facoltativo | confermata |
+| 2026-10-25 | App in `app/` come secondo progetto Vercel (`sleep-tracker-app`, root `app`); il gateway resta separato | confermata |
+| 2026-10-25 | Fuso fisso Europe/Rome; "data notte" = giorno locale del risveglio; asse letto = minuti dalle 18:00 | confermata |
+| 2026-10-25 | Tutti gli accessi ai dati passano dal server con service role; RLS attiva senza policy | confermata |
+| 2026-10-25 | Accesso all'app con password a utente singolo, fail-closed (`APP_LOGIN_PASSWORD`); chiavi di cookie e pepper derivate dalla password | confermata |
+| 2026-10-25 | Token API dei Comandi generati dall'app (pagina Impostazioni), salvati solo come hash, mostrati una volta | confermata |
+| 2026-10-25 | Insight: gateway con timeout 6 s e riserva a regole locali; al gateway solo statistiche aggregate | confermata |
+| 2026-10-25 | CI GitHub non eseguita sulle PR in bozza (evita email sui WIP) | confermata |
+| 2026-10-25 | Test finale profondo dell'app eseguito dall'utente in un'altra chat | confermata |
