@@ -48,3 +48,15 @@ body {
 .home-note {
   margin: 0;
 }
+
+/* Risposta immediata al tocco: niente attesa del doppio tocco, feedback visivo subito. */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:active,
+button:active {
+  opacity: 0.7;
+}
