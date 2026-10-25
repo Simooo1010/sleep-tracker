@@ -353,6 +353,7 @@ describe('getRepo con APP_SEED=demo', () => {
   const PEPPER = 'pepper-di-prova-per-i-test-0123456789';
 
   async function load() {
+    delete (globalThis as Record<symbol, unknown>)[Symbol.for('sleep-tracker.memory-repo')];
     vi.resetModules();
     return (await import('../../src/server/repo-factory')).getRepo;
   }
@@ -374,6 +375,22 @@ describe('getRepo con APP_SEED=demo', () => {
     expect(await repo.tokenExists(hashToken(generateToken(), PEPPER))).toBe(false);
     expect(Object.values(repo.exceptions).flat().sort()).toStrictEqual(['festa', 'malattia', 'viaggio']);
     expect(getRepo(env)).toBe(repo);
+  });
+
+  it('il repo in memoria è lo stesso anche dopo vi.resetModules() (bundle separati in next dev)', async () => {
+    const first = await load();
+    const env = { NODE_ENV: 'test', APP_DATA_MODE: 'memory' } as unknown as NodeJS.ProcessEnv;
+    const repo = first(env);
+    vi.resetModules();
+    const second = (await import('../../src/server/repo-factory')).getRepo;
+    expect(second).not.toBe(first); // modulo davvero ricaricato
+    expect(second(env)).toBe(repo);
+  });
+
+  it('in produzione non usa il repo in memoria', async () => {
+    const getRepo = await load();
+    const env = { NODE_ENV: 'production', APP_DATA_MODE: 'memory' } as unknown as NodeJS.ProcessEnv;
+    expect(() => getRepo(env)).toThrow();
   });
 
   it('senza APP_SEED il repo in memoria resta vuoto', async () => {

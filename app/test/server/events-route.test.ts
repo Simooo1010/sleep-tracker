@@ -3,7 +3,7 @@
  *
  * Nota sull'alias `@/`: vitest.config.ts non risolve i `paths` di tsconfig, quindi gli import
  * `@/server/*` della route vengono mappati qui (vi.doMock) sui moduli reali: stesso codice, nessun mock.
- * Isolamento: `getRepo()` tiene un singleton a livello di modulo; `vi.resetModules()` + doMock +
+ * Isolamento: `getRepo()` tiene il singleton su globalThis; azzerarlo + `vi.resetModules()` + doMock +
  * import dinamico in ogni test danno una route e un MemoryRepo nuovi, condivisi fra route e test.
  * Nota: `Headers` (Fetch) toglie gli spazi iniziali/finali dei valori, quindi `"Bearer <t> "` arriva
  * alla route già normalizzato: non è un caso di header malformato testabile via HTTP.
@@ -28,6 +28,8 @@ let token: string;
 /** Route e MemoryRepo nuovi: registry dei moduli azzerato e alias `@/` ri-mappati ogni volta. */
 async function load(): Promise<void> {
   vi.resetModules();
+  // Il repo in memoria vive su globalThis (sopravvive a resetModules): lo si azzera per avere un repo nuovo.
+  delete (globalThis as Record<symbol, unknown>)[Symbol.for('sleep-tracker.memory-repo')];
   vi.doMock('@/lib/auth', () => import('../../src/lib/auth'));
   vi.doMock('@/server/events-schema', () => import('../../src/server/events-schema'));
   vi.doMock('@/server/ingest', () => import('../../src/server/ingest'));
