@@ -73,11 +73,6 @@ const tracked = <T>(value: T | null, provenance: Provenance): Tracked<T> =>
 interface Draws {
   bed: number;
   wake: number;
-  screen: number;
-  sport: number;
-  stress: number;
-  dinner: number;
-  alcohol: number;
   quality: number;
   energy: number;
   tired: number;
@@ -93,11 +88,6 @@ function draw(rng: () => number): Draws {
   return {
     bed: rng(),
     wake: rng(),
-    screen: rng(),
-    sport: rng(),
-    stress: rng(),
-    dinner: rng(),
-    alcohol: rng(),
     quality: rng(),
     energy: rng(),
     tired: rng(),
@@ -123,14 +113,30 @@ interface Plan {
   d: Draws;
 }
 
-function planNight(idx: number, date: string, rng: () => number): Plan {
+/** Quote dei fattori su 60 sere (35%, 25%, 20%, 15%, 8%): insiemi di indici estratti a sorte, quindi frequenze esatte. */
+const FACTOR_QUOTAS = { screen: 21, sport: 15, stress: 12, dinner: 9, alcohol: 5 } as const;
+type FactorSets = Record<keyof typeof FACTOR_QUOTAS, Set<number>>;
+
+function pickFactorSets(rng: () => number): FactorSets {
+  const all = Array.from({ length: DEMO_DAYS }, (_, i) => i);
+  const pick = (n: number): Set<number> => new Set(shuffled(all, rng).slice(0, n));
+  return {
+    screen: pick(FACTOR_QUOTAS.screen),
+    sport: pick(FACTOR_QUOTAS.sport),
+    stress: pick(FACTOR_QUOTAS.stress),
+    dinner: pick(FACTOR_QUOTAS.dinner),
+    alcohol: pick(FACTOR_QUOTAS.alcohol),
+  };
+}
+
+function planNight(idx: number, date: string, rng: () => number, sets: FactorSets): Plan {
   const d = draw(rng);
   const weekend = isWeekendNight(date);
-  const screen = d.screen < 0.35;
-  const sport = d.sport < 0.25;
-  const stress = d.stress < 0.2;
-  const dinner = d.dinner < 0.15;
-  const alcohol = d.alcohol < 0.08;
+  const screen = sets.screen.has(idx);
+  const sport = sets.sport.has(idx);
+  const stress = sets.stress.has(idx);
+  const dinner = sets.dinner.has(idx);
+  const alcohol = sets.alcohol.has(idx);
   const factors = [
     ...(screen ? ['schermo-a-letto'] : []),
     ...(sport ? ['sport'] : []),
@@ -196,8 +202,9 @@ export function buildDemoSeed(nowIso: string): MemoryRepoSeed {
   const dateOf = (idx: number): string => addDays(today, idx - (DEMO_DAYS - 1));
 
   const rng = mulberry32(DEMO_SEED_VALUE);
+  const factorSets = pickFactorSets(rng);
   const plans: Plan[] = [];
-  for (let idx = 0; idx < DEMO_DAYS; idx++) plans.push(planNight(idx, dateOf(idx), rng));
+  for (let idx = 0; idx < DEMO_DAYS; idx++) plans.push(planNight(idx, dateOf(idx), rng, factorSets));
 
   const events: StoredEvent[] = [];
   const addEvent = (type: SignalType, ts: string, source: StoredEvent['source'], key: string): void => {
