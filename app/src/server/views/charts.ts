@@ -23,11 +23,13 @@ import {
   sleepDebt,
   type DurationBand,
 } from '../../domain/sleep-balance';
+import { clockChangeShiftMin } from '../../domain/clock-change';
 import { addDays } from '../../domain/time';
 import { DEFAULT_TARGET_SLEEP_MIN, type EveningCheck, type Nap, type Night, type NightStatus } from '../../domain/types';
 import {
   DURATION_SCALE_MIN,
   clamp,
+  clockChangeRangeNote,
   coverageMarks,
   coverageView,
   hiddenTextOf,
@@ -80,6 +82,8 @@ export interface DurationBarView {
   band: DurationBand | null;
   /** '24 ottobre · 7h 32m' oppure '24 ottobre · mancante'. */
   title: string;
+  /** true se in quella notte è cambiata l'ora (la durata è comunque quella reale). */
+  clockChange: boolean;
 }
 
 export interface ChartChipView {
@@ -96,6 +100,8 @@ export interface DurationChartView {
   targetText: string;
   chips: ChartChipView[];
   debtHiddenText: string | null;
+  /** Frase se nelle notti mostrate è cambiata l'ora, altrimenti null. */
+  clockChangeNote: string | null;
   coverage: CoverageView;
 }
 
@@ -234,7 +240,8 @@ export function buildChartsView(input: ChartsViewInput): ChartsView {
       status,
       durationText: formatHm(min),
       band: min === null ? null : durationBand(min),
-      title: `${formatDayMonth(date)} · ${min === null ? 'mancante' : formatHm(min)}`,
+      title: `${formatDayMonth(date)} · ${min === null ? 'mancante' : formatHm(min)}${clockChangeShiftMin(date) === 0 ? '' : " · cambio d'ora"}`,
+      clockChange: clockChangeShiftMin(date) !== 0,
     });
   }
   const ds = durationStats(nights, today);
@@ -424,6 +431,7 @@ export function buildChartsView(input: ChartsViewInput): ChartsView {
       targetText: `Linea tratteggiata = obiettivo ${formatHm(target)}`,
       chips,
       debtHiddenText: hiddenTextOf(debt),
+      clockChangeNote: clockChangeRangeNote(addDays(today, -13), today),
       coverage: coverageView(
         { used: bars.filter((x) => x.band !== null).length, window: 14 },
         coverageMarks(byDate, today, 14),

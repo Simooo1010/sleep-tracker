@@ -50,12 +50,19 @@ export function toCalendarNights(view: HistoryView): CalendarNight[] {
         night.end = end;
       }
       night.note = missing
-        ? NO_DATA_TEXT
+        ? [NO_DATA_TEXT, detail.clockChangeNote].filter(Boolean).join(' ')
         : `Letto: ${lower(detail.bedProvenanceWord)}. Sveglia: ${lower(detail.wakeProvenanceWord)}. ${detail.note}`;
       night.tags = detail.tags;
     }
     out.push(night);
   }
+  return out;
+}
+
+/** Giorni del mese con cambio d'ora (data → ±60 minuti), anche futuri. */
+export function clockChangesOf(view: HistoryView): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const c of view.cells) if (c.date !== null && c.clockShiftMin !== 0) out[c.date] = c.clockShiftMin;
   return out;
 }
 
@@ -130,6 +137,7 @@ export function HistoryScreen({ view, today }: HistoryScreenProps) {
         year={year}
         month={month}
         nights={toCalendarNights(view)}
+        clockChanges={clockChangesOf(view)}
         {...(todayDate !== undefined ? { today: todayDate } : {})}
         selectedDate={view.selectedDate}
         onSelect={select}

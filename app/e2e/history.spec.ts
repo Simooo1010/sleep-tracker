@@ -73,3 +73,21 @@ test('PC: calendario a sinistra e dettaglio a destra', async ({ page }, testInfo
   const detail = await page.getByRole('heading', { level: 4 }).boundingBox();
   expect(detail!.x).toBeGreaterThan(grid!.x + grid!.width - 1);
 });
+
+test('il giorno del cambio d’ora è segnato nel calendario (anche se futuro) e nella legenda', async ({ page }) => {
+  await page.goto('/storico');
+  // Domenica 25 ottobre 2026: l'ora torna indietro. È un giorno futuro (oggi è sabato 24).
+  const day = page.getByRole('gridcell', { name: /^domenica 25 ottobre, giorno futuro, cambio d'ora: un'ora in più$/ });
+  await expect(day).toBeVisible();
+  await expect(day.locator('svg')).toHaveCount(1); // segno vettoriale, non solo colore
+  await expect(page.getByRole('list', { name: 'Legenda' })).toContainText("Orologio = cambio d'ora");
+  // Nessun altro giorno del mese è segnato.
+  await expect(page.locator('[aria-label*="cambio d\'ora"]')).toHaveCount(1);
+});
+
+test('marzo 2026: il passaggio all’ora legale è segnato il 29', async ({ page }) => {
+  await page.goto('/storico?m=2026-03&d=2026-03-29');
+  await expect(page.getByRole('button', { name: /^domenica 29 marzo, .*cambio d'ora: un'ora in meno$/ })).toBeVisible();
+  await expect(page.getByText("Cambio d'ora: −1 h")).toBeVisible();
+  await expect(page.getByText('Cambio applicato: la durata mostrata è quella reale.')).toBeVisible();
+});

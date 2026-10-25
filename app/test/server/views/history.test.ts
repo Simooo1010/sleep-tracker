@@ -35,6 +35,7 @@ describe('buildHistoryView: ottobre 2026', () => {
       status: 'stimata',
       statusWord: 'Stimata',
       bedProvenanceWord: 'Automatico',
+      clockChangeNote: null,
       wakeProvenanceWord: 'Automatico',
       note: 'Orari stimati dai segnali. Conferma per renderli definitivi.',
       tags: ['Notte del weekend'],
@@ -105,7 +106,7 @@ describe('buildHistoryView: vuoto e cambio d’ora', () => {
       dateLabel: 'domenica 25 ottobre',
       durationText: '9h 00m',
       rangeText: '23:30 → 07:30',
-      tags: ['Qualità 4 su 5', 'Energia 5 su 5', 'Notte del weekend'],
+      tags: ['Qualità 4 su 5', 'Energia 5 su 5', 'Notte del weekend', 'Cambio d\'ora: +1 h'],
     });
     expectSerializable(v);
   });

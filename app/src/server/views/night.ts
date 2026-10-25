@@ -5,6 +5,7 @@
  * Funzione pura: `today` ('YYYY-MM-DD', giorno del risveglio di stanotte) e i dati sono parametri.
  */
 import { computeBaseline } from '../../domain/baseline';
+import { clockChangeShiftMin, clockChangeText } from '../../domain/clock-change';
 import { nightDeviation, regularityStats } from '../../domain/deviations';
 import {
   DEFAULT_EXCEPTIONS,
@@ -154,6 +155,8 @@ export interface NightView {
   rangeText: string;
   bar: BarView | null;
   explanation: string;
+  /** Frase sul cambio d'ora se stanotte l'ora è cambiata, altrimenti null. */
+  clockChangeNote: string | null;
   confirmed: boolean;
   canConfirm: boolean;
   confirmLabel: string;
@@ -495,6 +498,7 @@ export function buildNightView(input: NightViewInput): NightView {
     rangeText: formatRange(night?.bedAt.value ?? null, night?.wakeAt.value ?? null),
     bar: night ? nightBar(night) : null,
     explanation: explainNight(night, events),
+    clockChangeNote: clockChangeText(clockChangeShiftMin(today), 'stanotte'),
     confirmed,
     canConfirm: hasAny && !confirmed,
     confirmLabel: 'Conferma',

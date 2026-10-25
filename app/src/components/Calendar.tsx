@@ -41,6 +41,8 @@ export interface CalendarProps {
   /** Selezione iniziale se non controllata. */
   defaultSelectedDate?: string | null;
   onSelect?: (date: string) => void;
+  /** Giorni con cambio d'ora: data → +60 (ora tornata indietro) o −60 (ora andata avanti). Segnati anche se futuri. */
+  clockChanges?: Readonly<Record<string, number>>;
   /** Titolo. Default "Ottobre 2026". */
   title?: string;
   className?: string;
@@ -185,12 +187,23 @@ function nightHasDuration(n: CalendarNight | undefined): n is CalendarNight & { 
 }
 
 /** aria-label completo del giorno: "sabato 24 ottobre, 7h 32m, confermata". */
-export function dayAriaLabel(iso: string, night: CalendarNight | undefined, future = false): string {
+export function dayAriaLabel(iso: string, night: CalendarNight | undefined, future = false, clockShift = 0): string {
   const day = formatDayLabel(iso);
-  if (future) return `${day}, giorno futuro`;
-  if (!night || night.status === 'mancante') return `${day}, mancante`;
-  if (!nightHasDuration(night)) return `${day}, durata non disponibile, ${night.status}`;
-  return `${day}, ${formatDuration(night.minutes)}, ${night.status}`;
+  const clock = clockShift === 0 ? '' : clockShift > 0 ? ", cambio d'ora: un'ora in più" : ", cambio d'ora: un'ora in meno";
+  if (future) return `${day}, giorno futuro${clock}`;
+  if (!night || night.status === 'mancante') return `${day}, mancante${clock}`;
+  if (!nightHasDuration(night)) return `${day}, durata non disponibile, ${night.status}${clock}`;
+  return `${day}, ${formatDuration(night.minutes)}, ${night.status}${clock}`;
+}
+
+/** Segno vettoriale del giorno del cambio d'ora (orologio con freccia). */
+function ClockMark() {
+  return (
+    <svg className={styles.clockMark} viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+      <circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M6 3.4V6l1.8 1.1" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
 /** Classi di bundle.css per la cella di un giorno passato. */
@@ -257,6 +270,7 @@ export function Calendar({
   selectedDate,
   defaultSelectedDate = null,
   onSelect,
+  clockChanges,
   title,
   className,
 }: CalendarProps) {
@@ -320,10 +334,11 @@ export function Calendar({
                         key={d.date}
                         role="gridcell"
                         aria-disabled="true"
-                        aria-label={dayAriaLabel(d.date, undefined, true)}
+                        aria-label={dayAriaLabel(d.date, undefined, true, clockChanges?.[d.date] ?? 0)}
                         className={cx('cell', styles.day, styles.future)}
                       >
                         <span className={styles.num}>{d.day}</span>
+                        {clockChanges?.[d.date] ? <ClockMark /> : null}
                       </div>
                     );
                   }
@@ -339,13 +354,14 @@ export function Calendar({
                           else buttons.current.delete(d.date);
                         }}
                         tabIndex={d.date === tabTarget ? 0 : -1}
-                        aria-label={dayAriaLabel(d.date, night)}
+                        aria-label={dayAriaLabel(d.date, night, false, clockChanges?.[d.date] ?? 0)}
                         aria-current={d.date === today ? 'date' : undefined}
                         className={cx(dayCellClass(night), styles.day, isSelected && styles.isSelected)}
                         onClick={() => choose(d.date)}
                         onKeyDown={(e) => handleKeyDown(e, d.date)}
                       >
                         <span className={styles.num}>{d.day}</span>
+                        {clockChanges?.[d.date] ? <ClockMark /> : null}
                         <span className={styles.dur} aria-hidden="true">
                           <span className={styles.durFull}>{shown ? formatDuration(night.minutes) : '—'}</span>
                           <span className={styles.durShort}>
@@ -365,6 +381,7 @@ export function Calendar({
             <li>Pesca meno di 7h</li>
             <li>Tratteggio = stimata</li>
             <li>Punti = mancante</li>
+            {clockChanges && Object.keys(clockChanges).length > 0 ? <li>Orologio = cambio d&apos;ora</li> : null}
           </ul>
         </div>
         <div className={styles.detail} aria-live="polite">
