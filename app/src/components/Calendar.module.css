@@ -82,6 +82,7 @@
 }
 
 :global(.cell).day {
+  position: relative;
   width: 100%;
   min-width: 0;
   height: 3rem;
@@ -186,4 +187,15 @@
 
 .note {
   margin: 0;
+}
+
+/* Segno del giorno del cambio d'ora: piccolo orologio vettoriale nell'angolo della cella */
+.clockMark {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  color: var(--ink-muted);
+  pointer-events: none;
 }

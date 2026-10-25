@@ -15,6 +15,7 @@ import { BASELINE_WINDOW_DAYS, TOLERANCE_MIN, type Night, type NightStatus } fro
 import {
   axisPct,
   bedAxisToAxis,
+  clockChangeRangeNote,
   coverageMarks,
   coverageView,
   hiddenTextOf,
@@ -142,6 +143,8 @@ export interface RegularityView {
     coverage: CoverageView;
   };
   rows: RegularityRowView[];
+  /** Frase se nelle notti mostrate è cambiata l'ora, altrimenti null. */
+  clockChangeNote: string | null;
   bands: ToleranceBandsView | null;
   ticks: AxisTickView[];
   legend: string;
@@ -381,6 +384,7 @@ export function buildRegularityView(input: RegularityViewInput): RegularityView 
       coverage: coverageView(baseline.coverage, coverageMarks(byDate, addDays(today, -1), BASELINE_WINDOW_DAYS)),
     },
     rows,
+    clockChangeNote: clockChangeRangeNote(addDays(today, -BASELINE_WINDOW_DAYS), today),
     bands,
     ticks: TICKS,
     legend: 'Fascia salvia = mediana ± 30 min · Barra piena = confermata · Tratteggio = stimata · Punti = mancante',

@@ -202,6 +202,22 @@ describe('buildNightView: casi particolari', () => {
     expect(v.rangeText).toBe('23:30 → 07:30');
     expect(v.durationMin).toBe(540); // un'ora in più: si torna all'ora solare
     expect(v.durationText).toBe('9h 00m');
+    expect(v.clockChangeNote).toBe(
+      "Cambio d'ora applicato: le lancette sono tornate indietro di 1 ora, quindi la notte dura 1 ora in più di quanto dicono gli orari. La durata mostrata è quella reale.",
+    );
     expectSerializable(v);
+  });
+
+  it('senza cambio d’ora la nota è null (notte normale e giorno dopo il cambio)', () => {
+    const ds = buildDataset(30, '2026-09-26');
+    for (const today of ['2026-10-24', '2026-10-26']) {
+      expect(buildNightView({ today, nights: ds.nights }).clockChangeNote).toBeNull();
+    }
+  });
+
+  it('passaggio all’ora legale 2026-03-29: la notte dura 1 ora in meno', () => {
+    const v = buildNightView({ today: '2026-03-29', nights: [] });
+    expect(v.clockChangeNote).toContain('sono andate avanti di 1 ora');
+    expect(v.clockChangeNote).toContain('1 ora in meno');
   });
 });

@@ -147,6 +147,11 @@ function NightsBlock({ view, title }: { view: RegularityView; title?: string }) 
             : `${names.join(', ')} sono visibili nel grafico ma escluse dal riferimento.`}
         </p>
       )}
+      {view.clockChangeNote && (
+        <p className={`body-sm ${styles.note}`} data-clock-change="true">
+          {view.clockChangeNote}
+        </p>
+      )}
       <p className={`caption muted ${styles.note}`}>
         Riferimento: letto {baseline.bedText}, sveglia {baseline.wakeText}. Mediana delle ultime 14 notti, senza i giorni-eccezione.
       </p>
