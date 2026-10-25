@@ -168,15 +168,17 @@ export function NightBars(props: NightBarsProps) {
           const devs = missing ? null : formatDeviationPair(n.bedDevMin, n.wakeDevMin);
           const row = { gridRow: i + 2 };
           return (
-            <div key={`${n.label}-${i}`} className={styles.row} style={row}>
-              <span className={styles.label}>{n.label}</span>
-              <div className={cx('track', styles.track)}>
+            <div key={`${n.label}-${i}`} className={styles.row}>
+              <span className={styles.label} style={row}>
+                {n.label}
+              </span>
+              <div className={cx('track', styles.track)} style={row}>
                 <div
                   className={cx('hbar', missing ? 'is-missing' : BAR_CLASS[n.provenance])}
                   style={missing ? undefined : { left: `${span.left}%`, width: `${span.width}%` }}
                 />
               </div>
-              <span className={styles.devs}>
+              <span className={styles.devs} style={row}>
                 {devs !== null && <span className="muted">{devs}</span>}
                 <span className={cx('badge', missing ? 'badge-missing' : VERDICT_BADGE[verdict], styles.badge)}>
                   {missing ? 'Mancante' : VERDICT_WORD[verdict]}

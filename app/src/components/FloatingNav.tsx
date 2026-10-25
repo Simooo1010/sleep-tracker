@@ -68,7 +68,7 @@ function Icon({ d }: { d: string }) {
   );
 }
 
-export default function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTheme }: FloatingNavProps) {
+export function FloatingNav({ pathname, today = [], theme = 'chiaro', onToggleTheme }: FloatingNavProps) {
   const phoneItems = NAV_ITEMS.filter((item) => !item.desktopOnly);
   const lines = today.filter((line) => line.trim().length > 0);
   const other: Theme = theme === 'scuro' ? 'chiaro' : 'scuro';
@@ -138,3 +138,5 @@ export default function FloatingNav({ pathname, today = [], theme = 'chiaro', on
     </>
   );
 }
+
+export default FloatingNav;

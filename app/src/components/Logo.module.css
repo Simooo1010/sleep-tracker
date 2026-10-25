@@ -1,0 +1,41 @@
+/* Logo: solo variabili di tokens.css, misure in rem. La tessera bianca viene da `.icon-tile` di bundle.css. */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.tile {
+  flex: 0 0 auto;
+  width: var(--logo-size);
+  height: var(--logo-size);
+}
+
+.name {
+  font-weight: 300;
+  line-height: 1;
+  color: var(--ink);
+  font-size: var(--logo-name);
+}
+
+.sm {
+  --logo-size: 2rem;
+  --logo-name: 1.25rem;
+  gap: var(--space-2);
+}
+
+.md {
+  --logo-size: 4rem;
+  --logo-name: 2.125rem;
+}
+
+.lg {
+  --logo-size: 7.5rem;
+  --logo-name: 3rem;
+}
+
+.xl {
+  --logo-size: 11.25rem;
+  --logo-name: 4rem;
+}

@@ -1,0 +1,165 @@
+/* NightBars: griglia etichetta | pista | scarti. Solo variabili di tokens.css, misure in rem. */
+.root {
+  position: relative;
+  margin: 0;
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  row-gap: 0.375rem;
+  align-items: center;
+  min-width: 0;
+}
+
+.ticks {
+  grid-column: 2;
+  grid-row: 1;
+  position: relative;
+  height: 1.125rem;
+  font-size: 0.6875rem;
+  line-height: 1.125rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.tickStart {
+  transform: none;
+}
+
+.overlay {
+  grid-column: 2;
+  align-self: stretch;
+  position: relative;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.row {
+  display: contents;
+}
+
+.label {
+  grid-column: 1;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track {
+  grid-column: 2;
+  height: 0.875rem;
+  min-width: 0;
+}
+
+.devs {
+  grid-column: 3;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.badge {
+  height: 1.125rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+}
+
+/* Provenienza automatica: solo contorno azzurro, nessun riempimento. */
+.auto.auto {
+  background: transparent;
+  border: var(--hairline) solid var(--blue-edge);
+}
+
+.legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-4);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  color: var(--ink-muted);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.sw {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 0.625rem;
+  border-radius: var(--radius-pill);
+}
+
+.swBand {
+  border-radius: 0;
+  background: var(--sage);
+  opacity: 0.6;
+}
+
+.swMedian {
+  width: 0;
+  height: 0.875rem;
+  border-radius: 0;
+  border-left: calc(var(--hairline) * 2) dashed var(--sage-edge);
+}
+
+.swConfirmed {
+  background: var(--blue);
+  border: var(--hairline) solid var(--blue-edge);
+}
+
+.swAuto {
+  background: transparent;
+  border: var(--hairline) solid var(--blue-edge);
+}
+
+.swEstimated {
+  background: repeating-linear-gradient(135deg, var(--peach) 0 0.25rem, transparent 0.25rem 0.5rem);
+  border: 1.5px dashed var(--peach-edge);
+}
+
+.swMissing {
+  background: transparent;
+  border: 1.5px dotted var(--line-strong);
+}
+
+.srOnly {
+  position: absolute;
+  width: var(--hairline);
+  height: var(--hairline);
+  padding: 0;
+  margin: calc(var(--hairline) * -1);
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

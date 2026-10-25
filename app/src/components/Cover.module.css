@@ -1,0 +1,73 @@
+/* Cover: solo variabili di tokens.css, misure in rem e unità del contenitore. Proporzione 960×340. */
+.cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 960 / 340;
+  min-height: 10rem;
+  overflow: hidden;
+  background: var(--ground);
+  container-type: inline-size;
+}
+
+.art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.block {
+  rx: var(--radius-xl);
+}
+
+.blue {
+  fill: var(--blue);
+}
+
+.peach {
+  fill: var(--peach);
+}
+
+.sage {
+  fill: var(--sage);
+}
+
+.yellow {
+  fill: var(--yellow);
+}
+
+.moonOut {
+  fill: none;
+  stroke: var(--ground);
+  stroke-width: 2;
+}
+
+.moonLit {
+  fill: var(--ground);
+}
+
+.name {
+  position: absolute;
+  left: 4.1667cqi;
+  bottom: 12.9412%;
+  width: 43.75cqi;
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 300;
+  font-size: 10cqi;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  font-optical-sizing: auto;
+  color: var(--ink);
+}
+
+.tagline {
+  margin: 1.4583cqi 0 0;
+  font-family: var(--font-sans);
+  font-size: max(0.75rem, 1.4583cqi);
+  line-height: 1.43;
+  color: var(--ink-muted);
+}
