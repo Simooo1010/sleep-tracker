@@ -1,0 +1,29 @@
+/* ListRow: solo variabili di tokens.css, misure in rem. Le classi del sistema stanno in bundle.css. */
+.link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.button {
+  color: var(--ink);
+}
+
+.blue {
+  background: var(--blue);
+}
+
+.sage {
+  background: var(--sage);
+}
+
+.peach {
+  background: var(--peach);
+}
+
+.yellow {
+  background: var(--yellow);
+}
+
+.chevron {
+  flex: 0 0 auto;
+}

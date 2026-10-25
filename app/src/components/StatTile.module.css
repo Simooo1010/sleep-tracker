@@ -1,0 +1,24 @@
+/* StatTile: righe interne della tessera. Solo variabili di tokens.css, misure in rem. */
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.slot {
+  margin-top: var(--space-1);
+  min-height: 2.25rem;
+  display: flex;
+  align-items: center;
+}
+
+/* Dentro la tessera la copertura usa l'-ink della tessera: contrasto garantito sul fondo -soft. */
+.coverage {
+  margin-top: var(--space-2);
+}
+
+.coverage :global(.coverage),
+.coverage :global(.coverage strong) {
+  color: inherit;
+}
