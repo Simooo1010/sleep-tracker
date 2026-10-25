@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 const PASSWORD = 'prova-password-12345';
 
 async function signIn(page: Page, password = PASSWORD): Promise<void> {
-  await page.getByLabel('Password').fill(password);
+  await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entra' }).click();
 }
 
@@ -15,8 +15,8 @@ test('senza cookie la home reindirizza a /login?next=/ e la pagina non ha naviga
   await page.goto('/');
   await expect(page).toHaveURL(/\/login\?next=%2F$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Accesso' })).toBeVisible();
-  await expect(page.getByLabel('Password')).toHaveAttribute('autocomplete', 'current-password');
-  await expect(page.getByLabel('Password')).toHaveAttribute('type', 'password');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('autocomplete', 'current-password');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   await expect(page.getByRole('button', { name: 'Entra' })).toBeVisible();
   // Nessun guscio: niente navigazione, niente tema, niente link di salto.
   await expect(page.locator('nav')).toHaveCount(0);
@@ -105,7 +105,7 @@ for (const next of ['https://evil.com', '//evil.com', '/\\evil.com', 'javascript
 test.describe('Mostra/Nascondi password', () => {
   test('alterna type senza perdere il valore e permette l\'accesso con la password mostrata', async ({ page }) => {
     await page.goto('/login');
-    const field = page.getByLabel('Password');
+    const field = page.getByLabel('Password', { exact: true });
     await field.fill(PASSWORD);
     await expect(field).toHaveAttribute('type', 'password');
 
@@ -136,8 +136,8 @@ test.describe('Mostra/Nascondi password', () => {
 
   test('Invio nel campo invia il form', async ({ page }) => {
     await page.goto('/login');
-    await page.getByLabel('Password').fill(PASSWORD);
-    await page.getByLabel('Password').press('Enter');
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+    await page.getByLabel('Password', { exact: true }).press('Enter');
     await expect(page).toHaveURL(/\/$/);
     await expect(page.getByRole('heading', { level: 1, name: /^Notte di / })).toBeVisible();
   });
@@ -148,7 +148,7 @@ test.describe('Mostra/Nascondi password', () => {
     const box = await page.getByRole('button', { name: 'Mostra password' }).boundingBox();
     expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
     expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
-    await page.getByLabel('Password').focus();
+    await page.getByLabel('Password', { exact: true }).focus();
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Mostra password' })).toBeFocused();
     await page.keyboard.press('Tab');
@@ -161,9 +161,10 @@ test.describe('Mostra/Nascondi password', () => {
 
       test('nessuno scroll orizzontale, anche con la password mostrata', async ({ page }) => {
         await page.goto('/login');
-        await page.getByLabel('Password').fill(PASSWORD);
+        console.log('DBG', JSON.stringify(await page.evaluate(() => ['main','form','#password','button[aria-controls]','.card'].map((q) => { const r = document.querySelector(q)!.getBoundingClientRect(); return [q, Math.round(r.left), Math.round(r.width)]; }).concat([['inner', innerWidth, document.documentElement.scrollWidth]]))));
+        await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
         await page.getByRole('button', { name: 'Mostra password' }).click();
-        await expect(page.getByLabel('Password')).toHaveAttribute('type', 'text');
+        await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'text');
         const { scrollWidth, innerWidth } = await page.evaluate(() => ({
           scrollWidth: document.documentElement.scrollWidth,
           innerWidth: window.innerWidth,
