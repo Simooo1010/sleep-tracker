@@ -53,3 +53,5 @@
 | 2026-10-25 | Insight: gateway con timeout 6 s e riserva a regole locali; al gateway solo statistiche aggregate | confermata |
 | 2026-10-25 | CI GitHub non eseguita sulle PR in bozza (evita email sui WIP) | confermata |
 | 2026-10-25 | Test finale profondo dell'app eseguito dall'utente in un'altra chat | confermata |
+| 2026-10-25 | Velocità percepita: nav ottimistica, `loading.tsx` con skeleton, `staleTimes` (dynamic 30 s, static 180 s; le Server Actions invalidano con `revalidatePath`); accettato che un evento dai Comandi compaia con fino a 30 s di ritardo | confermata |
+| 2026-10-25 | I dati di prova del collaudo si scrivono su produzione con date nel passato recente e si eliminano a fine lavoro con DELETE mirati (mai DROP/TRUNCATE) | confermata |

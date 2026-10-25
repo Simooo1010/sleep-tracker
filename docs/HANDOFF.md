@@ -1,9 +1,9 @@
-# HANDOFF — Sleep Tracker (stato al 2026-10-25)
+# HANDOFF — Sleep Tracker (stato al 2026-10-25, dopo il collaudo)
 
 Documento di passaggio per una nuova chat. Leggi prima `CLAUDE.md`, poi questo file, poi `MEMORY.md`. Nessun segreto qui dentro: i valori stanno solo nelle variabili d'ambiente di Vercel/Supabase.
 
 ## 1. In una riga
-App personale per tracciare il sonno (PWA Next.js, italiano, utente unico), **costruita, mergiata su `main` (PR #11) e online**. Resta il **collaudo reale** (da fare nella nuova chat) e qualche rifinitura nota (§9).
+App personale per tracciare il sonno (PWA Next.js, italiano, utente unico), **costruita, mergiata su `main` (PR #11) e online**. Il **collaudo in produzione è fatto** (§13); restano le prove su dispositivo reale (§11) e qualche rifinitura nota (§9).
 
 ## 2. Dove vive
 | Cosa | Dove |
@@ -96,7 +96,7 @@ Progetto `sleep-tracker-app`, ambiente Production:
 - La CI non gira sulle PR in bozza; per attivarla segna la PR "Ready for review". Anteprime Vercel disattivate (solo produzione da `main`).
 - Possibili miglioramenti: notifiche di recupero; persistenza di `questions_log` per il budget oltre il giorno; cache insight (`insights_cache` esiste ma non è usata); routine settimanale di controllo (vedi §11).
 
-## 9b. PRESTAZIONI — priorità del collaudo (segnalato dall'utente)
+## 9b. PRESTAZIONI — risolte in PR #13 (misure in §13; testo originale della diagnosi)
 L'utente riferisce che **cambiare sezione è lento**: dopo il tocco la nuova schermata compare dopo 1–2 secondi, l'app sembra poco reattiva. Obiettivi del collaudo: **massima velocità percepita e massima risoluzione/nitidezza, senza ridurre sicurezza ed efficienza.** Misurare prima e dopo ogni ottimizzazione.
 Cause già individuate (non ancora corrette nel codice):
 - Tutte le pagine sono `force-dynamic` (render del server a ogni navigazione) e **non esiste nessun `loading.tsx`**: nessuna schermata di attesa né prefetch utile per le rotte dinamiche → il tocco non dà feedback finché non arriva tutto.
@@ -125,3 +125,11 @@ Cause già individuate (non ancora corrette nel codice):
 
 ## 12. Cronologia essenziale
 PR #1–#6 definizione e spec · #7 design system · #8–#10 gateway AI · **#11 app v1** (Slice 0–7 + accesso + Impostazioni). Dopo il merge: progetto Vercel app, variabili, redeploy; aggiunta "Mostra password" nel login (branch `claude/login-mostra-password`). Decisioni dettagliate: `docs/DECISIONS.md`.
+
+## 13. Collaudo del 2026-10-25 (esito)
+**Cicli**: ciclo 1 con 1 difetto corretto; cicli 2 e 3 consecutivi a zero difetti.
+**Corretti**: PR #13 velocità (nav ottimistica, `loading.tsx`, `staleTimes`, `touch-action`); PR #14 barra in alto su telefono (la regola `.action` perdeva contro `.btn`: pulsanti troppo grandi su 2 righe), con test di regressione in `e2e/shell.spec.ts`.
+**Misure** (390 px, CPU 4x, 4G, produzione): feedback al tocco 360–700 ms → 15–35 ms; contenuto già visitato 360–520 ms → ~40 ms; prima visita ~600–850 ms (limite del server, funzioni a fra1). Non misurati Lighthouse/INP/LCP.
+**Verificato in produzione**: 7 pagine × 6 viewport (320, 390, 768, 1280, 1920, 4K) × 2 temi, senza overflow, `undefined`/`NaN` ed errori console; zoom del testo 200% a 320 e 390 senza overflow; focus visibile; /api/events con ~25 input ostili (400/401/413 corretti, 10 invii paralleli = 1 solo evento); Server Action senza cookie 401; 28 notti di prova con buchi, weekend, eccezioni, sonnellini e notte DST 24→25 ott (9 h corrette); doppi click su Notte e Sera senza errori; advisor Supabase solo INFO; nessun errore runtime.
+**Pulizia**: eliminate solo le righe di prova (18 eventi `test-…`, 25 notti, 6 sonnellini, 11 check, 2 eccezioni, 1 domanda, token "collaudo"); contatori `exception_types.uses` invariati (0); tabelle tornate allo stato iniziale.
+**Aperto/non fatto**: sotto 320 px (es. 195 px) i badge non vanno a capo (fuori dal minimo WCAG, non corretto); `getRepo` singleton, `mapping.ts` fragile e gli altri punti di §9 invariati; i Comandi iOS e l'installazione PWA su iPhone reale restano da provare (§11); gateway AI non collegato (`GATEWAY_SECRET`).

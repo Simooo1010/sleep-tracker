@@ -51,6 +51,9 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - iPhone: creare i Comandi/automazioni (guida in `docs/COMANDI_IOS.md`) e aggiungere la PWA alla Home.
 - Opzionale: modalità Auto del menu permessi, o `.claude/settings.json` con `permissions.allow` per ridurre i prompt.
 
+## Stato (2026-10-25, fine collaudo)
+- Collaudo in produzione concluso: due cicli consecutivi senza difetti (PR #13 velocità, #14 barra in alto). Dettagli in `docs/HANDOFF.md` §13. Restano all'utente solo i Comandi iOS e la prova su iPhone vero.
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
