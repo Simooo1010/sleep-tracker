@@ -89,7 +89,7 @@ function nightFor(i: number, date: string): Night | null {
     ...(alcol ? ['alcol'] : []),
   ];
   const bedMin = hm('23:30') + (weekend ? 50 : 0) + Math.round((rnd(i) - 0.5) * 30) + (screen ? 15 : 0) + 24 * 60;
-  const durMin = 450 - (weekend ? 0 : 15) + Math.round((rnd(i + 40) - 0.5) * 60) + (sport ? 15 : 0);
+  const durMin = 450 - (weekend ? 0 : 25) + Math.round((rnd(i + 40) - 0.5) * 80) + (sport ? 15 : 0);
   const quality = score(3 + (sport ? 1 : 0) - (screen ? 1 : 0) + (rnd(i + 13) - 0.5));
   const energy = score(2.6 + (durMin - 420) / 60 + (rnd(i + 17) - 0.5));
   if (date === EXCEPTION_DATE) {
@@ -127,7 +127,7 @@ export function buildDataset(days = 30, start = START): Dataset {
     // Sonnellini: alcuni da comando rapido, uno recuperato dal check serale.
     if (i % 3 === 1) {
       const startAt = localToIso(date, hm('14:05') + (i % 4) * 10);
-      naps.push({ date, startAt, minutes: 25 + (i % 3) * 5, provenance: 'automatico' });
+      naps.push({ date, startAt, minutes: 20 + (i % 4) * 8, provenance: 'automatico' });
     }
   }
   naps.push({ date: '2026-10-21', startAt: localToIso('2026-10-21', 12 * 60), minutes: 30, provenance: 'confermato' });

@@ -71,16 +71,18 @@ function fakeClient(tables: Record<string, Row[]> = {}, opts: FakeOpts = {}) {
 
     const upsert = find('upsert')[0];
     if (upsert) {
-      const [value, o] = upsert.args as [Row, { onConflict?: string; ignoreDuplicates?: boolean }];
+      const [input, o] = upsert.args as [Row | Row[], { onConflict?: string; ignoreDuplicates?: boolean }];
       const conflictCol = o?.onConflict ?? key;
-      const existing = rows.find((r) => r[conflictCol] === value[conflictCol]);
-      let affected: Row[] = [];
-      if (!existing) {
-        rows.push({ ...value });
-        affected = [value];
-      } else if (!o?.ignoreDuplicates) {
-        Object.assign(existing, value);
-        affected = [existing];
+      const affected: Row[] = [];
+      for (const value of ([] as Row[]).concat(input)) {
+        const existing = rows.find((r) => r[conflictCol!] === value[conflictCol!]);
+        if (!existing) {
+          rows.push({ ...value });
+          affected.push(value);
+        } else if (!o?.ignoreDuplicates) {
+          Object.assign(existing, value);
+          affected.push(existing);
+        }
       }
       return { data: wantsSelect ? affected.map((r) => ({ ...r })) : null, error: null };
     }
@@ -438,6 +440,365 @@ describe('createSupabaseRepo: token', () => {
     await expect(createSupabaseRepo(client, fixedNow).tokenExists('h-ok')).rejects.toThrow(
       'Supabase: verifica token non riuscita',
     );
+  });
+});
+
+// ---------- Aggiunte Slice 3 ----------
+
+const failAll = (code?: string) => ({
+  failWhen: () => ({ ...(code ? { code } : {}), message: 'dato segreto 2026-10-25 nap-xyz' }),
+});
+
+describe('createSupabaseRepo: overwriteNight', () => {
+  it('sostituisce anche una notte confermata, con upsert su night_date senza filtro di status', async () => {
+    const { client, db, calls } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    await repo.upsertNight(night({ status: 'confermata' }));
+    const replaced = night({ status: 'stimata', quality: { value: 2, provenance: 'confermato' }, factors: [] });
+    const before = calls.length;
+    await repo.overwriteNight(replaced);
+    const call = calls[before]!;
+    expect(db.nights).toHaveLength(1);
+    expect(await repo.getNight('2026-10-25')).toEqual(replaced);
+
+    expect(call.table).toBe('nights');
+    expect(call.ops.map((o) => o.method)).toEqual(['upsert']);
+    expect(call.ops[0]!.args[1]).toEqual({ onConflict: 'night_date' });
+    expect(db.nights![0]).toMatchObject({ updated_at: NOW.toISOString() });
+  });
+
+  it('crea la notte se non esiste', async () => {
+    const { client, db } = fakeClient();
+    await createSupabaseRepo(client, fixedNow).overwriteNight(night());
+    expect(db.nights).toHaveLength(1);
+  });
+
+  it('errore → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll('42501'));
+    const p = createSupabaseRepo(client, fixedNow).overwriteNight(night());
+    await expect(p).rejects.toThrow('Supabase: sovrascrittura notte non riuscita (42501)');
+    await expect(p).rejects.not.toThrow(/segreto|2026/);
+  });
+});
+
+describe('createSupabaseRepo: listNaps / listEveningChecks', () => {
+  const napRow = (date: string, start: string, minutes = 20) => ({
+    id: 1,
+    date,
+    start_at: start,
+    minutes,
+    provenance: 'stimato',
+  });
+
+  it('listNaps: intervallo inclusivo, ordine per start_at, mapping a Nap', async () => {
+    const { client, calls } = fakeClient({
+      naps: [
+        napRow('2026-10-25', '2026-10-25T14:00:00+00:00', 30),
+        napRow('2026-10-23', '2026-10-23T13:00:00+00:00'),
+        napRow('2026-10-25', '2026-10-25T09:00:00+00:00', 15),
+        napRow('2026-10-20', '2026-10-20T13:00:00+00:00'),
+        napRow('2026-10-26', '2026-10-26T13:00:00+00:00'),
+      ],
+    });
+    const out = await createSupabaseRepo(client, fixedNow).listNaps('2026-10-23', '2026-10-25');
+    expect(out).toEqual([
+      { date: '2026-10-23', startAt: '2026-10-23T13:00:00.000Z', minutes: 20, provenance: 'stimato' },
+      { date: '2026-10-25', startAt: '2026-10-25T09:00:00.000Z', minutes: 15, provenance: 'stimato' },
+      { date: '2026-10-25', startAt: '2026-10-25T14:00:00.000Z', minutes: 30, provenance: 'stimato' },
+    ]);
+    const ops = calls[0]!.ops;
+    expect(ops).toContainEqual({ method: 'gte', args: ['date', '2026-10-23'] });
+    expect(ops).toContainEqual({ method: 'lte', args: ['date', '2026-10-25'] });
+    expect(ops).toContainEqual({ method: 'order', args: ['start_at', { ascending: true }] });
+  });
+
+  it('listNaps: riga non valida → errore senza dati; errore client → Error breve', async () => {
+    const bad = fakeClient({ naps: [{ ...napRow('2026-10-25', '2026-10-25T09:00:00+00:00'), provenance: 'boh' }] });
+    await expect(createSupabaseRepo(bad.client, fixedNow).listNaps('2026-10-01', '2026-10-31')).rejects.toThrow(
+      'Dato non valido letto da naps',
+    );
+    const { client } = fakeClient({}, failAll('XX000'));
+    const p = createSupabaseRepo(client, fixedNow).listNaps('2026-10-01', '2026-10-31');
+    await expect(p).rejects.toThrow('Supabase: lettura sonnellini non riuscita (XX000)');
+    await expect(p).rejects.not.toThrow(/segreto|nap-xyz/);
+  });
+
+  it('listEveningChecks: intervallo inclusivo, ordine per data, mapping a EveningCheck', async () => {
+    const { client, calls } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    const mk = (date: string): EveningCheck => ({
+      date,
+      tiredness: { value: 3, provenance: 'confermato' },
+      mood: { value: null, provenance: 'mancante' },
+      factors: ['caffe-tardi'],
+      napMinutesToday: { value: null, provenance: 'mancante' },
+    });
+    for (const d of ['2026-10-25', '2026-10-22', '2026-10-24', '2026-10-30']) {
+      await repo.saveEveningCheck(mk(d));
+    }
+    const out = await repo.listEveningChecks('2026-10-22', '2026-10-25');
+    expect(out).toEqual([mk('2026-10-22'), mk('2026-10-24'), mk('2026-10-25')]);
+    const ops = calls[calls.length - 1]!.ops;
+    expect(ops).toContainEqual({ method: 'gte', args: ['date', '2026-10-22'] });
+    expect(ops).toContainEqual({ method: 'lte', args: ['date', '2026-10-25'] });
+    expect(ops).toContainEqual({ method: 'order', args: ['date', { ascending: true }] });
+  });
+
+  it('listEveningChecks: errore → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll());
+    const p = createSupabaseRepo(client, fixedNow).listEveningChecks('2026-10-01', '2026-10-31');
+    await expect(p).rejects.toThrow('Supabase: lettura check serali non riuscita');
+    await expect(p).rejects.not.toThrow(/segreto/);
+  });
+});
+
+describe('createSupabaseRepo: eccezioni', () => {
+  const types = () => [
+    { slug: 'malattia', label: 'malattia', uses: 2 },
+    { slug: 'viaggio', label: 'viaggio', uses: 5 },
+    { slug: 'alcol', label: 'alcol', uses: 2 },
+    { slug: 'festa', label: 'festa', uses: 0 },
+  ];
+
+  it('listExceptionTypes: ordina per uses desc poi label, mapping a ExceptionTypeRow', async () => {
+    const { client, calls } = fakeClient({ exception_types: types() });
+    const out = await createSupabaseRepo(client, fixedNow).listExceptionTypes();
+    expect(out).toEqual([
+      { slug: 'viaggio', label: 'viaggio', uses: 5 },
+      { slug: 'alcol', label: 'alcol', uses: 2 },
+      { slug: 'malattia', label: 'malattia', uses: 2 },
+      { slug: 'festa', label: 'festa', uses: 0 },
+    ]);
+    const ops = calls[0]!.ops;
+    expect(ops).toContainEqual({ method: 'select', args: ['slug, label, uses'] });
+    expect(ops.filter((o) => o.method === 'order')).toEqual([
+      { method: 'order', args: ['uses', { ascending: false }] },
+      { method: 'order', args: ['label', { ascending: true }] },
+    ]);
+  });
+
+  it('listExceptionTypes: errore → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll('42P01'));
+    const p = createSupabaseRepo(client, fixedNow).listExceptionTypes();
+    await expect(p).rejects.toThrow('Supabase: lettura tipi di eccezione non riuscita (42P01)');
+    await expect(p).rejects.not.toThrow(/segreto/);
+  });
+
+  describe('setNightExceptions', () => {
+    const setup = (current: string[] = []) =>
+      fakeClient({
+        nights: [{ night_date: '2026-10-25' }, { night_date: '2026-10-24' }],
+        exception_types: types(),
+        night_exceptions: [
+          ...current.map((slug) => ({ night_date: '2026-10-25', slug })),
+          { night_date: '2026-10-24', slug: 'festa' },
+        ],
+      });
+    const usesOf = (db: Record<string, Row[]>) =>
+      Object.fromEntries(db.exception_types!.map((r) => [r.slug, r.uses]));
+
+    it('aggiunge: inserisce le associazioni e fa uses +1 solo per i nuovi', async () => {
+      const { client, db } = setup(['malattia']);
+      await createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['malattia', 'viaggio', 'alcol']);
+      expect(db.night_exceptions!.filter((r) => r.night_date === '2026-10-25').map((r) => r.slug).sort()).toEqual([
+        'alcol',
+        'malattia',
+        'viaggio',
+      ]);
+      expect(usesOf(db)).toEqual({ malattia: 2, viaggio: 6, alcol: 3, festa: 0 });
+    });
+
+    it('rimuove: cancella solo le righe di quella notte e fa uses -1, mai sotto 0', async () => {
+      const { client, db, calls } = setup(['malattia', 'festa']);
+      await createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['malattia']);
+      expect(db.night_exceptions).toEqual([
+        { night_date: '2026-10-25', slug: 'malattia' },
+        { night_date: '2026-10-24', slug: 'festa' },
+      ]);
+      expect(usesOf(db)).toEqual({ malattia: 2, viaggio: 5, alcol: 2, festa: 0 });
+      const del = calls.find((c) => c.ops.some((o) => o.method === 'delete'))!;
+      expect(del.table).toBe('night_exceptions');
+      expect(del.ops).toContainEqual({ method: 'eq', args: ['night_date', '2026-10-25'] });
+      expect(del.ops).toContainEqual({ method: 'in', args: ['slug', ['festa']] });
+    });
+
+    it('sostituzione mista, deduplica e nessuna modifica per gli slug invariati', async () => {
+      const { client, db, calls } = setup(['malattia', 'viaggio']);
+      await createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['alcol', 'viaggio', 'alcol']);
+      expect(db.night_exceptions!.filter((r) => r.night_date === '2026-10-25').map((r) => r.slug).sort()).toEqual([
+        'alcol',
+        'viaggio',
+      ]);
+      expect(usesOf(db)).toEqual({ malattia: 1, viaggio: 5, alcol: 3, festa: 0 });
+      const updates = calls.filter((c) => c.ops.some((o) => o.method === 'update'));
+      expect(updates.map((c) => c.ops.find((o) => o.method === 'eq')!.args[1]).sort()).toEqual(['alcol', 'malattia']);
+    });
+
+    it('slug sconosciuto: creato con label derivata e uses 0, poi portato a 1', async () => {
+      const { client, db, calls } = setup();
+      await createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['notte-in-bianco', 'viaggio']);
+      expect(db.exception_types).toContainEqual({ slug: 'notte-in-bianco', label: 'notte in bianco', uses: 1 });
+      expect(usesOf(db).viaggio).toBe(6);
+      const create = calls.find((c) => c.table === 'exception_types' && c.ops.some((o) => o.method === 'upsert'))!;
+      expect(create.ops[0]).toEqual({
+        method: 'upsert',
+        args: [[{ slug: 'notte-in-bianco', label: 'notte in bianco', uses: 0 }], { onConflict: 'slug', ignoreDuplicates: true }],
+      });
+      // Il tipo esiste prima dell'associazione (vincolo FK).
+      const idx = (pred: (c: Call) => boolean) => calls.findIndex(pred);
+      expect(idx((c) => c === create)).toBeLessThan(
+        idx((c) => c.table === 'night_exceptions' && c.ops.some((o) => o.method === 'insert')),
+      );
+    });
+
+    it('lista vuota: cancella tutto e scala i contatori; slug già presenti non toccano uses', async () => {
+      const { client, db } = setup(['viaggio', 'festa']);
+      const repo = createSupabaseRepo(client, fixedNow);
+      await repo.setNightExceptions('2026-10-25', ['viaggio', 'festa']);
+      expect(usesOf(db)).toEqual({ malattia: 2, viaggio: 5, alcol: 2, festa: 0 });
+      await repo.setNightExceptions('2026-10-25', []);
+      expect(db.night_exceptions).toEqual([{ night_date: '2026-10-24', slug: 'festa' }]);
+      expect(usesOf(db)).toEqual({ malattia: 2, viaggio: 4, alcol: 2, festa: 0 });
+    });
+
+    it('slug non valido → Error("Slug non valido.") prima di qualunque scrittura', async () => {
+      for (const bad of ['Viaggio', 'a b', 'x_y', '-x', 'x-', 'a--b', '']) {
+        const { client, calls } = setup();
+        await expect(
+          createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['viaggio', bad]),
+        ).rejects.toThrow('Slug non valido.');
+        expect(calls).toHaveLength(0);
+      }
+    });
+
+    it('notte inesistente → Error("Notte non trovata.") senza creare nulla', async () => {
+      const { client, db } = setup();
+      await expect(
+        createSupabaseRepo(client, fixedNow).setNightExceptions('2026-01-01', ['nuovo-tipo']),
+      ).rejects.toThrow('Notte non trovata.');
+      expect(db.exception_types).toHaveLength(4);
+      expect(db.night_exceptions).toHaveLength(1);
+    });
+
+    it('errori del client → Error breve senza dati', async () => {
+      const tables = ['nights', 'night_exceptions', 'exception_types'];
+      for (const t of tables) {
+        const { client } = fakeClient(
+          { nights: [{ night_date: '2026-10-25' }], exception_types: types(), night_exceptions: [{ night_date: '2026-10-25', slug: 'festa' }] },
+          { failWhen: (c) => (c.table === t ? { code: '23503', message: 'dato segreto 2026-10-25' } : null) },
+        );
+        const p = createSupabaseRepo(client, fixedNow).setNightExceptions('2026-10-25', ['nuovo-tipo']);
+        await expect(p).rejects.toThrow(/^Supabase: .+ non riuscita \(23503\)$/);
+        await expect(p).rejects.not.toThrow(/segreto|2026/);
+      }
+    });
+  });
+
+  it('listNightExceptions: intervallo, slug in ordine alfabetico, solo notti con eccezioni', async () => {
+    const { client, calls } = fakeClient({
+      night_exceptions: [
+        { night_date: '2026-10-25', slug: 'viaggio' },
+        { night_date: '2026-10-25', slug: 'alcol' },
+        { night_date: '2026-10-23', slug: 'festa' },
+        { night_date: '2026-10-20', slug: 'malattia' },
+        { night_date: '2026-10-26', slug: 'malattia' },
+      ],
+    });
+    const out = await createSupabaseRepo(client, fixedNow).listNightExceptions('2026-10-23', '2026-10-25');
+    expect(out).toEqual({ '2026-10-23': ['festa'], '2026-10-25': ['alcol', 'viaggio'] });
+    expect(calls[0]!.ops).toContainEqual({ method: 'gte', args: ['night_date', '2026-10-23'] });
+    expect(calls[0]!.ops).toContainEqual({ method: 'lte', args: ['night_date', '2026-10-25'] });
+    expect(await createSupabaseRepo(client, fixedNow).listNightExceptions('2027-01-01', '2027-01-31')).toEqual({});
+  });
+
+  it('listNightExceptions: errore → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll('XX000'));
+    const p = createSupabaseRepo(client, fixedNow).listNightExceptions('2026-10-01', '2026-10-31');
+    await expect(p).rejects.toThrow('Supabase: lettura eccezioni non riuscita (XX000)');
+    await expect(p).rejects.not.toThrow(/segreto/);
+  });
+});
+
+describe('createSupabaseRepo: domande e impostazioni', () => {
+  it('logQuestion mappa i campi (nightDate assente → null)', async () => {
+    const { client, db } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    await repo.logQuestion({ date: '2026-10-25', kind: 'confirm_night', nightDate: '2026-10-25', answeredOrSkipped: true });
+    await repo.logQuestion({ date: '2026-10-25', kind: 'energy', answeredOrSkipped: false });
+    expect(db.questions_log!.map((r) => ({ ...r, id: undefined }))).toEqual([
+      { date: '2026-10-25', kind: 'confirm_night', night_date: '2026-10-25', answered_or_skipped: true },
+      { date: '2026-10-25', kind: 'energy', night_date: null, answered_or_skipped: false },
+    ]);
+  });
+
+  it('listQuestions: intervallo, ordine per id, mapping a QuestionLogRow', async () => {
+    const { client, calls } = fakeClient({
+      questions_log: [
+        { id: 3, date: '2026-10-25', kind: 'quality', night_date: null, answered_or_skipped: false },
+        { id: 1, date: '2026-10-24', kind: 'confirm_night', night_date: '2026-10-24', answered_or_skipped: true },
+        { id: 2, date: '2026-10-25', kind: 'exception', night_date: '2026-10-25', answered_or_skipped: false },
+        { id: 4, date: '2026-10-20', kind: 'factors', night_date: null, answered_or_skipped: true },
+        { id: 10, date: '2026-10-25', kind: 'nap_today', night_date: null, answered_or_skipped: true },
+      ],
+    });
+    const out = await createSupabaseRepo(client, fixedNow).listQuestions('2026-10-24', '2026-10-25');
+    expect(out).toEqual([
+      { date: '2026-10-24', kind: 'confirm_night', nightDate: '2026-10-24', answeredOrSkipped: true },
+      { date: '2026-10-25', kind: 'exception', nightDate: '2026-10-25', answeredOrSkipped: false },
+      { date: '2026-10-25', kind: 'quality', answeredOrSkipped: false },
+      { date: '2026-10-25', kind: 'nap_today', answeredOrSkipped: true },
+    ]);
+    expect(out[2]).not.toHaveProperty('nightDate');
+    const ops = calls[0]!.ops;
+    expect(ops).toContainEqual({ method: 'gte', args: ['date', '2026-10-24'] });
+    expect(ops).toContainEqual({ method: 'lte', args: ['date', '2026-10-25'] });
+    expect(ops).toContainEqual({ method: 'order', args: ['id', { ascending: true }] });
+  });
+
+  it('listQuestions: kind non valido → errore senza dati', async () => {
+    const { client } = fakeClient({
+      questions_log: [{ id: 1, date: '2026-10-25', kind: 'boh', night_date: null, answered_or_skipped: true }],
+    });
+    await expect(createSupabaseRepo(client, fixedNow).listQuestions('2026-10-01', '2026-10-31')).rejects.toThrow(
+      'Dato non valido letto da questions_log',
+    );
+  });
+
+  it('errori del client su logQuestion / listQuestions → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll('23514'));
+    const repo = createSupabaseRepo(client, fixedNow);
+    const a = repo.logQuestion({ date: '2026-10-25', kind: 'energy', answeredOrSkipped: false });
+    await expect(a).rejects.toThrow('Supabase: registrazione domanda non riuscita (23514)');
+    await expect(a).rejects.not.toThrow(/segreto|2026/);
+    const b = repo.listQuestions('2026-10-01', '2026-10-31');
+    await expect(b).rejects.toThrow('Supabase: lettura domande non riuscita (23514)');
+    await expect(b).rejects.not.toThrow(/segreto|2026/);
+  });
+
+  it('getSetting: valore JSON tipizzato, null se assente, maybeSingle sulla chiave', async () => {
+    const { client, calls } = fakeClient({
+      settings: [
+        { key: 'target_sleep_minutes', value: 450 },
+        { key: 'timezone', value: 'Europe/Rome' },
+        { key: 'prefs', value: { a: [1, 2] } },
+      ],
+    });
+    const repo = createSupabaseRepo(client, fixedNow);
+    expect(await repo.getSetting<number>('target_sleep_minutes')).toBe(450);
+    expect(await repo.getSetting<string>('timezone')).toBe('Europe/Rome');
+    expect(await repo.getSetting('prefs')).toEqual({ a: [1, 2] });
+    expect(await repo.getSetting('assente')).toBeNull();
+    const ops = calls[0]!.ops;
+    expect(ops).toContainEqual({ method: 'select', args: ['value'] });
+    expect(ops).toContainEqual({ method: 'eq', args: ['key', 'target_sleep_minutes'] });
+    expect(ops.some((o) => o.method === 'maybeSingle')).toBe(true);
+  });
+
+  it('getSetting: errore → Error breve senza dati', async () => {
+    const { client } = fakeClient({}, failAll('XX000'));
+    const p = createSupabaseRepo(client, fixedNow).getSetting('timezone');
+    await expect(p).rejects.toThrow('Supabase: lettura impostazione non riuscita (XX000)');
+    await expect(p).rejects.not.toThrow(/segreto|timezone/);
   });
 });
 

@@ -124,7 +124,12 @@ async function rebuildNight(repo: Repo, nightDate: string): Promise<void> {
  * Duplicato (stessa idempotencyKey) → `{ ok: true, duplicate: true }` senza ricalcoli.
  * `now` non è usato: l'orario dell'evento è già in `ev.ts`.
  */
-export async function ingestEvent(repo: Repo, ev: ValidatedEvent, now: Date): Promise<IngestResult> {
+export async function ingestEvent(
+  repo: Repo,
+  ev: ValidatedEvent,
+  now: Date,
+  source: 'comandi' | 'app' = 'comandi',
+): Promise<IngestResult> {
   void now;
   if (Number.isNaN(Date.parse(ev.ts))) return { ok: false, status: 400, error: 'ts non valido' };
 
@@ -132,7 +137,7 @@ export async function ingestEvent(repo: Repo, ev: ValidatedEvent, now: Date): Pr
   const stored: SignalEvent & { idempotencyKey: string } = {
     type: ev.type,
     ts: ev.ts,
-    source: 'comandi',
+    source,
     idempotencyKey: ev.idempotencyKey,
   };
   const { inserted } = await repo.insertEvent(stored);
