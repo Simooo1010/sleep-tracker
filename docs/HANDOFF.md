@@ -34,7 +34,7 @@ Browser/PWA ──(cookie di sessione firmato)──▶ Next.js 16 (Vercel) ─�
 - `src/server/` — `types.ts` (interfaccia `Repo`), `repo-supabase.ts` (produzione), `memory-repo.ts` (solo sviluppo/test), `repo-factory.ts`, `ingest.ts`, `events-schema.ts` (Zod), `token.ts`, `mutations.ts` (scritture dell'utente), `insights.ts` (gateway + regole), `seed.ts` (dati demo), `views/` (view model pure per ogni schermata), `pages/` (loader per pagina).
 - `src/lib/` — `auth.ts` (modi off/closed/on, cookie firmato, pepper derivato), `auth-server.ts`, `clock.ts` (`getNow()`: unica fonte dell'ora), `theme.ts`.
 - `src/proxy.ts` — protezione di tutte le pagine (eccetto `/login`, `/api/events`, asset pubblici); le richieste non-GET senza sessione danno 401.
-- `src/app/` — pagine: `/` (Notte), `/sera`, `/regolarita`, `/grafici`, `/storico`, `/segnali`, `/impostazioni`, `/login`; `actions.ts` (Server Actions con controllo accesso); `api/events/route.ts`.
+- `src/app/` — pagine: `/` (Notte), `/sera`, `/regolarita`, `/grafici`, `/analisi`, `/storico`, `/segnali`, `/impostazioni`, `/login`; `actions.ts` (Server Actions con controllo accesso); `api/events/route.ts`.
 - `src/components/` — 25 componenti del design system + `AppShell`. Stili locali in `*.module.css` con sole variabili di `tokens.css`.
 - `supabase/migrations/` — schema applicato. Altre migrazioni applicate: log del gateway (`gateway/supabase/migrations/…ai_gateway_log.sql`) e `night_exceptions_slug_idx`.
 - Test: `test/` (Vitest) ed `e2e/` (Playwright). `gateway/` è un progetto a parte, non modificato.
@@ -53,7 +53,7 @@ Progetto `sleep-tracker-app`, ambiente Production:
 - `APP_LOGIN_PASSWORD` ✅ (segreta; il pannello Vercel non mostra mai il valore delle variabili "Sensitive")
 - `SUPABASE_SERVICE_ROLE_KEY` ✅ inserita dall'utente (da confermare con il collaudo: se le pagine mostrano "servizio dati non raggiungibile" il valore è sbagliato)
 - `INGEST_TOKEN_PEPPER` — **non impostata**: il pepper si deriva da `APP_LOGIN_PASSWORD`. **Cambiare la password invalida tutti i token dei Comandi e le sessioni** (vanno ricreati da Impostazioni). Per evitarlo, impostare `INGEST_TOKEN_PEPPER` (≥16 caratteri) una volta per tutte.
-- `GATEWAY_SECRET` — **non impostata** nell'app: gli insight usano le regole locali (badge "Regole"). Per l'AI vera: stesso valore nuovo su `sleep-tracker` (gateway) e `sleep-tracker-app`, rideploy di entrambi, verifica `GET /v1/health` (docs/AI_GATEWAY.md §13). Il valore attuale del gateway non lo conosce nessuno.
+- `GATEWAY_SECRET` — **impostata su entrambi i progetti** (`sleep-tracker-app` e gateway `sleep-tracker`, aggiornate a 16 s di distanza il 2026-10-25) con redeploy di entrambi subito dopo. Il gateway risponde 401 senza token (corretto). Il badge "AI" invece di "Regole" in app va ancora confermato con un insight reale (il valore non è leggibile). Il gateway ha anche `OPENROUTER_API_KEY` e `GROQ_API_KEY`.
 - Ogni modifica alle variabili richiede un **nuovo deploy** (Vercel → Deployments → Redeploy, oppure tool MCP `create_deployment` con `deploymentId`).
 
 ## 7. Cosa è verificato e cosa no
@@ -137,3 +137,10 @@ PR #1–#6 definizione e spec · #7 design system · #8–#10 gateway AI · **#1
 **Aggiunte dopo il collaudo (PR safe-area/tema)**: zone sicure iPhone (`--safe-top`/`--safe-bottom` in `app.css`; il test e2e le forza perché Chromium non emula `env()`), tema automatico senza interruttore nel guscio e sezione Impostazioni > Aspetto. Da verificare su iPhone vero: titolo non coperto dall'ora, pillola vicina al bordo senza toccare l'indicatore home.
 
 **Cambio d'ora legale (PR cambio-ora)**: `src/domain/clock-change.ts` (`clockChangeShiftMin(nightDate)` = +60 / −60 / 0, calcolato dalla data: vale anche per i dati già presenti e per i cambi futuri). Mostrato in Notte (nota nella scheda Stanotte), Sera (avviso la sera prima), Storico (segno vettoriale a orologio nella cella, nome accessibile, tag e frase nel dettaglio, voce in legenda), Regolarità e Grafici (frase sotto il grafico; barra marcata nei Grafici). Test: `test/domain/clock-change.test.ts`, `test/server/clock-change-everywhere.test.tsx`, e2e `history.spec.ts`.
+
+## 14. Analisi AI (2026-10-25, PR `claude/analisi-ai`)
+- Pagina `/analisi`: `src/app/analisi/` (`page.tsx`, `AnalysisScreen`, `AiNarrative`, `loading.tsx`); view model `src/server/views/analysis.ts` (+ contratto `analysis-types.ts`; alias `AnalysisScoreView`/`AnalysisForecastView` nel barrel per il conflitto con `ScoreView`/`ForecastView` di night/charts); loader `src/server/pages/analysis.ts` (`parseAnalysisPeriod`); componenti `src/components/analysis/` (AnalysisScene SVG, ScoreRing, NightsTrend, CauseCard, ActionCard).
+- `loadInsights(repo, now, deps, windowDays)` accetta 7/14/30 (default 30); `mean30Minutes` si invia solo con 30. Il gateway accetta `windowDays` 1–366: nessuna modifica a `gateway/`.
+- Navigazione: voce Analisi solo sidebar PC + pulsante nella barra in alto su telefono (la pillola resta a 5 voci).
+- Test: 1657 unitari, E2E analisi/shell/overflow su iphone, desktop, 4K; controllo visivo in chiaro/scuro a 320, 390, 1280, 4K.
+- Da fare dopo il merge: verificare in produzione che il racconto mostri il badge «AI» (gateway collegato).

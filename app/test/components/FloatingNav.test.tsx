@@ -19,12 +19,17 @@ describe('FloatingNav', () => {
     expect(html.match(/aria-label="Principale"/g)).toHaveLength(2);
   });
 
-  it('ha cinque voci sul telefono e sette sul PC, come link', () => {
+  it('ha cinque voci sul telefono e otto sul PC, come link', () => {
     expect(pill.match(/<a /g)).toHaveLength(5);
-    expect(side.match(/<a /g)).toHaveLength(7);
+    expect(side.match(/<a /g)).toHaveLength(8);
     expect(text(pill)).toBe('NotteRegolaritàGraficiStoricoSera');
     expect(text(side)).toContain('Segnali');
     expect(text(side)).toContain('Impostazioni');
+    expect(text(side)).toContain('Analisi');
+    expect(pill).not.toContain('Analisi');
+    expect(side).toContain('href="/analisi"');
+    expect(text(side).indexOf('Analisi')).toBeGreaterThan(text(side).indexOf('Grafici'));
+    expect(text(side).indexOf('Analisi')).toBeLessThan(text(side).indexOf('Storico'));
     expect(pill).not.toContain('Segnali');
     expect(pill).not.toContain('Impostazioni');
     expect(pill).toContain('href="/"');
@@ -48,8 +53,8 @@ describe('FloatingNav', () => {
   });
 
   it('nasconde le icone ai lettori di schermo', () => {
-    expect(html.match(/<svg/g)).toHaveLength(12);
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(12);
+    expect(html.match(/<svg/g)).toHaveLength(13);
+    expect(html.match(/aria-hidden="true"/g)).toHaveLength(13);
   });
 
   it('senza riepilogo scrive una frase e mai valori vuoti', () => {
@@ -83,7 +88,7 @@ describe('isNavActive', () => {
     expect(isNavActive('/', '')).toBe(true);
   });
 
-  it('ha sette voci con chiavi uniche', () => {
-    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(7);
+  it('ha otto voci con chiavi uniche', () => {
+    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(8);
   });
 });

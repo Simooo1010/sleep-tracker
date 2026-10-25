@@ -54,6 +54,10 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Stato (2026-10-25, fine collaudo)
 - Collaudo in produzione concluso: due cicli consecutivi senza difetti (PR #13 velocità, #14 barra in alto). Dettagli in `docs/HANDOFF.md` §13. Restano all'utente solo i Comandi iOS e la prova su iPhone vero.
 
+## Stato (2026-10-25, feature Analisi AI costruita e testata; in merge)
+- Branch `claude/analisi-ai` (dettagli `docs/HANDOFF.md` §14): nuova pagina `/analisi` (punteggio, notti, cause, azioni, previsione, illustrazioni SVG, selettore 7/14/30, testo AI via gateway con fallback a regole). Contratto tipi: `app/src/server/views/analysis-types.ts`. Decisioni dell'utente: voce "Analisi" nella nav, SVG di stato (niente immagini AI), selettore periodo.
+- `GATEWAY_SECRET` impostata su app e gateway con redeploy (HANDOFF §6); badge "AI" da confermare dal vivo.
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
@@ -61,6 +65,8 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Design system (artefatto): https://claude.ai/artifact/3bLXhSQ61PrRXtpzM9F2mR · Prototipi: https://claude.ai/artifact/8MfknmomX1jzdWa26CRFRP
 
 ## Preferenze di lavoro
+- **Memoria sempre aggiornata, in automatico**: a ogni chat, grande azione e grande cambiamento, senza chiederlo (regola in `CLAUDE.md`).
+- Dopo l'approvazione del piano procede in autonomia fino alla costruzione completa e perfetta (test, uso reale, push e merge).
 - Vuole vedere il meno possibile: costruzione, test e fix autonomi fino a risultato funzionante; gli si mostra l'esito.
 - Non consuma caffeina. Si alza subito dopo la sveglia → NFC non necessario.
 - Vuole molti grafici e insight.

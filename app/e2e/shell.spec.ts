@@ -18,7 +18,8 @@ test('telefono: pillola visibile, barra laterale no; PC il contrario', async ({ 
     await expect(side).toBeHidden();
     await expect(navs).toHaveCount(1); // la barra nascosta non è esposta ai lettori di schermo
     await expect(pill.getByRole('link')).toHaveCount(5);
-    // Segnali e Impostazioni: pulsanti nella riga in alto, titolo della sezione.
+    // Analisi, Segnali e Impostazioni: pulsanti nella riga in alto, titolo della sezione.
+    await expect(page.getByRole('link', { name: 'Analisi' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Segnali' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Impostazioni' })).toBeVisible();
     await expect(page.getByText('Notte', { exact: true }).first()).toBeVisible();
@@ -31,7 +32,7 @@ test('telefono: pillola visibile, barra laterale no; PC il contrario', async ({ 
     await expect(side).toBeVisible();
     await expect(pill).toBeHidden();
     await expect(navs).toHaveCount(1);
-    await expect(side.getByRole('link')).toHaveCount(7);
+    await expect(side.getByRole('link')).toHaveCount(8);
     const sideBox = await side.boundingBox();
     expect(sideBox!.width).toBeGreaterThanOrEqual(239);
     expect(sideBox!.width).toBeLessThanOrEqual(241);
@@ -140,18 +141,18 @@ test('ordine di Tab: salta al contenuto, poi navigazione', async ({ page }, test
   await page.goto('/');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
-  // Dopo il link di salto: su telefono i comandi in alto (Segnali), su PC la prima voce della barra laterale.
+  // Dopo il link di salto: su telefono i comandi in alto (Analisi), su PC la prima voce della barra laterale.
   const next = isPhone(testInfo.project.name)
-    ? page.getByRole('link', { name: 'Segnali' })
+    ? page.getByRole('link', { name: 'Analisi' })
     : page.locator('nav.side').getByRole('link', { name: 'Notte' });
   await expect(next).toBeFocused();
 });
 
-test('telefono: Segnali e Impostazioni stanno su una sola riga (barra in alto compatta)', async ({ page }, testInfo) => {
+test('telefono: Analisi, Segnali e Impostazioni stanno su una sola riga (barra in alto compatta)', async ({ page }, testInfo) => {
   test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
   await page.goto('/');
   const tops = await Promise.all(
-    [page.getByRole('link', { name: 'Segnali' }), page.getByRole('link', { name: 'Impostazioni' })].map(
+    [page.getByRole('link', { name: 'Analisi' }), page.getByRole('link', { name: 'Segnali' }), page.getByRole('link', { name: 'Impostazioni' })].map(
       async (l) => Math.round((await l.first().boundingBox())?.y ?? -1),
     ),
   );
@@ -187,4 +188,19 @@ test('telefono: il titolo sta sotto la barra di stato e la pillola è a 14px dal
   await page.addStyleTag({ content: ':root{--safe-top:0px!important;--safe-bottom:0px!important}' });
   const pill0 = (await page.locator('nav.navpill').boundingBox())!;
   expect(Math.round(vh - (pill0.y + pill0.height))).toBe(14);
+});
+
+test('telefono: il pulsante Analisi in alto si evidenzia subito al tocco e porta alla pagina', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  await page.route(/\/analisi/, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  const link = page.getByRole('link', { name: 'Analisi', exact: true });
+  await link.click();
+  await expect(link).toHaveAttribute('aria-current', 'page', { timeout: 500 });
+  await expect(page).toHaveURL(/\/analisi$/);
+  await expect(page.getByRole('heading', { level: 1, name: 'Analisi' })).toHaveCount(1);
 });

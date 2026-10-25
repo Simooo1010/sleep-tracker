@@ -9,7 +9,7 @@ import { FloatingNav, NAV_ITEMS, isNavActive } from './FloatingNav';
 
 /**
  * AppShell: guscio comune delle schermate (docs/design/system/Schermate.md, Navigazione).
- * Telefono: riga in alto con titolo della sezione, Segnali e Impostazioni; contenuto; pillola flottante.
+ * Telefono: riga in alto con titolo della sezione, Analisi, Segnali e Impostazioni; contenuto; pillola flottante.
  * Il tema è automatico (segue il sistema); la scelta manuale sta solo in Impostazioni.
  * PC (da 60rem): barra laterale di 240px a sinistra, contenuto a destra centrato con `content-max`.
  * Il titolo non è un titolo di documento: ogni pagina mette il proprio <h1>.
@@ -35,6 +35,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const pathname = pending !== null && pending.from === currentPath ? pending.to : currentPath;
   const onNavigate = useCallback((to: string) => setPending({ from: currentPath, to }), [currentPath]);
 
+  const analisiActive = isNavActive('/analisi', pathname);
   const segnaliActive = isNavActive('/segnali', pathname);
   const impostazioniActive = isNavActive('/impostazioni', pathname);
 
@@ -50,6 +51,14 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className={styles.topbar}>
         <p className={`title ${styles.sectionTitle}`}>{sectionTitle(pathname)}</p>
         <div className={styles.actions}>
+          <Link
+            href="/analisi"
+            className={`btn btn-secondary ${styles.action}`}
+            aria-current={analisiActive ? 'page' : undefined}
+            onClick={() => onNavigate('/analisi')}
+          >
+            Analisi
+          </Link>
           <Link
             href="/segnali"
             className={`btn btn-secondary ${styles.action}`}
