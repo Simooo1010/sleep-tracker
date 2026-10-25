@@ -144,3 +144,28 @@ test('ordine di Tab: salta al contenuto, poi navigazione', async ({ page }, test
     : page.locator('nav.side').getByRole('link', { name: 'Notte' });
   await expect(next).toBeFocused();
 });
+
+test('telefono: Segnali, Impostazioni e Tema stanno su una sola riga (barra in alto compatta)', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
+  await page.goto('/');
+  const tops = await Promise.all(
+    [page.getByRole('link', { name: 'Segnali' }), page.getByRole('link', { name: 'Impostazioni' }), page.getByRole('button', { name: /^Tema/ })].map(
+      async (l) => Math.round((await l.first().boundingBox())?.y ?? -1),
+    ),
+  );
+  expect(new Set(tops).size).toBe(1);
+});
+
+test('la voce di navigazione si evidenzia subito al tocco, prima che arrivi la pagina', async ({ page }, testInfo) => {
+  test.skip(!isPhone(testInfo.project.name), 'Solo telefono');
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+  // Ritarda le richieste di navigazione: l'evidenziazione non deve aspettarle.
+  await page.route(/\/grafici/, async (route) => {
+    await new Promise((r) => setTimeout(r, 1500));
+    await route.continue();
+  });
+  const link = page.locator('nav.navpill').getByRole('link', { name: 'Grafici' });
+  await link.click();
+  await expect(link).toHaveAttribute('aria-current', 'page', { timeout: 500 });
+});
