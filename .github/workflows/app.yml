@@ -2,6 +2,8 @@ name: app
 
 on:
   pull_request:
+    # ready_for_review: la CI parte anche quando la PR esce da draft
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'app/**'
       - 'docs/design/**'
@@ -29,6 +31,8 @@ env:
 
 jobs:
   check:
+    # Sulle PR in bozza (lavoro in corso) la CI non gira: parte quando la PR è pronta o su main.
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
