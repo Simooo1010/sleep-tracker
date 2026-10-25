@@ -61,7 +61,7 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
-- Logo: nuvola con luna, azzurro pastello su bianco (icona PWA per iPhone). File in `docs/design/logo/`.
+- Logo: nuvola con luna, azzurro pastello su bianco (icona PWA per iPhone). File in `docs/design/logo/`. Variante scura dell'icona (sfondo #161a22) aggiunta 2026-10-25, vedi `docs/DESIGN.md` §Logo.
 - Design system (artefatto): https://claude.ai/artifact/3bLXhSQ61PrRXtpzM9F2mR · Prototipi: https://claude.ai/artifact/8MfknmomX1jzdWa26CRFRP
 
 ## Preferenze di lavoro
