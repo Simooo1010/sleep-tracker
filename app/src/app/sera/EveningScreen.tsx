@@ -6,9 +6,11 @@ import { actionSaveEveningCheck, actionSetExceptions } from '@/app/actions';
 import { Chip } from '@/components/Chip';
 import { ExceptionChips } from '@/components/ExceptionChips';
 import { MoonRating, toScore } from '@/components/MoonRating';
+import { TextField } from '@/components/TextField';
 import { WizardStep } from '@/components/WizardStep';
+import { DAY_NOTE_MAX } from '@/domain/questions';
 import type { Score } from '@/domain/types';
-import type { EveningStepView, EveningSummaryRowView, EveningView } from '@/server/views/evening';
+import { DAY_NOTE_ROW_LABEL, type EveningStepView, type EveningSummaryRowView, type EveningView } from '@/server/views/evening';
 import { DASH, formatMinutes, formatScore } from '@/server/views/format';
 
 import styles from './EveningScreen.module.css';
@@ -34,6 +36,10 @@ export interface EveningAnswers {
   factors: string[] | null;
   /** null = eccezioni mai toccate: non si chiama `actionSetExceptions`; si mostrano quelle attive della view. */
   exceptions: string[] | null;
+  /** Etichette (slug → testo) degli imprevisti creati qui con `+ Aggiungi`: servono al riepilogo e al salvataggio. */
+  exceptionLabels?: Record<string, string>;
+  /** Descrizione della giornata. null = mai toccata (si mostra quella già salvata); '' = svuotata. */
+  dayNote?: string | null;
   nap: number | null;
   /** Il sonnellino precompilato può venire dal comando rapido (già registrato): si invia solo se toccato. */
   napTouched: boolean;
@@ -45,11 +51,14 @@ export interface EveningCheckInput {
   mood?: Score;
   factors?: string[];
   napMinutesToday?: number;
+  dayNote?: string;
 }
 
 export interface ExceptionsInput {
   nightDate: string;
   slugs: string[];
+  /** Etichette dei soli imprevisti nuovi (creati dall'utente) tra quelli scelti. */
+  labels?: Record<string, string>;
 }
 
 function stepOf(view: EveningView, key: EveningStepView['key']): EveningStepView | undefined {
@@ -78,6 +87,8 @@ export function initialAnswers(view: EveningView): EveningAnswers {
     mood: toScoreValue(selectedValues(view, 'mood')[0]),
     factors: factors.length > 0 ? factors : null,
     exceptions: null,
+    exceptionLabels: {},
+    dayNote: null,
     nap: toMinutes(selectedValues(view, 'nap')[0]),
     napTouched: false,
   };
@@ -87,6 +98,11 @@ export function initialAnswers(view: EveningView): EveningAnswers {
 export function currentExceptions(view: EveningView, answers: EveningAnswers): string[] {
   if (answers.exceptions !== null) return answers.exceptions;
   return (stepOf(view, 'factors')?.exceptions ?? []).filter((e) => e.selected).map((e) => e.value);
+}
+
+/** Testo corrente della descrizione: quello scritto ora, altrimenti quello già salvato stasera. */
+export function currentDayNote(view: EveningView, answers: EveningAnswers): string {
+  return answers.dayNote ?? view.dayNote.value;
 }
 
 /** Aggiunge o toglie uno slug senza duplicati. */
@@ -102,12 +118,21 @@ export function toCheckInput(date: string, answers: EveningAnswers): EveningChec
   if (answers.mood !== null) input.mood = answers.mood;
   if (answers.factors !== null) input.factors = [...answers.factors];
   if (answers.nap !== null && answers.napTouched) input.napMinutesToday = answers.nap;
+  if (answers.dayNote !== null && answers.dayNote !== undefined) input.dayNote = answers.dayNote.trim();
   return input;
 }
 
 /** Input di `actionSetExceptions`, oppure null se l'utente non ha toccato le eccezioni. */
 export function toExceptionsInput(nightDate: string, answers: EveningAnswers): ExceptionsInput | null {
-  return answers.exceptions === null ? null : { nightDate, slugs: [...answers.exceptions] };
+  if (answers.exceptions === null) return null;
+  const input: ExceptionsInput = { nightDate, slugs: [...answers.exceptions] };
+  const labels: Record<string, string> = {};
+  for (const slug of answers.exceptions) {
+    const label = answers.exceptionLabels?.[slug];
+    if (label !== undefined) labels[slug] = label;
+  }
+  if (Object.keys(labels).length > 0) input.labels = labels;
+  return input;
 }
 
 function optionLabel(view: EveningView, key: EveningStepView['key'], value: string): string | undefined {
@@ -117,7 +142,8 @@ function optionLabel(view: EveningView, key: EveningStepView['key'], value: stri
 /** Righe del riepilogo con le risposte di adesso (etichette dalla view, valori dalle risposte). */
 export function summaryRows(view: EveningView, answers: EveningAnswers): EveningSummaryRowView[] {
   const exceptionLabels = currentExceptions(view, answers).map(
-    (slug) => stepOf(view, 'factors')?.exceptions.find((e) => e.value === slug)?.label ?? slug,
+    (slug) =>
+      stepOf(view, 'factors')?.exceptions.find((e) => e.value === slug)?.label ?? answers.exceptionLabels?.[slug] ?? slug,
   );
   const factorLabels = (answers.factors ?? []).map((slug) => optionLabel(view, 'factors', slug) ?? slug);
   const factorsAll = [...factorLabels, ...exceptionLabels];
@@ -134,7 +160,11 @@ export function summaryRows(view: EveningView, answers: EveningAnswers): Evening
         return answers.nap === null ? DASH : answers.nap === 0 ? 'Nessuno' : formatMinutes(answers.nap);
     }
   };
-  return view.summary.rows.map((row) => ({ key: row.key, label: row.label, value: valueOf(row.key) }));
+  const rows = view.summary.rows
+    .filter((row): row is EveningSummaryRowView & { key: EveningStepKey } => row.key !== 'dayNote')
+    .map((row) => ({ key: row.key, label: row.label, value: valueOf(row.key) }));
+  const note = currentDayNote(view, answers).trim();
+  return note === '' ? rows : [...rows, { key: 'dayNote', label: DAY_NOTE_ROW_LABEL, value: note }];
 }
 
 type EveningStepKey = EveningStepView['key'];
@@ -177,16 +207,20 @@ interface Handlers {
   mood: (score: Score | null) => void;
   factor: (slug: string, on: boolean) => void;
   exception: (slug: string, on: boolean) => void;
+  createException: (item: { id: string; label: string }) => void;
+  dayNote: (text: string) => void;
   nap: (minutes: number | null) => void;
 }
 
 function StepControl({
+  view,
   step,
   answers,
   exceptions,
   handlers,
   layout,
 }: {
+  view: EveningView;
   step: EveningStepView;
   answers: EveningAnswers;
   exceptions: string[];
@@ -231,10 +265,25 @@ function StepControl({
             ))}
           </div>
           <ExceptionChips
-            exceptions={step.exceptions.map((e) => ({ id: e.value, label: e.label }))}
+            exceptions={[
+              ...step.exceptions.map((e) => ({ id: e.value, label: e.label })),
+              ...Object.entries(answers.exceptionLabels ?? {})
+                .filter(([slug]) => !step.exceptions.some((e) => e.value === slug))
+                .map(([slug, label]) => ({ id: slug, label })),
+            ]}
             active={exceptions}
             onToggle={handlers.exception}
+            onCreate={handlers.createException}
             showNote={false}
+          />
+          <TextField
+            label={view.dayNote.label}
+            hint={view.dayNote.hint}
+            placeholder={view.dayNote.placeholder}
+            value={currentDayNote(view, answers)}
+            onChange={handlers.dayNote}
+            maxLength={DAY_NOTE_MAX}
+            multiline
           />
         </div>
       );
@@ -313,6 +362,12 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }
     mood: (score) => update({ mood: score }),
     factor: (slug, on) => update({ factors: withSlug(answers.factors ?? [], slug, on) }),
     exception: (slug, on) => update({ exceptions: withSlug(exceptions, slug, on) }),
+    createException: ({ id, label }) =>
+      update({
+        exceptions: withSlug(exceptions, id, true),
+        exceptionLabels: { ...answers.exceptionLabels, [id]: label },
+      }),
+    dayNote: (text) => update({ dayNote: text }),
     nap: (minutes) => update({ nap: minutes, napTouched: true }),
   };
 
@@ -352,7 +407,7 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }
             <fieldset className={styles.fieldset} disabled={locked}>
               <div className={styles.stack}>
                 {stepIndex === 0 && view.emptyText ? <p className={`body-sm ${styles.note}`}>{view.emptyText}</p> : null}
-                <StepControl step={current} answers={answers} exceptions={exceptions} handlers={handlers} layout="phone" />
+                <StepControl view={view} step={current} answers={answers} exceptions={exceptions} handlers={handlers} layout="phone" />
                 {current.note ? <p className={`caption ${styles.note}`}>{current.note}</p> : null}
                 {stepIndex === last ? <Summary view={view} answers={answers} /> : null}
                 {problem}
@@ -385,7 +440,7 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }
                 <h3 id={`${deskId}-${step.key}`} className={`title ${styles.question}`}>
                   {step.question}
                 </h3>
-                <StepControl step={step} answers={answers} exceptions={exceptions} handlers={handlers} layout="desktop" />
+                <StepControl view={view} step={step} answers={answers} exceptions={exceptions} handlers={handlers} layout="desktop" />
                 {step.note ? <p className={`caption ${styles.note}`}>{step.note}</p> : null}
               </section>
             ))}

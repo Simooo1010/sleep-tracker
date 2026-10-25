@@ -4,8 +4,8 @@ import {
   EXCEPTION_LABEL_MAX,
   normalizeExceptionLabel,
   slugifyExceptionLabel,
-} from '../domain/questions';
-import { TextField } from './TextField';
+} from '@/domain/questions';
+import { TextField } from '@/components/TextField';
 
 /**
  * Chip a un tocco per segnare un giorno fuori dal normale (classi `chip chip-exc` e `chip-add` di bundle.css).

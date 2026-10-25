@@ -320,9 +320,7 @@ describe('buildInsightsPayload: dayContext', () => {
       nightExceptions: { [TODAY]: ['ok-slug', 'Ho bevuto da Mario'] },
     });
     expect(withCtx.dayContext?.[0]?.factors).toEqual(['ok-slug']);
-    const { dayContext: _a, ...rest } = withCtx;
-    const { dayContext: _b, ...baseRest } = base;
-    expect(rest).toEqual(baseRest);
+    expect({ ...withCtx, dayContext: undefined }).toEqual({ ...base, dayContext: undefined });
   });
 });
 

@@ -168,9 +168,26 @@ export async function sendSkip(q: QuickQuestionView, todayDate: string): Promise
   }
 }
 
-export async function sendExceptions(nightDate: string, slugs: string[]): Promise<ActionResult> {
+/** Etichette (slug → testo) dei soli imprevisti scelti ora e creati dall'utente: servono al server per salvarli. */
+export function labelsFor(
+  slugs: readonly string[],
+  custom: Readonly<Record<string, string>>,
+): Record<string, string> | undefined {
+  const out: Record<string, string> = {};
+  for (const slug of slugs) {
+    const label = custom[slug];
+    if (label !== undefined) out[slug] = label;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+export async function sendExceptions(
+  nightDate: string,
+  slugs: string[],
+  labels?: Record<string, string>,
+): Promise<ActionResult> {
   try {
-    return await actionSetExceptions({ nightDate, slugs });
+    return await actionSetExceptions(labels ? { nightDate, slugs, labels } : { nightDate, slugs });
   } catch {
     return failed();
   }
@@ -186,8 +203,13 @@ export async function sendNap(action: 'start' | 'stop'): Promise<ActionResult> {
 }
 
 /** Riga di sintesi di ogni sezione (telefono). Mai NaN o undefined, mai un dato obbligatorio. */
-export function sectionSummaries(view: NightView, active: readonly string[], nap: NapState): Record<SectionKey, string> {
-  const labelOf = (slug: string) => view.exceptions.chips.find((c) => c.slug === slug)?.label ?? slug;
+export function sectionSummaries(
+  view: NightView,
+  active: readonly string[],
+  nap: NapState,
+  extraLabels: Readonly<Record<string, string>> = {},
+): Record<SectionKey, string> {
+  const labelOf = (slug: string) => view.exceptions.chips.find((c) => c.slug === slug)?.label ?? extraLabels[slug] ?? slug;
   const exceptions =
     active.length === 0
       ? 'Nessuna segnata'
@@ -280,6 +302,8 @@ export function NightSections({ view, todayDate, onOpenChange }: NightSectionsPr
   const [error, setError] = useState<string | null>(null);
   const [answered, setAnswered] = useState<ReadonlySet<string>>(() => new Set());
   const [active, setActive] = useState<string[]>(() => activeSlugs(view));
+  /** Imprevisti creati qui con `+ Aggiungi` (slug → etichetta) finché il server non li restituisce nella view. */
+  const [custom, setCustom] = useState<Record<string, string>>({});
   const [nap, setNap] = useState<NapState>(IDLE);
   const [openSection, setOpenSection] = useState<SectionKey | null>(null);
   const [seenNight, setSeenNight] = useState(view.nightDate);
@@ -297,6 +321,7 @@ export function NightSections({ view, todayDate, onOpenChange }: NightSectionsPr
   if (seenNight !== view.nightDate) {
     setSeenNight(view.nightDate);
     setActive(activeSlugs(view));
+    setCustom({});
     setAnswered(new Set());
     setNap(IDLE);
     setOpenSection(null);
@@ -353,7 +378,24 @@ export function NightSections({ view, todayDate, onOpenChange }: NightSectionsPr
     const before = active;
     const after = toggleSlug(before, slug, next);
     setActive(after);
-    run(() => sendExceptions(view.nightDate, after), () => setActive(before));
+    run(() => sendExceptions(view.nightDate, after, labelsFor(after, custom)), () => setActive(before));
+  };
+
+  /** Nuovo imprevisto libero: chip subito attivo; se il salvataggio fallisce torna com'era. */
+  const createException = (item: { id: string; label: string }) => {
+    const before = active;
+    const beforeCustom = custom;
+    const nextCustom = { ...custom, [item.id]: item.label };
+    const after = toggleSlug(before, item.id, true);
+    setCustom(nextCustom);
+    setActive(after);
+    run(
+      () => sendExceptions(view.nightDate, after, labelsFor(after, nextCustom)),
+      () => {
+        setActive(before);
+        setCustom(beforeCustom);
+      },
+    );
   };
 
   const startNap = () => {
@@ -379,9 +421,15 @@ export function NightSections({ view, todayDate, onOpenChange }: NightSectionsPr
   const open = (key: SectionKey) => () => setOpenSection(key);
   const close = () => setOpenSection(null);
 
-  const chips = view.exceptions.chips;
+  const serverChips = view.exceptions.chips;
+  const chips = [
+    ...serverChips,
+    ...Object.entries(custom)
+      .filter(([slug]) => !serverChips.some((c) => c.slug === slug))
+      .map(([slug, label]) => ({ slug, label, uses: 0 })),
+  ];
   const hasExceptions = chips.length > 0;
-  const summaries = sectionSummaries(view, active, nap);
+  const summaries = sectionSummaries(view, active, nap, custom);
 
   const sectionProps = (key: SectionKey) =>
     ({ 'data-section': key, 'data-open': openSection === key ? 'true' : 'false' }) as const;
@@ -445,6 +493,7 @@ export function NightSections({ view, todayDate, onOpenChange }: NightSectionsPr
                 exceptions={chips.map((c) => ({ id: c.slug, label: c.label, uses: c.uses }))}
                 active={active}
                 onToggle={toggleException}
+                onCreate={createException}
               />
             </div>
           </div>
