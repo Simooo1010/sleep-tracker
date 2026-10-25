@@ -1,0 +1,73 @@
+/* DriftChart: sei barre verticali con orario sopra ed etichetta sotto. Solo variabili di tokens.css, misure in rem. */
+.root {
+  margin: 0;
+  gap: 0.875rem;
+  min-width: 0;
+}
+
+.head {
+  justify-content: space-between;
+}
+
+.chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.bars {
+  height: 7.5rem;
+}
+
+.col {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.value {
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bar {
+  width: 100%;
+  flex: 0 0 auto;
+}
+
+.missingBar {
+  width: 100%;
+  flex: 0 0 auto;
+  border: 1.5px dotted var(--line-strong);
+  border-radius: var(--radius-xs) var(--radius-xs) 0.1875rem 0.1875rem;
+  background: transparent;
+}
+
+.labels {
+  display: flex;
+  gap: var(--space-2);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  color: var(--ink-muted);
+}
+
+.label {
+  flex: 1 1 0;
+  min-width: 0;
+  text-align: center;
+}
+
+.sentence {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+}
