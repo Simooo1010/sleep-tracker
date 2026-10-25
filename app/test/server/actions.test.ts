@@ -243,6 +243,76 @@ describe.each(cases)('$name', (c) => {
   });
 });
 
+describe('actionSetExceptions: labels', () => {
+  const base = { nightDate: '2026-10-25', slugs: ['trasloco'] };
+
+  it('accetta labels e le passa alla mutation (trim)', async () => {
+    vi.mocked(mutations.setExceptions).mockResolvedValue({ ok: true, value: undefined });
+    const res = await actionSetExceptions({ ...base, labels: { trasloco: '  Trasloco casa ' } });
+    expect(res).toEqual({ ok: true });
+    expect(mutations.setExceptions).toHaveBeenCalledWith(fakeRepo, { ...base, labels: { trasloco: 'Trasloco casa' } });
+  });
+
+  it('labels invalide respinte: chiave non slug, label vuota o oltre 30, più di 12 voci, non oggetto', async () => {
+    const twelvePlusOne = Object.fromEntries(Array.from({ length: 13 }, (_, i) => [`s${i}`, 'x']));
+    const bad = [
+      { 'Non Slug': 'x' },
+      { trasloco: '' },
+      { trasloco: '   ' },
+      { trasloco: 'a'.repeat(31) },
+      { trasloco: 5 },
+      twelvePlusOne,
+      'trasloco',
+      [],
+    ];
+    for (const labels of bad) {
+      expect(await actionSetExceptions({ ...base, labels })).toEqual(INVALID);
+    }
+    expect(mutations.setExceptions).not.toHaveBeenCalled();
+  });
+
+  it('label lunga esattamente 30 e 12 voci sono accettate', async () => {
+    vi.mocked(mutations.setExceptions).mockResolvedValue({ ok: true, value: undefined });
+    const twelve = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`s${i}`, 'x']));
+    expect(await actionSetExceptions({ ...base, labels: { trasloco: 'a'.repeat(30) } })).toEqual({ ok: true });
+    expect(await actionSetExceptions({ ...base, labels: twelve })).toEqual({ ok: true });
+  });
+});
+
+describe('actionSaveEveningCheck: dayNote', () => {
+  const base = { date: '2026-10-24' };
+
+  it('trim e passaggio alla mutation', async () => {
+    vi.mocked(mutations.saveEveningCheckFromUi).mockResolvedValue({ ok: true, value: undefined });
+    await actionSaveEveningCheck({ ...base, dayNote: '  esame di fisica ' });
+    expect(mutations.saveEveningCheckFromUi).toHaveBeenCalledWith(fakeRepo, { ...base, dayNote: 'esame di fisica' });
+  });
+
+  it('vuota o solo spazi diventa null; null resta null', async () => {
+    vi.mocked(mutations.saveEveningCheckFromUi).mockResolvedValue({ ok: true, value: undefined });
+    await actionSaveEveningCheck({ ...base, dayNote: '   ' });
+    await actionSaveEveningCheck({ ...base, dayNote: null });
+    const calls = vi.mocked(mutations.saveEveningCheckFromUi).mock.calls;
+    expect(calls[0]?.[1]).toEqual({ ...base, dayNote: null });
+    expect(calls[1]?.[1]).toEqual({ ...base, dayNote: null });
+  });
+
+  it('assente: la chiave non arriva alla mutation', async () => {
+    vi.mocked(mutations.saveEveningCheckFromUi).mockResolvedValue({ ok: true, value: undefined });
+    await actionSaveEveningCheck({ ...base, mood: 3 });
+    expect(vi.mocked(mutations.saveEveningCheckFromUi).mock.calls[0]?.[1]).toStrictEqual({ ...base, mood: 3 });
+  });
+
+  it('limite 280 (dopo il trim): 280 ok, 281 respinta, tipo errato respinto', async () => {
+    vi.mocked(mutations.saveEveningCheckFromUi).mockResolvedValue({ ok: true, value: undefined });
+    expect(await actionSaveEveningCheck({ ...base, dayNote: ` ${'a'.repeat(280)} ` })).toEqual({ ok: true });
+    vi.mocked(mutations.saveEveningCheckFromUi).mockClear();
+    expect(await actionSaveEveningCheck({ ...base, dayNote: 'a'.repeat(281) })).toEqual(INVALID);
+    expect(await actionSaveEveningCheck({ ...base, dayNote: 5 })).toEqual(INVALID);
+    expect(mutations.saveEveningCheckFromUi).not.toHaveBeenCalled();
+  });
+});
+
 describe('actionConfirmNight / actionRateNight / actionSaveEveningCheck: campi opzionali', () => {
   it('non passa chiavi undefined alla mutation', async () => {
     vi.mocked(mutations.confirmNight).mockResolvedValue({ ok: true, value: { night, previous: null } });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { setExceptions } from '../../../src/server/mutations';
 import { MemoryRepo } from '../../../src/server/memory-repo';
 import { loadNightPage } from '../../../src/server/pages/night';
 import { DEMO_NOW, buildDemoSeed } from '../../../src/server/seed';
@@ -39,5 +40,33 @@ describe('loadNightPage', () => {
     await repo.logQuestion({ date: '2026-10-24', kind: 'confirm_night', nightDate: '2026-10-24', answeredOrSkipped: true });
     const { view } = await loadNightPage(repo, NOW);
     expect(view.questions.some((q) => q.kind === 'confirm_night' && q.nightDate === '2026-10-24')).toBe(false);
+  });
+
+  it('i chip scelti con setExceptions restano attivi dopo il ricaricamento (fonte: night_exceptions)', async () => {
+    const repo = new MemoryRepo();
+    const r = await setExceptions(repo, { nightDate: '2026-10-24', slugs: ['viaggio'] });
+    expect(r.ok).toBe(true);
+    const { view } = await loadNightPage(repo, NOW);
+    const active = view.exceptions.chips.filter((c) => c.active).map((c) => c.slug);
+    expect(active).toEqual(['viaggio']);
+  });
+
+  it('un imprevisto libero aggiunto compare come chip attivo, con l’etichetta del tipo', async () => {
+    const repo = new MemoryRepo();
+    await setExceptions(repo, { nightDate: '2026-10-24', slugs: ['trasloco', 'festa'] });
+    const { view } = await loadNightPage(repo, NOW);
+    const chip = view.exceptions.chips.find((c) => c.slug === 'trasloco');
+    expect(chip).toBeDefined();
+    expect(chip?.active).toBe(true);
+    expect(chip?.label.toLowerCase()).toBe('trasloco');
+    expect(view.exceptions.chips.filter((c) => c.active).map((c) => c.slug).sort()).toEqual(['festa', 'trasloco']);
+  });
+
+  it('togliendo tutte le eccezioni nessun chip resta attivo', async () => {
+    const repo = new MemoryRepo();
+    await setExceptions(repo, { nightDate: '2026-10-24', slugs: ['viaggio'] });
+    await setExceptions(repo, { nightDate: '2026-10-24', slugs: [] });
+    const { view } = await loadNightPage(repo, NOW);
+    expect(view.exceptions.chips.some((c) => c.active)).toBe(false);
   });
 });

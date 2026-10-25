@@ -10,6 +10,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
+import { DAY_NOTE_MAX, EXCEPTION_LABEL_MAX } from '@/domain/questions';
 import type { Night } from '@/domain/types';
 import { getPepper } from '@/lib/auth';
 import { isAuthorized } from '@/lib/auth-server';
@@ -77,7 +78,24 @@ const rateSchema = z.strictObject({
   quality: scoreSchema.optional(),
 });
 
-const exceptionsSchema = z.strictObject({ nightDate: dateSchema, slugs: slugsSchema });
+/** Etichette libere degli imprevisti: slug → nome (max 12 voci; ogni chiave è uno slug valido, ogni nome 1..30 caratteri). */
+const labelsSchema = z
+  .record(slugSchema, z.string().trim().min(1).max(EXCEPTION_LABEL_MAX))
+  .refine((r) => Object.keys(r).length <= 12);
+
+const exceptionsSchema = z.strictObject({
+  nightDate: dateSchema,
+  slugs: slugsSchema,
+  labels: labelsSchema.optional(),
+});
+
+/** Descrizione della giornata: trim, max DAY_NOTE_MAX; vuota → null (cancella la nota). */
+const dayNoteSchema = z
+  .string()
+  .trim()
+  .max(DAY_NOTE_MAX)
+  .transform((s) => (s === '' ? null : s))
+  .nullable();
 
 const eveningSchema = z.strictObject({
   date: dateSchema,
@@ -85,6 +103,7 @@ const eveningSchema = z.strictObject({
   mood: scoreSchema.optional(),
   factors: slugsSchema.optional(),
   napMinutesToday: z.int().min(0).max(600).optional(),
+  dayNote: dayNoteSchema.optional(),
 });
 
 const questionSchema = z.strictObject({

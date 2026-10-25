@@ -253,6 +253,23 @@ describe('parseIncomingEvent — check', () => {
     expect(e).not.toMatch(/note|Marco/);
   });
 
+  it('dayNote: accettata, trim; vuota o null = assente', () => {
+    expect(ok({ type: 'evening_check', check: { dayNote: '  Esame di fisica ' } }).check).toEqual({
+      dayNote: 'Esame di fisica',
+    });
+    expect(ok({ type: 'evening_check', check: { dayNote: '   ', mood: 3 } }).check).toEqual({ mood: 3 });
+    expect(ok({ type: 'evening_check', check: { dayNote: null } }).check).toEqual({});
+  });
+
+  it('dayNote: limite 280 caratteri e tipo, senza eco del contenuto', () => {
+    expect(ok({ type: 'evening_check', check: { dayNote: 'a'.repeat(280) } }).check?.dayNote).toHaveLength(280);
+    const tooLong = err({ type: 'evening_check', check: { dayNote: 'segreto'.repeat(50) } });
+    expect(tooLong).toMatch(/"check.dayNote".*280/);
+    expect(tooLong).not.toMatch(/segreto/);
+    expect(err({ type: 'evening_check', check: { dayNote: 42 } })).toMatch(/"check.dayNote"/);
+    expect(err({ type: 'wake', check: { dayNote: 'x' } })).toMatch(/consentito solo per .*evening_check/);
+  });
+
   it('rifiuta check non oggetto', () => {
     expect(err({ type: 'evening_check', check: [1, 2] })).toMatch(/"check" deve essere un oggetto/);
     expect(err({ type: 'evening_check', check: 'stanco' })).toMatch(/"check" deve essere un oggetto/);

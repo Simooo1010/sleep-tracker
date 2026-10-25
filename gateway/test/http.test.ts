@@ -1,6 +1,6 @@
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createHandler } from '../src/http/handler.ts';
 import { timingSafeEqualStr } from '../src/http/auth.ts';
 import { noopLogger } from '../src/log.ts';
@@ -174,5 +174,48 @@ describe('end-to-end with real local HTTP provider servers (native fetch)', () =
     expect(res.status).toBe(200);
     expect(await res.json()).toMatchObject({ source: 'ai', provider: 'local2', model: 'lm2' });
     expect(seen).toEqual(['s1 POST /v1/chat/completions Bearer local-key-1', 's2 POST /v1/chat/completions lm2']);
+  });
+});
+
+describe('dayContext via HTTP', () => {
+  const body = (dayContext: unknown) => JSON.stringify({ ...goodStats, dayContext });
+  const ctx = [{ daysAgo: 2, factors: ['cena-fuori'], text: 'TESTO-RISERVATO mario@example.com +39 347 1234567' }];
+
+  it('200 se valido, 400 oltre i limiti, 400 per chiave "note"', async () => {
+    const { h } = handler({ 'https://p1.test/v1': () => completion(validInsightsJson) });
+    expect((await h(req('/v1/insights', { method: 'POST', body: body(ctx) }))).status).toBe(200);
+    const tooLong = await h(req('/v1/insights', { method: 'POST', body: body([{ ...ctx[0], text: 'a'.repeat(141) }]) }));
+    expect(tooLong.status).toBe(400);
+    expect((await tooLong.json()).error.code).toBe('invalid_stats');
+    const tooMany = await h(req('/v1/insights', { method: 'POST', body: body(Array.from({ length: 11 }, () => ctx[0])) }));
+    expect(tooMany.status).toBe(400);
+    const note = await h(req('/v1/insights', { method: 'POST', body: JSON.stringify({ ...goodStats, note: 'ciao' }) }));
+    expect(note.status).toBe(400);
+    expect((await note.json()).error.code).toBe('privacy_violation');
+  });
+
+  it('il testo non finisce mai nei log né nelle risposte (AI, regole, errore)', async () => {
+    const events: unknown[] = [];
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const logger = { log: (e: unknown) => void events.push(e) };
+    try {
+      for (const routes of [
+        { 'https://p1.test/v1': () => completion(validInsightsJson) },
+        { 'https://p1.test/v1': () => status(500), 'https://p2.test/v1': () => status(500), 'https://p3.test/v1': () => status(500) },
+      ]) {
+        const { h } = handler(routes, { logger });
+        for (const b of [body(ctx), body([{ ...ctx[0], text: 'TESTO-RISERVATO' + 'a'.repeat(140) }])]) {
+          const res = await h(req('/v1/insights', { method: 'POST', body: b }));
+          expect(await res.text()).not.toContain('TESTO-RISERVATO');
+        }
+      }
+      expect(events.length).toBeGreaterThan(0);
+      const seen = JSON.stringify(events) + JSON.stringify([info, warn, error].map((s) => s.mock.calls));
+      expect(seen).not.toMatch(/TESTO-RISERVATO|mario@example|1234567/);
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 });

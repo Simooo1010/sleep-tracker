@@ -44,6 +44,18 @@ export function redactText(text: string): { text: string; count: number } {
   return { text: out, count };
 }
 
+export const DAY_CONTEXT_TEXT_MAX = 140;
+
+/**
+ * Sanitizes the user-reported text of one day: strips control characters, collapses whitespace,
+ * redacts identifiers (email, phone, ISO dates, UUID) and clamps the length. Never logs.
+ */
+export function sanitizeDayContextText(text: string): { text: string; redactions: number } {
+  const flat = text.replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const r = redactText(flat);
+  return { text: r.text.slice(0, DAY_CONTEXT_TEXT_MAX), redactions: r.count };
+}
+
 export function guardMessages(
   messages: ChatMessage[],
   limits: PrivacyLimits = defaultPrivacyLimits,

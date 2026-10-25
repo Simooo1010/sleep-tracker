@@ -1,0 +1,77 @@
+/* TextField: solo variabili di tokens.css, misure in rem. Stesso aspetto di `.input` in Impostazioni. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+/* Campo da 16px minimo (niente zoom su iPhone), altezza toccabile */
+.control {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  box-sizing: border-box;
+}
+
+.area {
+  min-height: 7rem;
+  padding-block: var(--space-3);
+  resize: vertical;
+}
+
+.control::placeholder {
+  color: var(--ink-muted);
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.control:disabled {
+  opacity: 0.6;
+}
+
+.invalid {
+  border-width: 1.5px;
+  border-color: var(--peach-ink);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.25rem var(--space-4);
+}
+
+.hint,
+.count,
+.error {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.count {
+  margin-inline-start: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+.error {
+  color: var(--peach-ink);
+}
