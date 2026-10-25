@@ -54,8 +54,8 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Stato (2026-10-25, fine collaudo)
 - Collaudo in produzione concluso: due cicli consecutivi senza difetti (PR #13 velocità, #14 barra in alto). Dettagli in `docs/HANDOFF.md` §13. Restano all'utente solo i Comandi iOS e la prova su iPhone vero.
 
-## Stato (2026-10-25, feature Analisi AI in corso)
-- Branch `claude/analisi-ai`: nuova pagina `/analisi` (punteggio, notti, cause, azioni, previsione, illustrazioni SVG, selettore 7/14/30, testo AI via gateway con fallback a regole). Contratto tipi: `app/src/server/views/analysis-types.ts`. Decisioni dell'utente: voce "Analisi" nella nav, SVG di stato (niente immagini AI), selettore periodo.
+## Stato (2026-10-25, feature Analisi AI costruita e testata; in merge)
+- Branch `claude/analisi-ai` (dettagli `docs/HANDOFF.md` §14): nuova pagina `/analisi` (punteggio, notti, cause, azioni, previsione, illustrazioni SVG, selettore 7/14/30, testo AI via gateway con fallback a regole). Contratto tipi: `app/src/server/views/analysis-types.ts`. Decisioni dell'utente: voce "Analisi" nella nav, SVG di stato (niente immagini AI), selettore periodo.
 - `GATEWAY_SECRET` impostata su app e gateway con redeploy (HANDOFF §6); badge "AI" da confermare dal vivo.
 
 ## Design
