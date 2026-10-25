@@ -161,7 +161,6 @@ test.describe('Mostra/Nascondi password', () => {
 
       test('nessuno scroll orizzontale, anche con la password mostrata', async ({ page }) => {
         await page.goto('/login');
-        console.log('DBG', JSON.stringify(await page.evaluate(() => ['main','form','#password','button[aria-controls]','.card'].map((q) => { const r = document.querySelector(q)!.getBoundingClientRect(); return [q, Math.round(r.left), Math.round(r.width)]; }).concat([['inner', innerWidth, document.documentElement.scrollWidth]]))));
         await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
         await page.getByRole('button', { name: 'Mostra password' }).click();
         await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'text');
@@ -170,6 +169,11 @@ test.describe('Mostra/Nascondi password', () => {
           innerWidth: window.innerWidth,
         }));
         expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
+        // Il pulsante sta tutto dentro lo schermo e non copre il campo.
+        const field = await page.getByLabel('Password', { exact: true }).boundingBox();
+        const toggle = await page.getByRole('button', { name: 'Nascondi password' }).boundingBox();
+        expect((toggle?.x ?? 0) + (toggle?.width ?? 0)).toBeLessThanOrEqual(innerWidth);
+        expect((field?.x ?? 0) + (field?.width ?? 0)).toBeLessThanOrEqual(toggle?.x ?? 0);
       });
     });
   }
