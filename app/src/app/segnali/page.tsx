@@ -9,13 +9,16 @@ export const dynamic = 'force-dynamic';
 
 export const metadata = { title: 'Segnali · Sleep Tracker' };
 
-export default async function SegnaliPage() {
-  let data: SignalsPageData | null = null;
+async function load(): Promise<SignalsPageData | null> {
   try {
-    data = await loadSignalsPage(getRepo(), getNow());
+    return await loadSignalsPage(getRepo(), getNow());
   } catch {
-    data = null;
+    return null;
   }
+}
+
+export default async function SegnaliPage() {
+  const data = await load();
 
   return (
     <div className={styles.page}>
