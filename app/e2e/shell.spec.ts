@@ -122,8 +122,7 @@ test('nessuno scorrimento orizzontale', async ({ page }) => {
   expect(overflow.scroll).toBeLessThanOrEqual(overflow.client);
 });
 
-test('il link "Salta al contenuto" è il primo con Tab, compare e porta al contenuto', async ({ page }, testInfo) => {
-  test.skip(isPhone(testInfo.project.name), 'serve una tastiera');
+test('il link "Salta al contenuto" è il primo con Tab, compare e porta al contenuto', async ({ page }) => {
   await page.goto('/');
   await page.keyboard.press('Tab');
   const skip = page.getByRole('link', { name: 'Salta al contenuto' });
@@ -135,10 +134,12 @@ test('il link "Salta al contenuto" è il primo con Tab, compare e porta al conte
 });
 
 test('ordine di Tab: salta al contenuto, poi navigazione', async ({ page }, testInfo) => {
-  test.skip(isPhone(testInfo.project.name), 'serve una tastiera');
   await page.goto('/');
   await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
-  // Dopo il link di salto arriva la prima voce della barra laterale.
-  await expect(page.locator('nav.side').getByRole('link', { name: 'Notte' })).toBeFocused();
+  // Dopo il link di salto: su telefono i comandi in alto (Segnali), su PC la prima voce della barra laterale.
+  const next = isPhone(testInfo.project.name)
+    ? page.getByRole('link', { name: 'Segnali' })
+    : page.locator('nav.side').getByRole('link', { name: 'Notte' });
+  await expect(next).toBeFocused();
 });

@@ -21,8 +21,18 @@ const webkitAvailable = (() => {
 
 const PORT = Number(process.env.E2E_PORT ?? 3100);
 const baseURL = `http://127.0.0.1:${PORT}`;
-// L'E2E gira sulla build di produzione: se manca la build la crea.
-const hasBuild = existsSync('.next/BUILD_ID');
+/*
+ * L'E2E usa il server di sviluppo (UN SOLO processo: il repo in memoria è un singleton nel processo).
+ * `next start` imposta NODE_ENV=production, dove repo in memoria, dataset demo e ora fissa sono
+ * volutamente disattivati: per questo qui serve `next dev`. Valori di PROVA, non segreti.
+ */
+const E2E_ENV = {
+  APP_DATA_MODE: 'memory',
+  APP_SEED: 'demo',
+  APP_FIXED_NOW: '2026-10-24T08:30:00+02:00',
+  INGEST_TOKEN_PEPPER: 'e2e-demo-pepper-not-a-secret-01234567890', // 40 caratteri
+  DEMO_INGEST_TOKEN: 'st_demo-e2e-token-not-a-secret-0123456789ABCDE', // 'st_' + 43 caratteri base64url
+};
 
 export default defineConfig({
   testDir: './e2e',
@@ -68,9 +78,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: `${hasBuild ? '' : 'npm run build && '}npm run start -- -p ${PORT} -H 127.0.0.1`,
+    command: `npm run dev -- -p ${PORT} -H 127.0.0.1`,
+    env: E2E_ENV,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    // Mai riusare un server già acceso: potrebbe non avere il repo demo / l'ora fissa.
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });
