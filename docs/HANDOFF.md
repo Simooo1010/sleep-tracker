@@ -53,7 +53,7 @@ Progetto `sleep-tracker-app`, ambiente Production:
 - `APP_LOGIN_PASSWORD` ✅ (segreta; il pannello Vercel non mostra mai il valore delle variabili "Sensitive")
 - `SUPABASE_SERVICE_ROLE_KEY` ✅ inserita dall'utente (da confermare con il collaudo: se le pagine mostrano "servizio dati non raggiungibile" il valore è sbagliato)
 - `INGEST_TOKEN_PEPPER` — **non impostata**: il pepper si deriva da `APP_LOGIN_PASSWORD`. **Cambiare la password invalida tutti i token dei Comandi e le sessioni** (vanno ricreati da Impostazioni). Per evitarlo, impostare `INGEST_TOKEN_PEPPER` (≥16 caratteri) una volta per tutte.
-- `GATEWAY_SECRET` — **non impostata** nell'app: gli insight usano le regole locali (badge "Regole"). Per l'AI vera: stesso valore nuovo su `sleep-tracker` (gateway) e `sleep-tracker-app`, rideploy di entrambi, verifica `GET /v1/health` (docs/AI_GATEWAY.md §13). Il valore attuale del gateway non lo conosce nessuno.
+- `GATEWAY_SECRET` — **impostata su entrambi i progetti** (`sleep-tracker-app` e gateway `sleep-tracker`, aggiornate a 16 s di distanza il 2026-10-25) con redeploy di entrambi subito dopo. Il gateway risponde 401 senza token (corretto). Il badge "AI" invece di "Regole" in app va ancora confermato con un insight reale (il valore non è leggibile). Il gateway ha anche `OPENROUTER_API_KEY` e `GROQ_API_KEY`.
 - Ogni modifica alle variabili richiede un **nuovo deploy** (Vercel → Deployments → Redeploy, oppure tool MCP `create_deployment` con `deploymentId`).
 
 ## 7. Cosa è verificato e cosa no

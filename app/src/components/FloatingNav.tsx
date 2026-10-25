@@ -5,11 +5,11 @@ import styles from './FloatingNav.module.css';
 /**
  * FloatingNav: navigazione principale (docs/design/system/components/FloatingNav).
  * Telefono: pillola flottante `navpill` con cinque voci. PC (da 60rem): barra laterale `side`
- * di 240px con sette voci e riepilogo di oggi. Il CSS mostra l'una o l'altra.
+ * di 240px con otto voci e riepilogo di oggi. Il CSS mostra l'una o l'altra.
  * Il percorso attivo arriva come prop: nessun hook di routing qui dentro.
  */
 
-export type NavKey = 'notte' | 'regolarita' | 'grafici' | 'storico' | 'sera' | 'segnali' | 'impostazioni';
+export type NavKey = 'notte' | 'regolarita' | 'grafici' | 'analisi' | 'storico' | 'sera' | 'segnali' | 'impostazioni';
 
 export interface NavItem {
   key: NavKey;
@@ -17,7 +17,7 @@ export interface NavItem {
   href: string;
   /** Tracciato SVG su griglia 24px, tratto 1.6px. */
   icon: string;
-  /** Solo su PC: su telefono Segnali e Impostazioni si aprono da pulsanti in alto. */
+  /** Solo su PC: su telefono Analisi, Segnali e Impostazioni si aprono da pulsanti in alto. */
   desktopOnly?: boolean;
 }
 
@@ -25,6 +25,13 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { key: 'notte', label: 'Notte', href: '/', icon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z' },
   { key: 'regolarita', label: 'Regolarità', href: '/regolarita', icon: 'M4 7h9M4 12h13M4 17h7M18 5v14' },
   { key: 'grafici', label: 'Grafici', href: '/grafici', icon: 'M5 19V11M12 19V5M19 19v-6' },
+  {
+    key: 'analisi',
+    label: 'Analisi',
+    href: '/analisi',
+    icon: 'M16 10.5a5.5 5.5 0 1 1-11 0a5.5 5.5 0 0 1 11 0ZM14.6 14.6 20 20M7.8 11.8l1.7-1.8 1.4 1.3 1.9-2.3',
+    desktopOnly: true,
+  },
   { key: 'storico', label: 'Storico', href: '/storico', icon: 'M5 5h14v15H5zM5 10h14M9 3v4M15 3v4' },
   { key: 'sera', label: 'Sera', href: '/sera', icon: 'M4 17h16M7 17a5 5 0 0 1 10 0M12 6v3M5.6 9.6l1.8 1.8M18.4 9.6l-1.8 1.8' },
   {
