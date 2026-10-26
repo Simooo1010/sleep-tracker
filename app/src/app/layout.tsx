@@ -38,6 +38,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <meta name="theme-color" content="#161a22" media="(prefers-color-scheme: dark)" />
       </head>
       <body>
+        {/* Fascia fissa sotto la barra di stato dell'iPhone (app installata): vedi .status-cover in styles/app.css */}
+        <div className="status-cover" aria-hidden="true" />
         {/* Variante scura delle icone quando il sistema è in modalità scura, dopo l'idratazione: vedi lib/app-icon.ts. */}
         <AppIconSync />
         <AppShell>{children}</AppShell>

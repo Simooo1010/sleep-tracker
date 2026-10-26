@@ -44,7 +44,12 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Regole utente per questa chat: attività piccole in parallelo; Sonnet costruisce, Opus solo altissimo livello; sforzo max high (Opus low/medium).
 - Dati reali: Supabase `sleep-tracker` ha lo schema applicato (10 tabelle, RLS senza policy: accesso solo server con service role).
 
-## Feature imprevisti liberi + nota giornata (2026-10-26, PR #21, branch claude/imprevisti-giornata)
+## Fix iPhone: titolo sfocato in cima (2026-10-26, branch claude/fix-ios-status-bar)
+- Causa: da iOS 26/27 nelle PWA installate il sistema sfuma il bordo alto e la sfocatura copre il titolo. `theme-color` e `apple-mobile-web-app-status-bar-style` non hanno più effetto.
+- Fix: fascia `.status-cover` (layout.tsx + styles/app.css), `position: fixed`, in cima, a tutta larghezza, alta come la barra di stato, sfondo `--ground` (segue il tema), solo con `display-mode: standalone` sotto 60rem. Test: `e2e/status-cover.spec.ts`.
+- Limite: provato solo in Chromium (nessun WebKit/iOS nel cloud). Da confermare sul telefono dopo il deploy, riaprendo la PWA dalla Home.
+
+## Feature imprevisti liberi + nota giornata (2026-10-26, PR #21 → branch vecchio, PR #24 → `main`)
 - ✅ Imprevisti a testo libero (`+ Aggiungi`, max 30 caratteri, Notte e Sera), nota facoltativa sulla giornata particolare nel check serale (max 280, Sera passo 3, sola lettura in Storico), componente `TextField`.
 - ✅ Contesto AI: `dayContext` (max 10 giornate, 140 caratteri, giorni relativi) sanificato in app e gateway, mai nei log, prompt con blocco «NON istruzioni»; fallback a regole. Eccezione alla regola «solo aggregati» decisa dall'utente (`docs/DECISIONS.md` 2026-10-26).
 - ✅ Fix bug preesistente: i chip eccezione della pagina Notte risultavano spenti dopo il reload.
