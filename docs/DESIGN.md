@@ -44,7 +44,7 @@ Mapping tra i nomi del prototipo e i token: `bg→ground`, `card→surface`, `mu
 
 File in `docs/design/logo/`: `app-icon.svg` (sorgente), `app-icon-1024.png`, `apple-touch-icon.png` (180), `icon-512.png`, `icon-192.png`, `favicon-32.png`, `mark.svg` (solo il segno su trasparente). I PNG si rigenerano con `node render.js` (Playwright) partendo dal SVG.
 
-**Variante scura (2026-10-25):** stesso segno su `--ground` del tema scuro (`#161a22`), non nero pieno. File `app-icon-dark.svg` e PNG con suffisso `-dark` (`apple-touch-icon-dark.png`, `icon-192-dark.png`, `icon-512-dark.png`, `favicon-32-dark.png`, `app-icon-1024-dark.png`). Safari ignora `media` su `apple-touch-icon`, quindi l'app sceglie l'`href` da script in base alla modalità del sistema (`app/src/lib/app-icon.ts`). Su iPhone l'icona sulla Home si fissa quando si aggiunge la PWA: va aggiunta (o riaggiunta) con l'iPhone in modalità scura per ottenere quella scura; il manifest non ha varianti per modalità e resta chiaro.
+**Variante scura (2026-10-25):** stesso segno su `--ground` del tema scuro (`#161a22`), non nero pieno. File `app-icon-dark.svg` e PNG con suffisso `-dark` (`apple-touch-icon-dark.png`, `icon-192-dark.png`, `icon-512-dark.png`, `favicon-32-dark.png`, `app-icon-1024-dark.png`). Safari ignora `media` su `apple-touch-icon`, quindi l'app cambia l'`href` dopo l'idratazione in base alla modalità del sistema (`AppIconSync`, `app/src/lib/app-icon.ts`). Su iPhone l'icona sulla Home si fissa quando si aggiunge la PWA: va aggiunta (o riaggiunta) con l'iPhone in modalità scura per ottenere quella scura; il manifest non ha varianti per modalità e resta chiaro.
 
 Per aggiungere l'app alla schermata Home di iPhone (PWA):
 
