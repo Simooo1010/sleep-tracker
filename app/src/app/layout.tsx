@@ -34,6 +34,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Sleep Tracker" />
+        {/* Barra di stato iOS trasparente: la pagina parte dal bordo vero dello schermo e .status-cover la tinge come lo sfondo. Senza, iOS la lascia bianca sopra l'app. */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#eef2f6" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#161a22" media="(prefers-color-scheme: dark)" />
       </head>
