@@ -171,9 +171,12 @@ Body: **solo statistiche aggregate** (schema `insightStatsSchema`, campi sconosc
   "weekdayWeekend": { "weekdayNights": 8, "weekendNights": 4, "weekdayMidpoint": "03:20",
                       "weekendMidpoint": "04:35", "socialJetLagMinutes": 75 },
   "naps": { "days": 14, "count": 4, "medianMinutes": 25 },
-  "correlations": [{ "factor": "schermi", "target": "quality", "r": -0.42, "n": 18 }]
+  "correlations": [{ "factor": "schermi", "target": "quality", "r": -0.42, "n": 18 }],
+  "dayContext": [{ "daysAgo": 2, "factors": ["cena-fuori"], "text": "Cena fuori, tardi" }]   // facoltativo
 }
 ```
+
+`dayContext` (facoltativo): imprevisti e nota «giornata particolare» dell'utente. Max 10 voci, `daysAgo` 0–60 (mai date), `factors` max 8 slug ≤ 40 caratteri, `text` ≤ 140 caratteri. Oltre i limiti → 400 `invalid_stats` (il messaggio non riporta il testo). Il testo viene sanificato dal gateway (`sanitizeDayContextText`) e finisce nel prompt in un blocco delimitato come contesto riportato dall'utente, **non istruzioni**. Categoria insight dedicata: `day_context`.
 
 Risposta (stesso schema per AI e regole):
 
@@ -233,6 +236,7 @@ Nota integrazione: il sorgente usa import con estensione `.ts` (eseguibile diret
 ## 8. Privacy (dati sanitari)
 
 - `/v1/insights` accetta solo lo schema di statistiche aggregate: numeri, quote, orari `HH:MM` **senza data**, etichette brevi (slug ≤ 40 caratteri) per i fattori. Campi identificativi o grezzi (`email`, `nome`, `userId`, `timestamps`, `events`, `note`…) a qualunque profondità → **400 `privacy_violation`**; campi sconosciuti → 400.
+- **Eccezione `dayContext`** (decisione utente 2026-10-26, `docs/DECISIONS.md`): è l'unico testo libero ammesso in `/v1/insights`. Limiti e sanificazione in §6; le chiavi `note`, `notes`, `free_text`, `diary` restano vietate a qualunque profondità. L'app sanifica già prima dell'invio (`sanitizeDayText` in `app/src/server/insights.ts`), il gateway lo rifà. Il testo non compare mai nei log; un'uscita AI che ripete testualmente un `text` di almeno 12 caratteri viene respinta (retry, poi fallback a regole). Il fallback a regole cita solo gli slug dei fattori, mai il testo.
 - `/v1/chat/completions`: redazione automatica di email, numeri di telefono, date/timestamp completi e UUID prima dell'invio al provider (conteggio in `x_gateway.redactions`); massimo 30 messaggi, 8000 caratteri per messaggio, 16000 totali (413).
 - Log: **solo metadati** (provider, modello, esito, tipo di errore, stato HTTP, latenza, token, modo strutturato, esito validazione). Mai contenuto di prompt o risposte, mai chiavi. Gli errori interni non vengono mai restituiti al client.
 - Tabella `ai_gateway_log`: RLS attiva, nessuna policy, privilegi revocati ad `anon`/`authenticated` → accessibile solo con service role. Migrazione: `gateway/supabase/migrations/20261024120000_ai_gateway_log.sql` (**non applicata**; verificata su un Postgres 16 locale usa e getta: crea la tabella, RLS attiva, `anon` riceve *permission denied*).
@@ -356,7 +360,7 @@ Il campo `source` va mostrato in UI come provenienza (principio §3c di `docs/PR
 
 **Regole per chi sviluppa l'app**
 - Chiamare il gateway solo da codice server (route/edge function), mai dal browser: il bearer non deve uscire.
-- Inviare solo statistiche aggregate (§8); mai note libere, nomi, email, timestamp grezzi.
+- Inviare solo statistiche aggregate (§8); mai nomi, email, timestamp grezzi. Unico testo libero ammesso: `dayContext` sanificato e limitato (§6, §8).
 - Timeout e rete: se il gateway non risponde, l'app deve funzionare comunque (nessun dato obbligatorio, nessun errore all'utente).
 - Nuovo modello/provider: §4, non toccare l'app.
 

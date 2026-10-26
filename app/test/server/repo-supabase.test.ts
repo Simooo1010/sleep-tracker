@@ -6,6 +6,7 @@ import {
   createServiceClient,
   createSupabaseRepo,
   rowToApiToken,
+  rowToEveningCheck,
   rowToNight,
   type NightRow,
 } from '../../src/server/repo-supabase';
@@ -396,14 +397,52 @@ describe('createSupabaseRepo: check serale e sonnellini', () => {
       factors: ['caffe-tardi'],
       nap_minutes: 20,
       nap_prov: 'automatico',
+      day_note: null,
       saved_at: NOW.toISOString(),
     });
-    expect(await repo.getEveningCheck('2026-10-24')).toEqual(check);
+    // Senza nota la lettura dà dayNote null.
+    expect(await repo.getEveningCheck('2026-10-24')).toEqual({ ...check, dayNote: null });
 
     await repo.saveEveningCheck({ ...check, mood: { value: 2, provenance: 'confermato' } });
     expect(db.evening_checks).toHaveLength(1);
     expect((await repo.getEveningCheck('2026-10-24'))?.mood).toEqual({ value: 2, provenance: 'confermato' });
     expect(await repo.getEveningCheck('2026-10-25')).toBeNull();
+  });
+
+  it('dayNote: salvata con trim, riletta, null se vuota/assente, troncata a 280', async () => {
+    const { client, db } = fakeClient();
+    const repo = createSupabaseRepo(client, fixedNow);
+    await repo.saveEveningCheck({ ...check, dayNote: '  Cena fuori con amici.  ' });
+    expect(db.evening_checks![0]!.day_note).toBe('Cena fuori con amici.');
+    expect((await repo.getEveningCheck('2026-10-24'))?.dayNote).toBe('Cena fuori con amici.');
+
+    await repo.saveEveningCheck({ ...check, dayNote: '   ' });
+    expect(db.evening_checks![0]!.day_note).toBeNull();
+    expect((await repo.getEveningCheck('2026-10-24'))?.dayNote).toBeNull();
+
+    await repo.saveEveningCheck({ ...check, dayNote: null });
+    expect(db.evening_checks![0]!.day_note).toBeNull();
+
+    await repo.saveEveningCheck({ ...check, dayNote: 'x'.repeat(500) });
+    expect(db.evening_checks![0]!.day_note).toBe('x'.repeat(280));
+    expect(db.evening_checks).toHaveLength(1);
+  });
+
+  it('dayNote: riga legacy senza colonna o con testo vuoto/lungo → null / troncata', () => {
+    const base = {
+      date: '2026-10-24',
+      tiredness: 3,
+      tiredness_prov: 'confermato',
+      mood: null,
+      mood_prov: 'mancante',
+      factors: [],
+      nap_minutes: null,
+      nap_prov: 'mancante',
+    };
+    expect(rowToEveningCheck(base).dayNote).toBeNull();
+    expect(rowToEveningCheck({ ...base, day_note: '' }).dayNote).toBeNull();
+    expect(rowToEveningCheck({ ...base, day_note: ' Viaggio ' }).dayNote).toBe('Viaggio');
+    expect(rowToEveningCheck({ ...base, day_note: 'y'.repeat(400) }).dayNote).toBe('y'.repeat(280));
   });
 
   it('saveNap mappa i campi e usa start_at come chiave', async () => {
@@ -637,6 +676,7 @@ describe('createSupabaseRepo: listNaps / listEveningChecks', () => {
       mood: { value: null, provenance: 'mancante' },
       factors: ['caffe-tardi'],
       napMinutesToday: { value: null, provenance: 'mancante' },
+      dayNote: null,
     });
     for (const d of ['2026-10-25', '2026-10-22', '2026-10-24', '2026-10-30']) {
       await repo.saveEveningCheck(mk(d));
@@ -754,6 +794,42 @@ describe('createSupabaseRepo: eccezioni', () => {
       expect(idx((c) => c === create)).toBeLessThan(
         idx((c) => c.table === 'night_exceptions' && c.ops.some((o) => o.method === 'insert')),
       );
+    });
+
+    it('slug nuovo con label dalla UI: usa la label normalizzata invece dello slug', async () => {
+      const { client, db, calls } = setup();
+      await createSupabaseRepo(client, fixedNow).setNightExceptions(
+        '2026-10-25',
+        ['cena-fuori', 'viaggio'],
+        { 'cena-fuori': '  Cena   fuori  ' },
+      );
+      expect(db.exception_types).toContainEqual({ slug: 'cena-fuori', label: 'Cena fuori', uses: 1 });
+      const create = calls.find((c) => c.table === 'exception_types' && c.ops.some((o) => o.method === 'upsert'))!;
+      expect(create.ops[0]!.args[0]).toEqual([{ slug: 'cena-fuori', label: 'Cena fuori', uses: 0 }]);
+    });
+
+    it('label troppo lunga troncata a 30; label vuota o mancante → derivata dallo slug', async () => {
+      const { client, db } = setup();
+      await createSupabaseRepo(client, fixedNow).setNightExceptions(
+        '2026-10-25',
+        ['lunga', 'vuota', 'altra-cosa'],
+        { lunga: 'L'.repeat(50), vuota: '   ', 'non-presente': 'ignorata' },
+      );
+      expect(db.exception_types).toContainEqual({ slug: 'lunga', label: 'L'.repeat(30), uses: 1 });
+      expect(db.exception_types).toContainEqual({ slug: 'vuota', label: 'vuota', uses: 1 });
+      expect(db.exception_types).toContainEqual({ slug: 'altra-cosa', label: 'altra cosa', uses: 1 });
+      expect(db.exception_types!.some((r) => r.slug === 'non-presente')).toBe(false);
+    });
+
+    it('slug esistente: la label passata NON sovrascrive quella del catalogo', async () => {
+      const { client, db, calls } = setup();
+      await createSupabaseRepo(client, fixedNow).setNightExceptions(
+        '2026-10-25',
+        ['viaggio'],
+        { viaggio: 'Viaggione' },
+      );
+      expect(db.exception_types).toContainEqual({ slug: 'viaggio', label: 'viaggio', uses: 6 });
+      expect(calls.some((c) => c.table === 'exception_types' && c.ops.some((o) => o.method === 'upsert'))).toBe(false);
     });
 
     it('lista vuota: cancella tutto e scala i contatori; slug già presenti non toccano uses', async () => {

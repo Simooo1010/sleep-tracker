@@ -9,7 +9,7 @@ import { generateRuleInsights } from './insights/rules.ts';
 import { aiInsightsSchema, insightStatsSchema, type AiInsights, type InsightsResult } from './insights/schema.ts';
 import { applyThresholds, categoryToSection, coverageOf } from './insights/thresholds.ts';
 import { safeLog, loggerFromEnv, type GatewayLogEvent, type GatewayLogger } from './log.ts';
-import { assertNoIdentifyingKeys, guardMessages, defaultPrivacyLimits, type PrivacyLimits } from './privacy.ts';
+import { assertNoIdentifyingKeys, guardMessages, defaultPrivacyLimits, sanitizeDayContextText, type PrivacyLimits } from './privacy.ts';
 import {
   buildStructuredRequest,
   correctionMessages,
@@ -283,7 +283,11 @@ export function createGateway(options: GatewayOptions = {}): Gateway {
         const where = parsed.error.issues.slice(0, 5).map((i) => `${i.path.join('.') || '(radice)'}: ${i.message}`);
         throw new GatewayError(400, 'invalid_stats', `statistiche non valide: ${where.join('; ')}`);
       }
-      const stats = parsed.data;
+      // Free text from the user: redact identifiers server-side too (the app already does). Never logged.
+      const dayContext = parsed.data.dayContext
+        ?.map((d) => ({ ...d, text: sanitizeDayContextText(d.text).text }))
+        .filter((d) => d.text !== '' || d.factors.length > 0);
+      const stats = { ...parsed.data, ...(dayContext ? { dayContext } : {}) };
       const { eligible, hidden } = applyThresholds(stats);
       const coverage = coverageOf(stats);
       const rules = generateRuleInsights(stats);
@@ -322,6 +326,10 @@ export function createGateway(options: GatewayOptions = {}): Gateway {
         validate: (value) => {
           const v = baseSpec.validate(value);
           if (!v.ok) return v;
+          // The AI must not repeat the user's free text verbatim (potentially identifying).
+          const out = JSON.stringify(v.value).toLowerCase();
+          const echoed = (eligible.dayContext ?? []).some((d) => d.text.length >= 12 && out.includes(JSON.stringify(d.text.toLowerCase()).slice(1, -1)));
+          if (echoed) return { ok: false, errors: ['non ripetere testualmente il contesto riportato dall\'utente'] };
           const bad = (v.value as AiInsights).insights
             .map((i) => i.category)
             .filter((c) => {

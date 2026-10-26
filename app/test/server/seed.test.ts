@@ -138,6 +138,18 @@ describe('buildDemoSeed: conteggi e copertura', () => {
     expect(new Set(naps.map((p) => `${p.date}|${p.startAt}`)).size).toBe(14);
   });
 
+  it('1-2 note della giornata realistiche, solo su sere particolari, entro il limite', () => {
+    const noted = checks.filter((c) => c.dayNote != null);
+    expect(noted.length).toBeGreaterThanOrEqual(1);
+    expect(noted.length).toBeLessThanOrEqual(2);
+    for (const c of noted) {
+      expect((c.dayNote as string).length).toBeLessThanOrEqual(280);
+      expect(c.dayNote).toBe((c.dayNote as string).trim());
+      const night = nights.find((n) => n.nightDate === addDays(c.date, 1));
+      expect(night?.isException).toBe(true);
+    }
+  });
+
   it('45 check serali, mai per le notti mancanti, voti 1–5', () => {
     expect(checks).toHaveLength(45);
     expect(new Set(checks.map((c) => c.date)).size).toBe(45);

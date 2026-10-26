@@ -22,6 +22,50 @@ describe('privacy guard', () => {
     expect(redactText(text)).toEqual({ text, count: 0 });
   });
 
+  it('redacts Italian and international phone numbers in any grouping', () => {
+    const phones = [
+      '333 1234567',
+      '333-123-4567',
+      '333.123.45.67',
+      '3331234567',
+      '333 123 4567',
+      '(333) 123-4567',
+      '06 12345678',
+      '02-1234-5678',
+      '(06) 1234 5678',
+      '0721 123456',
+      '+39 333 1234567',
+      '+39 3331234567',
+      '0039 333 1234567',
+      '+39 06 1234 5678',
+      '+44 7911 123456',
+      '+44 (0) 20 7946 0958',
+      '0044 20 7946 0958',
+    ];
+    for (const p of phones) {
+      const r = redactText(`chiamami al ${p} grazie`);
+      expect(r.text, p).toBe('chiamami al [telefono] grazie');
+      expect(r.count, p).toBe(1);
+    }
+    const end = redactText('Compleanno di Marco, scrivimi a marco@esempio.it o 333 1234567.');
+    expect(end.text).toBe('Compleanno di Marco, scrivimi a [email] o [telefono].');
+    expect(end.count).toBe(2);
+    expect(redactText('+39 333 1234567 12 persone').text).toBe('[telefono] 12 persone');
+  });
+
+  it('does not redact innocuous numbers (times, durations, years, amounts, counts)', () => {
+    const texts = [
+      'cena alle 21:30, 3 ore di sonno, 12 persone',
+      'dormito 2 ore e 45 min, 8 bicchieri d\'acqua',
+      'nel 2026 ho speso 1.200 euro, poi 50 euro e 3,5 litri',
+      'sveglia 07:05 e 22:30, 0.85 di efficienza, 7.5 8.0 6.5 7.0 7.2',
+      'caffe alle 15:00, 300 mg, 120 battiti, 2025 2026',
+      'r=-0.42 n=18 mediana 23:40 debito 240 min',
+      'dal 10 al 12 ottobre, camera 305, 18 km, 4 amici',
+    ];
+    for (const t of texts) expect(redactText(t), t).toEqual({ text: t, count: 0 });
+  });
+
   it('chat: identifiers never reach the provider', async () => {
     const f = fakeFetch({ 'https://p1.test/v1': () => completion('ok') });
     const g = createGateway({ env: testEnv, providers: testProviders(), fetch: f.fetch, logger: noopLogger });
@@ -56,5 +100,67 @@ describe('privacy guard', () => {
     await expect(
       g.insights({ ...goodStats, correlations: [{ factor: 'ho litigato con mia sorella Anna ieri sera', target: 'mood', r: -0.5, n: 20 }] }),
     ).rejects.toMatchObject({ status: 400 });
+  });
+});
+
+describe('dayContext (testo libero dell\'utente)', () => {
+  const ctx = [{ daysAgo: 2, factors: ['cena-fuori', 'alcol'], text: 'Cena fuori con amici, rientrato tardi' }];
+
+  it('accetta dayContext valido e continua a vietare note/free_text', async () => {
+    expect(() => assertNoIdentifyingKeys({ ...goodStats, dayContext: ctx })).not.toThrow();
+    for (const key of ['note', 'notes', 'free_text', 'diary']) {
+      expect(() => assertNoIdentifyingKeys({ ...goodStats, [key]: 'x' })).toThrowError(expect.objectContaining({ code: 'privacy_violation' }));
+      expect(() => assertNoIdentifyingKeys({ ...goodStats, dayContext: [{ ...ctx[0], [key]: 'x' }] })).toThrow(/privacy|dayContext\[0\]/);
+    }
+    const g = createGateway({ env: {}, logger: noopLogger });
+    const res = await g.insights({ ...goodStats, dayContext: ctx });
+    expect(res.source).toBe('rules');
+  });
+
+  it('respinge con 400 oltre i limiti e forme non ammesse', async () => {
+    const g = createGateway({ env: {}, logger: noopLogger });
+    const bad: unknown[] = [
+      [{ ...ctx[0], text: 'a'.repeat(141) }],
+      Array.from({ length: 11 }, () => ctx[0]),
+      [{ ...ctx[0], daysAgo: 61 }],
+      [{ ...ctx[0], daysAgo: -1 }],
+      [{ ...ctx[0], daysAgo: 1.5 }],
+      [{ ...ctx[0], factors: Array.from({ length: 9 }, (_, i) => `f${i}`) }],
+      [{ ...ctx[0], factors: ['x'.repeat(41)] }],
+      [{ ...ctx[0], factors: ['ho litigato con Anna'] }],
+      [{ ...ctx[0], date: '2026-10-20' }],
+      [{ daysAgo: 1, factors: [] }],
+    ];
+    for (const dayContext of bad) {
+      await expect(g.insights({ ...goodStats, dayContext })).rejects.toMatchObject({ status: 400, code: 'invalid_stats' });
+    }
+  });
+
+  it('i messaggi di errore non riportano il testo dell\'utente', async () => {
+    const g = createGateway({ env: {}, logger: noopLogger });
+    const secret = 'SEGRETO-' + 'z'.repeat(150);
+    const err = await g.insights({ ...goodStats, dayContext: [{ ...ctx[0], text: secret }] }).catch((e: Error) => e);
+    expect((err as Error).message).not.toContain('SEGRETO');
+  });
+
+  it('redige email, telefoni, date ISO e UUID prima di inviare al provider', async () => {
+    const f = fakeFetch({ 'https://p1.test/v1': () => completion('{}'), 'https://p2.test/v1': () => completion('{}'), 'https://p3.test/v1': () => completion('{}') });
+    const g = createGateway({ env: testEnv, providers: testProviders(), fetch: f.fetch, logger: noopLogger });
+    await g.insights({
+      ...goodStats,
+      dayContext: [
+        {
+          daysAgo: 3,
+          factors: ['viaggio'],
+          text: 'scrivi a mario@example.com o chiama +39 347 1234567, il 2026-10-20 id 123e4567-e89b-12d3-a456-426614174000',
+        },
+      ],
+    });
+    const sent = JSON.stringify(f.calls[0]!.body.messages);
+    expect(sent).not.toMatch(/mario@example|1234567|2026-10-20|123e4567/);
+    expect(sent).toContain('[email]');
+    expect(sent).toContain('[telefono]');
+    expect(sent).toContain('[data]');
+    expect(sent).toContain('[id]');
   });
 });

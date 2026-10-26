@@ -111,6 +111,46 @@ describe('buildEveningView: check salvato e sonnellino da comando rapido', () =>
   });
 });
 
+describe('buildEveningView: descrizione della giornata', () => {
+  const base: EveningCheck = {
+    date: TODAY,
+    tiredness: { value: 3, provenance: 'confermato' },
+    mood: { value: 3, provenance: 'confermato' },
+    factors: [],
+    napMinutesToday: { value: null, provenance: 'mancante' },
+  };
+
+  it('campo facoltativo: etichetta, limite 280, nessun testo se manca; i passi restano quattro', () => {
+    const v = buildEveningView({ today: TODAY });
+    expect(v.dayNote).toEqual({
+      label: 'Descrivi la giornata (solo se è stata davvero particolare)',
+      hint: 'Facoltativo: puoi lasciare vuoto.',
+      placeholder: expect.any(String),
+      max: 280,
+      value: '',
+    });
+    expect(v.steps).toHaveLength(4);
+    expect(v.steps.every((s) => s.total === 4)).toBe(true);
+    expect(v.summary.rows.map((r) => r.key)).toEqual(['tiredness', 'mood', 'factors', 'nap']);
+    expectSerializable(v);
+  });
+
+  it('nota salvata: nel campo e come riga "Nota" del riepilogo', () => {
+    const v = buildEveningView({ today: TODAY, check: { ...base, dayNote: '  Cena fuori con amici  ' } });
+    expect(v.dayNote.value).toBe('Cena fuori con amici');
+    expect(v.summary.rows.at(-1)).toEqual({ key: 'dayNote', label: 'Nota', value: 'Cena fuori con amici' });
+    expectSerializable(v);
+  });
+
+  it('nota null o di soli spazi: nessuna riga', () => {
+    for (const dayNote of [null, '', '   ']) {
+      const v = buildEveningView({ today: TODAY, check: { ...base, dayNote } });
+      expect(v.dayNote.value).toBe('');
+      expect(v.summary.rows).toHaveLength(4);
+    }
+  });
+});
+
 describe('buildEveningView: avviso del cambio d’ora', () => {
   it('la sera prima del ritorno all’ora solare avvisa con una frase calma', () => {
     const v = buildEveningView({ today: '2026-10-24', tonightNightDate: '2026-10-25' });

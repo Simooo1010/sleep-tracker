@@ -82,6 +82,17 @@ const gatewaySchema = z.strictObject({
     )
     .max(20)
     .optional(),
+  // Contratto del gateway: max 10 voci, text <= 140, giorni relativi (nessuna data).
+  dayContext: z
+    .array(
+      z.strictObject({
+        daysAgo: z.number().int().min(0).max(366),
+        factors: z.array(z.string().regex(/^[a-z0-9_-]{1,40}$/i)).max(10),
+        text: z.string().min(1).max(140),
+      }),
+    )
+    .max(10)
+    .optional(),
 });
 
 const GOOD_BODY = {

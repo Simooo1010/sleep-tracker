@@ -8,10 +8,25 @@
  * I dati sono copiati in entrata e in uscita: i chiamanti non possono mutare lo stato interno.
  * I campi pubblici servono per ispezionare lo stato nei test (sono copie: modificarli non ha effetto).
  */
+import { DAY_NOTE_MAX, normalizeExceptionLabel } from '../domain/questions';
 import type { EveningCheck, Nap, Night, SignalEvent } from '../domain/types';
 import type { ApiTokenInfo, ExceptionTypeRow, QuestionLogRow, Repo, StoredEvent } from './types';
 
 const clone = <T>(v: T): T => structuredClone(v);
+
+/** Nota della giornata: trim, vuota → null, troncata a DAY_NOTE_MAX (per code point). */
+function cleanDayNote(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const t = Array.from(v.trim()).slice(0, DAY_NOTE_MAX).join('').trimEnd();
+  return t === '' ? null : t;
+}
+
+/** Etichetta di un tipo nuovo: quella passata dalla UI (normalizzata) o, se vuota/assente, derivata dallo slug. */
+function labelFor(slug: string, labels?: Record<string, string>): string {
+  const given = labels && Object.prototype.hasOwnProperty.call(labels, slug) ? labels[slug] : undefined;
+  const norm = typeof given === 'string' ? normalizeExceptionLabel(given) : '';
+  return norm !== '' ? norm : slug.replace(/-/g, ' ');
+}
 
 export interface MemoryRepoSeed {
   events?: StoredEvent[];
@@ -153,7 +168,10 @@ export class MemoryRepo implements Repo {
   }
 
   async saveEveningCheck(check: EveningCheck): Promise<void> {
-    this.checksByDate.set(check.date, clone(check));
+    const stored = clone(check);
+    // dayNote assente resta assente; se passata (anche vuota) viene normalizzata (trim, limite, vuota → null).
+    if (check.dayNote !== undefined) stored.dayNote = cleanDayNote(check.dayNote);
+    this.checksByDate.set(check.date, stored);
   }
 
   async getNight(nightDate: string): Promise<Night | null> {
@@ -219,7 +237,7 @@ export class MemoryRepo implements Repo {
     return this.exceptionTypes;
   }
 
-  async setNightExceptions(nightDate: string, slugs: string[]): Promise<void> {
+  async setNightExceptions(nightDate: string, slugs: string[], labels?: Record<string, string>): Promise<void> {
     for (const s of slugs) if (!SLUG_RE.test(s)) throw new Error('Slug non valido.');
     const next = new Set(slugs);
     const prev = new Set(this.exceptionsByNight.get(nightDate) ?? []);
@@ -227,7 +245,7 @@ export class MemoryRepo implements Repo {
       if (prev.has(slug)) continue;
       const row = this.exceptionTypesBySlug.get(slug);
       if (row) row.uses += 1;
-      else this.exceptionTypesBySlug.set(slug, { slug, label: slug.replace(/-/g, ' '), uses: 1 });
+      else this.exceptionTypesBySlug.set(slug, { slug, label: labelFor(slug, labels), uses: 1 });
     }
     for (const slug of prev) {
       if (next.has(slug)) continue;

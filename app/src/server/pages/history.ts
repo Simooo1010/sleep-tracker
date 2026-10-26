@@ -3,6 +3,7 @@
  * mese mostrato e costruisce la view (funzione pura `buildHistoryView`). Nessun accesso a variabili
  * globali: repo e istante arrivano dal chiamante.
  */
+import { addDays } from '@/domain/time';
 import { todayInRome } from '@/lib/clock';
 import type { Repo } from '@/server/types';
 import { buildHistoryView, type HistoryView, type HistoryViewInput } from '@/server/views';
@@ -77,10 +78,12 @@ export async function loadHistoryPage(repo: Repo, now: Date, params: HistoryPara
   // Ogni notte è identificata dalla data del risveglio; il mese non supera mai il mese di oggi, quindi to >= first.
   const to = last < today ? last : today;
 
-  const [nights, naps, exceptionTypes] = await Promise.all([
+  // La nota di una notte è nel check della sera prima: si parte dal giorno prima del primo del mese.
+  const [nights, naps, exceptionTypes, eveningChecks] = await Promise.all([
     repo.listNights(first, to),
     repo.listNaps(first, to),
     repo.listExceptionTypes(),
+    repo.listEveningChecks(addDays(first, -1), to),
   ]);
 
   // Le eccezioni sono già in `Night.isException` e in `Night.factors`: i tipi servono solo per le etichette.
@@ -93,6 +96,7 @@ export async function loadHistoryPage(repo: Repo, now: Date, params: HistoryPara
     naps,
     month,
     factorLabels,
+    eveningChecks,
     ...(selectedDate !== undefined ? { selectedDate } : {}),
   };
   return { today, view: buildHistoryView(input) };

@@ -4,6 +4,10 @@
  * Nessuna funzione lancia: gli errori del repo diventano un messaggio generico (niente dettagli interni).
  */
 import { napFromCheck } from "../domain/naps";
+import {
+  DAY_NOTE_MAX,
+  normalizeExceptionLabel,
+} from "../domain/questions";
 import { durationMinutes } from "../domain/time";
 import type { EveningCheck, Night, Score, Tracked } from "../domain/types";
 import { ingestEvent } from "./ingest";
@@ -128,10 +132,37 @@ export async function rateNight(
   }
 }
 
-/** Sostituisce le eccezioni della notte (la crea come 'mancante' se non esiste) e aggiorna `isException`. */
+/**
+ * Etichette difensive: solo per gli slug richiesti, normalizzate (trim, spazi, max lunghezza);
+ * le vuote o non stringa vengono ignorate (il repo deriverà la label dallo slug).
+ */
+function cleanLabels(
+  slugs: string[],
+  labels: Record<string, string> | undefined,
+): Record<string, string> | undefined {
+  if (!labels || typeof labels !== "object") return undefined;
+  const out: Record<string, string> = {};
+  for (const slug of slugs) {
+    if (!Object.prototype.hasOwnProperty.call(labels, slug)) continue;
+    const raw = labels[slug];
+    if (typeof raw !== "string") continue;
+    const label = normalizeExceptionLabel(raw);
+    if (label !== "") out[slug] = label;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Sostituisce le eccezioni della notte (la crea come 'mancante' se non esiste) e aggiorna `isException`.
+ * `labels` (slug → etichetta libera) serve a creare i nuovi tipi di imprevisto con il nome scelto dall'utente.
+ */
 export async function setExceptions(
   repo: Repo,
-  input: { nightDate: string; slugs: string[] },
+  input: {
+    nightDate: string;
+    slugs: string[];
+    labels?: Record<string, string>;
+  },
 ): Promise<MutationResult> {
   try {
     let night = await repo.getNight(input.nightDate);
@@ -139,8 +170,10 @@ export async function setExceptions(
       night = emptyNight(input.nightDate);
       await repo.overwriteNight(night);
     }
+    const labels = cleanLabels(input.slugs, input.labels);
     try {
-      await repo.setNightExceptions(input.nightDate, input.slugs);
+      if (labels) await repo.setNightExceptions(input.nightDate, input.slugs, labels);
+      else await repo.setNightExceptions(input.nightDate, input.slugs);
     } catch {
       return fail("Eccezione non valida.");
     }
@@ -163,9 +196,19 @@ export async function saveEveningCheckFromUi(
     mood?: Score;
     factors?: string[];
     napMinutesToday?: number;
+    /** Descrizione della giornata: stringa (trim, max DAY_NOTE_MAX), vuota/null = cancella, assente = invariata. */
+    dayNote?: string | null;
   },
 ): Promise<MutationResult> {
   const { tiredness, mood, factors, napMinutesToday } = input;
+  let dayNote: string | null | undefined;
+  if (input.dayNote !== undefined) {
+    if (input.dayNote !== null && typeof input.dayNote !== "string")
+      return fail("Dati non validi.");
+    const t = input.dayNote === null ? "" : input.dayNote.trim();
+    if (Array.from(t).length > DAY_NOTE_MAX) return fail("Dati non validi.");
+    dayNote = t === "" ? null : t;
+  }
   const invalid =
     (tiredness !== undefined && !isScore(tiredness)) ||
     (mood !== undefined && !isScore(mood)) ||
@@ -199,6 +242,8 @@ export async function saveEveningCheckFromUi(
           ? confirmedOf<number>(napMinutesToday)
           : (previous?.napMinutesToday ?? missing<number>()),
     };
+    const note = dayNote !== undefined ? dayNote : previous?.dayNote;
+    if (note !== undefined) check.dayNote = note;
     await repo.saveEveningCheck(check);
     if (napMinutesToday !== undefined && napMinutesToday > 0) {
       const nap = napFromCheck(check);

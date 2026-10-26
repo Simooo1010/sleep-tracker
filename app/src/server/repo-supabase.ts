@@ -21,6 +21,7 @@ import type {
   SignalType,
   Tracked,
 } from '../domain/types';
+import { DAY_NOTE_MAX, normalizeExceptionLabel } from '../domain/questions';
 import type { ApiTokenInfo, ExceptionTypeRow, QuestionKind, QuestionLogRow, Repo, StoredEvent } from './types';
 
 // ---------- Righe del DB (schema della migration) ----------
@@ -67,6 +68,7 @@ export interface EveningCheckRow {
   factors: string[] | null;
   nap_minutes: number | null;
   nap_prov: string | null;
+  day_note?: string | null;
   saved_at?: string;
 }
 
@@ -213,6 +215,20 @@ export function nightToRow(n: Night, updatedAt: string): NightRow {
   };
 }
 
+/** Nota della giornata: trim, vuota → null, troncata a DAY_NOTE_MAX (per code point). */
+/** Etichetta di un tipo nuovo: quella passata dalla UI (normalizzata) o, se vuota/assente, derivata dallo slug. */
+function labelFor(slug: string, labels?: Record<string, string>): string {
+  const given = labels && Object.prototype.hasOwnProperty.call(labels, slug) ? labels[slug] : undefined;
+  const norm = typeof given === 'string' ? normalizeExceptionLabel(given) : '';
+  return norm !== '' ? norm : slug.replace(/-/g, ' ');
+}
+
+function cleanDayNote(v: unknown): string | null {
+  if (typeof v !== 'string') return null;
+  const t = Array.from(v.trim()).slice(0, DAY_NOTE_MAX).join('').trimEnd();
+  return t === '' ? null : t;
+}
+
 export function rowToEveningCheck(r: EveningCheckRow): EveningCheck {
   const T = 'evening_checks';
   return {
@@ -229,6 +245,7 @@ export function rowToEveningCheck(r: EveningCheckRow): EveningCheck {
       },
       T,
     ),
+    dayNote: cleanDayNote(r.day_note),
   };
 }
 
@@ -245,6 +262,7 @@ export function eveningCheckToRow(c: EveningCheck, savedAt: string): EveningChec
     factors: [...c.factors],
     nap_minutes: nap.value,
     nap_prov: nap.prov,
+    day_note: cleanDayNote(c.dayNote),
     saved_at: savedAt,
   };
 }
@@ -471,7 +489,7 @@ export function createSupabaseRepo(
      * valida+deduplica, verifica la notte, legge gli slug attuali e il catalogo,
      * crea i tipi sconosciuti, cancella i rimossi, inserisce i nuovi, poi aggiorna `uses`.
      */
-    async setNightExceptions(nightDate, slugs) {
+    async setNightExceptions(nightDate, slugs, labels) {
       for (const s of slugs) {
         if (typeof s !== 'string' || !SLUG_RE.test(s)) throw new Error('Slug non valido.');
       }
@@ -506,7 +524,7 @@ export function createSupabaseRepo(
         const { error } = await client
           .from('exception_types')
           .upsert(
-            unknown.map((slug) => ({ slug, label: slug.replace(/-/g, ' '), uses: 0 })),
+            unknown.map((slug) => ({ slug, label: labelFor(slug, labels), uses: 0 })),
             { onConflict: 'slug', ignoreDuplicates: true },
           );
         if (error) throw dbError('creazione tipo di eccezione', error);

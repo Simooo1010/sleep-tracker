@@ -1,9 +1,15 @@
 /**
  * Insight testuali della pagina Grafici.
  *
- * 1. `buildInsightsPayload` riduce le ultime 30 notti (o 7/14, parametro `windowDays`) a SOLE statistiche aggregate (contratto
+ * 1. `buildInsightsPayload` riduce le ultime 30 notti (o 7/14, parametro `windowDays`) a statistiche aggregate (contratto
  *    `POST /v1/insights` del gateway, docs/AI_GATEWAY.md §6): numeri, quote, orari 'HH:MM' senza data,
- *    slug brevi. Mai date, timestamp, id, note o nomi (docs/AI_GATEWAY.md §8).
+ *    slug brevi. Mai date, timestamp, id o nomi (docs/AI_GATEWAY.md §8).
+ *    UNICA eccezione, per decisione esplicita dell'utente (piano "imprevisti liberi"): `dayContext`,
+ *    al massimo 10 giornate "particolari" con testo breve (≤ 140 caratteri) SANITIZZATO lato app
+ *    (`sanitizeDayText`: via email, telefoni, URL, date, UUID), con "giorni fa" invece di date e senza
+ *    mai la chiave `note`. Il gateway lo tratta come dato non fidato. Non esiste (ancora) un'impostazione
+ *    di consenso dedicata: il contesto viene SEMPRE inviato quando c'è; se verrà aggiunta, basta non
+ *    passare `dayContextSource` a `buildInsightsPayload`.
  * 2. `loadInsights` chiama il gateway (solo lato server). Qualsiasi problema (env mancanti, rete,
  *    timeout, 401, 429, 5xx, JSON non valido) → in silenzio `rulesInsights` calcolati in locale.
  *    Il bearer e il corpo della richiesta non vengono mai loggati né restituiti.
@@ -21,6 +27,7 @@ import { hasPlaceholderStart } from '@/domain/naps';
 import { durationStats, nightDuration, sleepDebt } from '@/domain/sleep-balance';
 import { computeSocialJetlag, formatDuration } from '@/domain/social-jetlag';
 import { addDays, hasTimes, isWeekendNight, median } from '@/domain/time';
+import { DAY_CONTEXT_MAX_DAYS, DAY_CONTEXT_TEXT_MAX } from '@/domain/questions';
 import { BASELINE_WINDOW_DAYS, DEFAULT_TARGET_SLEEP_MIN, TOLERANCE_MIN } from '@/domain/types';
 import type { EveningCheck, Nap, Night } from '@/domain/types';
 import { todayInRome } from '@/lib/clock';
@@ -76,6 +83,23 @@ export interface GatewayInsightsRequest {
   };
   naps?: { days: number; count: number; medianMinutes?: number };
   correlations?: Array<{ factor: string; target: 'quality' | 'energy' | 'mood' | 'duration'; r: number; n: number }>;
+  /** Giornate particolari recenti (più recente per prima, max 10). Assente se non ce ne sono. */
+  dayContext?: DayContextEntry[];
+}
+
+/** Una giornata particolare: "giorni fa" (0 = oggi), slug degli imprevisti e testo breve sanitizzato. */
+export interface DayContextEntry {
+  daysAgo: number;
+  factors: string[];
+  text: string;
+}
+
+/** Fonti (già lette dal repo) da cui costruire `dayContext`. */
+export interface DayContextSource {
+  /** Slug degli imprevisti per notte (`Repo.listNightExceptions`), chiave = nightDate. */
+  nightExceptions?: Record<string, string[]>;
+  /** Etichette degli imprevisti per slug (da `Repo.listExceptionTypes`). */
+  exceptionLabels?: Record<string, string>;
 }
 
 /** Finestra di default degli insight: ultimi 30 giorni (la notte di oggi inclusa). */
@@ -107,6 +131,7 @@ const MIN_CORRELATION_NIGHTS = 14;
 const MIN_CORRELATION_ABS_R = 0.3;
 const LOW_COVERAGE_SHARE = 0.6;
 const FACTOR_SLUG_RE = /^[a-z0-9_-]{1,40}$/i;
+const MAX_DAY_FACTORS = 5;
 
 // ---------------------------------------------------------------------------
 // Payload (solo statistiche aggregate)
@@ -193,12 +218,116 @@ function buildCorrelations(
   return out.sort((a, b) => Math.abs(b.r) - Math.abs(a.r)).slice(0, 20);
 }
 
+// ---------------------------------------------------------------------------
+// Contesto delle giornate particolari (testo libero sanitizzato)
+// ---------------------------------------------------------------------------
+
+/**
+ * Stesse redazioni di `redactText` del gateway (gateway/src/privacy.ts) più gli URL; qui però si
+ * RIMUOVE (niente segnaposto), così nel testo inviato non resta traccia del dato.
+ */
+const DAY_TEXT_REDACTIONS: RegExp[] = [
+  /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi, // email
+  /\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b/gi, // UUID
+  /\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})?)?\b/g, // data/timestamp ISO
+  /\b\d{1,2}[/.]\d{1,2}[/.]\d{4}\b/g, // gg/mm/aaaa
+  /\b(?:https?:\/\/|www\.)\S+/gi, // URL
+  /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|it|org|net|io|app|dev|eu|me|co|info|ly)\b(?:\/\S*)?/gi, // domini nudi
+];
+
+/**
+ * Telefoni: candidato = inizia con "+", "(" o una coppia di cifre 0x/3x, poi cifre con separatori
+ * (spazio, punto, trattino, parentesi) in qualunque raggruppamento; è un telefono solo se ha almeno
+ * 8 cifre complessive (separatori ignorati). Orari (22:30), durate, anni, importi brevi e conteggi
+ * restano intatti. Il punto/virgola finale di frase non fa parte del match.
+ */
+const PHONE_CANDIDATE = /(?<![\w.])(?:\+[ \t]?\d|\([ \t]?\+?\d|[03]\d)[\d \t().-]{5,}\d(?!\w)/g;
+const PHONE_MIN_DIGITS = 8;
+
+function redactPhones(text: string): string {
+  return text.replace(PHONE_CANDIDATE, (m) => (m.replace(/\D/g, '').length >= PHONE_MIN_DIGITS ? ' ' : m));
+}
+
+/**
+ * Testo libero → testo da inviare all'AI: toglie email, telefoni, URL, date ISO/gg/mm/aaaa e UUID,
+ * rimuove i caratteri di controllo, collassa gli spazi, fa il trim e tronca a `DAY_CONTEXT_TEXT_MAX`
+ * caratteri (per code point). Il contenuto resta testo: nessuna interpretazione (anche "ignora le
+ * istruzioni" passa come parole qualunque; il gateway lo tratta comunque come dato non fidato).
+ * Ritorna '' se non resta nulla.
+ */
+export function sanitizeDayText(raw: string): string {
+  let out = raw;
+  for (const re of DAY_TEXT_REDACTIONS) out = out.replace(re, ' ');
+  out = redactPhones(out);
+  out = out
+    .replace(/\p{Cc}+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return Array.from(out).slice(0, DAY_CONTEXT_TEXT_MAX).join('').trimEnd();
+}
+
+/** Giorni di calendario tra due 'YYYY-MM-DD' (a - b). */
+function dayDiff(a: string, b: string): number {
+  const t = (d: string): number => Date.UTC(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)));
+  return Math.round((t(a) - t(b)) / 86_400_000);
+}
+
+/**
+ * Giornate particolari delle ultime 30 (la giornata è quella che PRECEDE la notte: sera D ↔ notte D+1):
+ * descrizione libera del check serale e/o imprevisti della notte. Più recenti per prime, max 10.
+ * Voci senza testo dopo la sanitizzazione scartate.
+ */
+function buildDayContext(checks: EveningCheck[], today: string, source: DayContextSource): DayContextEntry[] {
+  const from = addDays(today, -(INSIGHTS_WINDOW_DAYS - 1));
+  const byDay = new Map<string, { note: string; slugs: Set<string> }>();
+  const slot = (day: string): { note: string; slugs: Set<string> } => {
+    let e = byDay.get(day);
+    if (!e) {
+      e = { note: '', slugs: new Set() };
+      byDay.set(day, e);
+    }
+    return e;
+  };
+
+  for (const c of checks) {
+    if (c.date < from || c.date > today || typeof c.dayNote !== 'string') continue;
+    const note = sanitizeDayText(c.dayNote);
+    if (note) slot(c.date).note = note;
+  }
+  for (const [nightDate, slugs] of Object.entries(source.nightExceptions ?? {})) {
+    const day = addDays(nightDate, -1);
+    if (day < from || day > today) continue;
+    for (const s of slugs) if (typeof s === 'string' && s.length > 0) slot(day).slugs.add(s);
+  }
+
+  const labels = source.exceptionLabels ?? {};
+  const out: Array<DayContextEntry & { day: string }> = [];
+  for (const [day, { note, slugs }] of byDay) {
+    const list = [...slugs].sort();
+    const labelText = sanitizeDayText(list.map((s) => sanitizeDayText(labels[s] ?? humanFactor(s))).filter(Boolean).join(', '));
+    const text = note || labelText;
+    if (!text) continue;
+    out.push({
+      day,
+      daysAgo: Math.max(0, dayDiff(today, day)),
+      factors: list.filter((s) => FACTOR_SLUG_RE.test(s)).slice(0, MAX_DAY_FACTORS),
+      text,
+    });
+  }
+  return out
+    .sort((a, b) => b.day.localeCompare(a.day))
+    .slice(0, DAY_CONTEXT_MAX_DAYS)
+    .map(({ daysAgo, factors, text }) => ({ daysAgo, factors, text }));
+}
+
 /**
  * Riduce notti, sonnellini e check serali a statistiche aggregate per il gateway.
  * Funzione pura. Nessuna data, nessun timestamp, nessun id: solo numeri, quote, orari 'HH:MM' e slug.
  * `targetMin` (opzionale) è l'obiettivo di sonno personale in minuti.
  * `windowDays` (opzionale, 7/14/30, default 30) è la finestra; le soglie minime restano le stesse,
  * quindi con 7 notti molte sezioni restano assenti (è voluto).
+ * `dayContextSource` (opzionale): imprevisti per notte + etichette; con le `dayNote` dei check serali
+ * produce `dayContext` (sanitizzato, max 10). Senza nulla da dire il campo è omesso.
  */
 export function buildInsightsPayload(
   nights: Night[],
@@ -207,6 +336,7 @@ export function buildInsightsPayload(
   today: string,
   targetMin: number = DEFAULT_TARGET_SLEEP_MIN,
   windowDays: InsightsWindow = INSIGHTS_WINDOW_DAYS,
+  dayContextSource: DayContextSource = {},
 ): GatewayInsightsRequest {
   const win = normalizeWindow(windowDays);
   const inWindow = windowNights(nights, today, win);
@@ -342,6 +472,10 @@ export function buildInsightsPayload(
   // Correlazioni (indizi, mai cause).
   const correlations = buildCorrelations(withData, checks);
   if (correlations.length > 0) payload.correlations = correlations;
+
+  // Giornate particolari (testo libero sanitizzato): omesso se non c'è nulla.
+  const dayContext = buildDayContext(checks, today, dayContextSource);
+  if (dayContext.length > 0) payload.dayContext = dayContext;
 
   return payload;
 }
@@ -488,6 +622,20 @@ export function rulesInsights(payload: GatewayInsightsRequest, nowIso: string): 
     });
   }
 
+  // Giornate particolari recenti: riconoscimento prudente, senza cause e senza ripetere il testo.
+  const dc = payload.dayContext;
+  if (dc && dc.length > 0 && items.length > 0) {
+    const excluded = payload.nights.exceptions ?? 0;
+    items.splice(Math.min(2, items.length), 0, {
+      title: 'Hai segnalato giornate particolari.',
+      body: `Nelle ultime notti hai segnalato ${plural(dc.length, 'giornata particolare', 'giornate particolari')}. ${
+        excluded > 0
+          ? 'Le notti segnate come imprevisto restano visibili, ma i loro valori sono esclusi dal riferimento. '
+          : ''
+      }Per ora le tengo come contesto, senza dedurne cause.`,
+    });
+  }
+
   // Copertura dichiarata, se bassa.
   const share = inWindow > 0 ? withData / inWindow : 0;
   if (items.length > 0 && items.length < MAX_INSIGHTS && share < LOW_COVERAGE_SHARE) {
@@ -565,12 +713,14 @@ export async function loadInsights(
   const today = todayInRome(now);
   const from = addDays(today, -(win - 1));
 
-  const [nights, naps, checks, target] = await Promise.all([
+  const [nights, naps, checks, target, nightExceptions, exceptionTypes] = await Promise.all([
     repo.listNights(from, today),
     repo.listNaps(from, today),
     // Un giorno in più: l'umore di una notte è quello della sera prima.
     repo.listEveningChecks(addDays(from, -1), today),
     repo.getSetting<number>('target_sleep_minutes'),
+    repo.listNightExceptions(from, addDays(today, 1)),
+    repo.listExceptionTypes(),
   ]);
 
   const payload = buildInsightsPayload(
@@ -580,6 +730,7 @@ export async function loadInsights(
     today,
     typeof target === 'number' && Number.isFinite(target) && target > 0 ? target : DEFAULT_TARGET_SLEEP_MIN,
     win,
+    { nightExceptions, exceptionLabels: Object.fromEntries(exceptionTypes.map((t) => [t.slug, t.label])) },
   );
   const nowIso = now.toISOString();
 

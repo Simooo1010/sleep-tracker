@@ -8,6 +8,7 @@ vi.mock('@/app/actions', () => ({
 
 import {
   EveningScreen,
+  currentDayNote,
   currentExceptions,
   initialAnswers,
   submitEveningCheck,
@@ -128,6 +129,98 @@ describe('eccezioni', () => {
   });
 });
 
+describe('imprevisti liberi', () => {
+  it('toExceptionsInput passa le etichette solo degli imprevisti nuovi ancora scelti', () => {
+    const answers: EveningAnswers = {
+      ...blank(),
+      exceptions: ['viaggio', 'cena-fuori'],
+      exceptionLabels: { 'cena-fuori': 'Cena fuori', 'ospiti-a-casa': 'Ospiti a casa' },
+    };
+    expect(toExceptionsInput(NIGHT, answers)).toEqual({
+      nightDate: NIGHT,
+      slugs: ['viaggio', 'cena-fuori'],
+      labels: { 'cena-fuori': 'Cena fuori' },
+    });
+  });
+
+  it('senza imprevisti nuovi non c\'è la chiave labels', () => {
+    const input = toExceptionsInput(NIGHT, { ...blank(), exceptions: ['festa'] });
+    expect(input).toEqual({ nightDate: NIGHT, slugs: ['festa'] });
+    expect(input && 'labels' in input).toBe(false);
+  });
+
+  it('il riepilogo usa l\'etichetta libera, non lo slug', () => {
+    const rows = summaryRows(emptyView, {
+      ...blank(),
+      exceptions: ['cena-fuori'],
+      exceptionLabels: { 'cena-fuori': 'Cena fuori' },
+    });
+    expect(rows.find((r) => r.key === 'factors')?.value).toBe('Cena fuori');
+  });
+});
+
+describe('descrizione della giornata', () => {
+  it('non toccata: il check non la contiene', () => {
+    expect('dayNote' in toCheckInput(TODAY, blank())).toBe(false);
+  });
+
+  it('scritta: va nel check ripulita dagli spazi; svuotata: stringa vuota', () => {
+    expect(toCheckInput(TODAY, { ...blank(), dayNote: '  Cena fuori con amici  ' })).toEqual({
+      date: TODAY,
+      dayNote: 'Cena fuori con amici',
+    });
+    expect(toCheckInput(TODAY, { ...blank(), dayNote: '   ' })).toEqual({ date: TODAY, dayNote: '' });
+  });
+
+  it('currentDayNote: quella scritta ora, altrimenti quella già salvata', () => {
+    const noted = buildEveningView({ today: TODAY, check: { ...check, dayNote: 'Giornata lunga' } });
+    expect(currentDayNote(noted, initialAnswers(noted))).toBe('Giornata lunga');
+    expect(currentDayNote(noted, { ...initialAnswers(noted), dayNote: '' })).toBe('');
+  });
+
+  it('riepilogo: la riga "Nota" c\'è solo se c\'è del testo', () => {
+    expect(summaryRows(emptyView, blank()).some((r) => r.key === 'dayNote')).toBe(false);
+    const rows = summaryRows(emptyView, { ...blank(), dayNote: 'Giornata lunga' });
+    expect(rows.at(-1)).toEqual({ key: 'dayNote', label: 'Nota', value: 'Giornata lunga' });
+    expect(summaryRows(emptyView, { ...blank(), dayNote: '  ' }).some((r) => r.key === 'dayNote')).toBe(false);
+  });
+
+  it('submitEveningCheck invia la nota con il check', async () => {
+    const saveCheck = vi.fn(async () => ({ ok: true }));
+    const setExceptions = vi.fn(async () => ({ ok: true }));
+    await submitEveningCheck(
+      { today: TODAY, tonightNightDate: NIGHT, answers: { ...blank(), dayNote: 'Viaggio lungo' } },
+      { saveCheck, setExceptions },
+    );
+    expect(saveCheck).toHaveBeenCalledWith({ date: TODAY, dayNote: 'Viaggio lungo' });
+    expect(setExceptions).not.toHaveBeenCalled();
+  });
+
+  it('il passo 3 ha la textarea facoltativa con contatore, senza nuovi pulsanti pieni né un quinto passo', () => {
+    const { phone, desktop } = render(emptyView, 2);
+    expect(phone).toContain('<textarea');
+    expect(text(phone)).toContain('Descrivi la giornata (solo se è stata davvero particolare)');
+    expect(text(phone)).toContain('0 su 280');
+    expect(phone).toContain('maxLength="280"');
+    expect(phone).not.toContain('required');
+    expect(text(phone)).toContain('domanda 3 di 4');
+    expect(count(phone, /btn-primary/g)).toBe(0);
+    expect(count(desktop, /<textarea/g)).toBe(1);
+    expect(count(desktop, /btn-primary/g)).toBe(1);
+    expect(count(phone, /\+ Aggiungi/g)).toBe(1);
+  });
+
+  it('con nota salvata: la textarea è precompilata e il riepilogo la mostra', () => {
+    const noted = buildEveningView({ today: TODAY, check: { ...check, dayNote: 'Giornata lunga <b>' } });
+    const mid = render(noted, 2);
+    expect(mid.phone).toContain('Giornata lunga &lt;b&gt;</textarea>');
+    expect(text(mid.phone)).toContain('18 su 280');
+    const last = render(noted, 3);
+    expect(text(last.phone)).toContain('NotaGiornata lunga');
+    expectClean(last.html);
+  });
+});
+
 describe('initialAnswers e summaryRows', () => {
   it('senza check non c\'è nulla di precompilato', () => {
     expect(blank()).toEqual({
@@ -135,6 +228,8 @@ describe('initialAnswers e summaryRows', () => {
       mood: null,
       factors: null,
       exceptions: null,
+      exceptionLabels: {},
+      dayNote: null,
       nap: null,
       napTouched: false,
     });

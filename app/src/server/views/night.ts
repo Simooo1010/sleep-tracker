@@ -69,6 +69,11 @@ export interface NightViewInput {
   napsRecentlyMissing?: boolean;
   /** Tipi di eccezione con la loro frequenza d'uso (lista aperta). */
   exceptionTypes?: ChipType[];
+  /**
+   * Slug delle eccezioni della notte di stanotte (fonte: `night_exceptions`, da `listNightExceptions`).
+   * Se assente o vuoto si ricade sul vecchio schema (`isException` + slug in `factors`, come nel seed demo).
+   */
+  activeExceptions?: string[];
   targetMin?: number;
 }
 
@@ -473,11 +478,25 @@ export function buildNightView(input: NightViewInput): NightView {
   }));
 
   // Chip eccezioni (scorciatoia).
-  const chips = orderExceptionChips(input.exceptionTypes ?? [], DEFAULT_EXCEPTIONS).map((c) => ({
+  const stored = input.activeExceptions ?? [];
+  const activeSet =
+    stored.length > 0
+      ? new Set(stored)
+      : new Set(night && night.isException ? night.factors : []);
+  const ordered = orderExceptionChips(input.exceptionTypes ?? [], DEFAULT_EXCEPTIONS);
+  // Imprevisti scelti ma assenti dai tipi noti: chip in coda, etichetta ricavata dallo slug.
+  const known = new Set(ordered.map((c) => c.slug));
+  for (const slug of stored) {
+    if (known.has(slug)) continue;
+    known.add(slug);
+    const s = slug.replace(/-/g, ' ');
+    ordered.push({ slug, label: s.charAt(0).toUpperCase() + s.slice(1), uses: 0 });
+  }
+  const chips = ordered.map((c) => ({
     slug: c.slug,
     label: c.label,
     uses: c.uses,
-    active: !!night && night.isException && night.factors.includes(c.slug),
+    active: activeSet.has(c.slug),
   }));
 
   const timelineItems = buildTimeline(night, today, events, checks);

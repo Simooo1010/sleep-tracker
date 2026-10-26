@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildHistoryView } from '../../../src/server/views';
+import type { EveningCheck } from '../../../src/domain/types';
+import { buildHistoryView, dayNoteFor } from '../../../src/server/views';
 import { TODAY, buildDataset, datasetWithTonight, expectSerializable, makeNight } from './fixtures';
 
 describe('buildHistoryView: ottobre 2026', () => {
@@ -39,7 +40,30 @@ describe('buildHistoryView: ottobre 2026', () => {
       wakeProvenanceWord: 'Automatico',
       note: 'Orari stimati dai segnali. Conferma per renderli definitivi.',
       tags: ['Notte del weekend'],
+      dayNote: null,
     });
+  });
+
+  it('nota della giornata: dal check della sera prima, con la parola "Nota"', () => {
+    const checks = [
+      { date: '2026-10-23', tiredness: { value: 3, provenance: 'confermato' }, mood: { value: 3, provenance: 'confermato' }, factors: [], napMinutesToday: { value: null, provenance: 'mancante' }, dayNote: '  Cena fuori con amici  ' },
+      { date: '2026-10-24', tiredness: { value: 3, provenance: 'confermato' }, mood: { value: 3, provenance: 'confermato' }, factors: [], napMinutesToday: { value: null, provenance: 'mancante' }, dayNote: '   ' },
+    ] as EveningCheck[];
+    const w = buildHistoryView({ today: TODAY, nights: ds.nights, naps: ds.naps, selectedDate: '2026-10-24', eveningChecks: checks });
+    expect(w.detail?.dayNote).toEqual({ label: 'Nota · giornata del 23 ottobre', text: 'Cena fuori con amici' });
+    // La sera del 24 ha solo spazi: la notte del 25 non esiste ancora e un testo vuoto non è una nota.
+    expect(dayNoteFor('2026-10-25', checks)).toBeNull();
+    expect(dayNoteFor('2026-10-20', checks)).toBeNull();
+    expect(dayNoteFor('2026-10-24', [])).toBeNull();
+  });
+
+  it('la nota compare anche se la notte è mancante', () => {
+    const checks = [
+      { date: '2026-10-13', tiredness: { value: null, provenance: 'mancante' }, mood: { value: null, provenance: 'mancante' }, factors: [], napMinutesToday: { value: null, provenance: 'mancante' }, dayNote: 'Giornata di lavoro lunga' },
+    ] as EveningCheck[];
+    const gap = buildHistoryView({ today: TODAY, nights: ds.nights, selectedDate: '2026-10-14', eveningChecks: checks });
+    expect(gap.detail?.statusWord).toBe('Mancante');
+    expect(gap.detail?.dayNote?.text).toBe('Giornata di lavoro lunga');
   });
 
   it('notte confermata con voti, fattori e sonnellino', () => {

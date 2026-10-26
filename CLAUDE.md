@@ -16,7 +16,7 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
 - Endpoint in produzione: `https://sleep-tracker-simone-dr-s-projects.vercel.app` (`POST /v1/insights`, `POST /v1/chat/completions`, `GET /v1/health`), autenticati con `Authorization: Bearer $GATEWAY_SECRET`.
 - Gli ID dei modelli e le chiavi (`GROQ_API_KEY`, ecc.) stanno solo in env Vercel del progetto `sleep-tracker`; `GATEWAY_SECRET` è sensitive e non leggibile. Per usarlo dall'app: `docs/AI_GATEWAY.md` §13.
 - Aggiungere un provider o un modello = una voce in `gateway/providers.config.json` (o `npm run add-provider`) + una env var, zero codice (`docs/AI_GATEWAY.md` §4).
-- All'AI si inviano solo statistiche aggregate, mai dati identificativi (dati sanitari, `docs/AI_GATEWAY.md` §8). Se tutti i provider falliscono, il gateway risponde comunque con insight a regole.
+- All'AI si inviano solo statistiche aggregate, mai dati identificativi (dati sanitari, `docs/AI_GATEWAY.md` §8). Unica eccezione decisa dall'utente (2026-10-26): `dayContext`, brevi testi sanificati su imprevisti e giornate particolari (§6, §8). Se tutti i provider falliscono, il gateway risponde comunque con insight a regole.
 - Il progetto Vercel `sleep-tracker` ha Root Directory `gateway`: l'app va in una cartella/progetto separato (vedi `docs/AI_GATEWAY.md` §13).
 
 ## Processo di lavoro (obbligatorio)

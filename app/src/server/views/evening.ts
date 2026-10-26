@@ -4,7 +4,14 @@
  * Spec: docs/design/system/Schermate.md §Sera, componenti WizardStep, MoonRating, Chip, ExceptionChips.
  * Funzione pura: `today` e i dati sono parametri. Nessuna risposta è obbligatoria.
  */
-import { DEFAULT_EXCEPTIONS, DEFAULT_FACTORS, DEFAULT_LABELS, orderExceptionChips, type ChipType } from '../../domain/questions';
+import {
+  DAY_NOTE_MAX,
+  DEFAULT_EXCEPTIONS,
+  DEFAULT_FACTORS,
+  DEFAULT_LABELS,
+  orderExceptionChips,
+  type ChipType,
+} from '../../domain/questions';
 import { clockChangeShiftMin, clockChangeText } from '../../domain/clock-change';
 import type { EveningCheck, Nap } from '../../domain/types';
 import { DASH, formatClockMinutes, formatLongDate, formatMinutes, formatScore } from './format';
@@ -55,8 +62,19 @@ export interface EveningStepView {
 }
 
 export interface EveningSummaryRowView {
-  key: EveningStepKey;
+  /** `dayNote` è la riga facoltativa "Nota": c'è solo se la giornata ha una descrizione. */
+  key: EveningStepKey | 'dayNote';
   label: string;
+  value: string;
+}
+
+/** Descrizione libera della giornata (passo "Cosa è successo oggi?"): facoltativa, sotto i chip. */
+export interface EveningDayNoteView {
+  label: string;
+  hint: string;
+  placeholder: string;
+  max: number;
+  /** Testo già salvato per stasera, '' se assente. */
   value: string;
 }
 
@@ -72,6 +90,7 @@ export interface EveningView {
   /** Avviso se stanotte cambia l'ora, altrimenti null. */
   clockChangeNotice: string | null;
   steps: EveningStepView[];
+  dayNote: EveningDayNoteView;
   summary: {
     title: string;
     rows: EveningSummaryRowView[];
@@ -87,6 +106,12 @@ export const MOODS: ReadonlyArray<{ value: number; label: string }> = [
   { value: 4, label: 'Leggero' },
   { value: 5, label: 'Sereno' },
 ];
+
+export const DAY_NOTE_LABEL = 'Descrivi la giornata (solo se è stata davvero particolare)';
+export const DAY_NOTE_HINT = 'Facoltativo: puoi lasciare vuoto.';
+export const DAY_NOTE_PLACEHOLDER = 'Per esempio: cena fuori con amici, rientrato tardi.';
+/** Etichetta della riga del riepilogo e della sezione nello Storico. */
+export const DAY_NOTE_ROW_LABEL = 'Nota';
 
 export const EVENING_EMPTY_TEXT = 'Nessun check per stasera. Bastano pochi tocchi, e ogni domanda si può saltare.';
 
@@ -194,6 +219,9 @@ export function buildEveningView(input: EveningViewInput): EveningView {
     },
   ];
 
+  const dayNote = (check?.dayNote ?? '').trim();
+  if (dayNote !== '') rows.push({ key: 'dayNote', label: DAY_NOTE_ROW_LABEL, value: dayNote });
+
   const alarm = input.alarmMin;
   const savedText =
     typeof alarm === 'number' && Number.isFinite(alarm)
@@ -211,6 +239,7 @@ export function buildEveningView(input: EveningViewInput): EveningView {
     clockChangeNotice:
       input.tonightNightDate === undefined ? null : clockChangeText(clockChangeShiftMin(input.tonightNightDate), 'stasera'),
     steps,
+    dayNote: { label: DAY_NOTE_LABEL, hint: DAY_NOTE_HINT, placeholder: DAY_NOTE_PLACEHOLDER, max: DAY_NOTE_MAX, value: dayNote },
     summary: { title: 'Riepilogo', rows, sendLabel: 'Vado a dormire', savedText },
   };
 }

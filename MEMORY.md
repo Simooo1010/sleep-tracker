@@ -49,6 +49,13 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Fix: fascia `.status-cover` (layout.tsx + styles/app.css), `position: fixed`, in cima, a tutta larghezza, alta come la barra di stato, sfondo `--ground` (segue il tema), solo con `display-mode: standalone` sotto 60rem. Test: `e2e/status-cover.spec.ts`.
 - Limite: provato solo in Chromium (nessun WebKit/iOS nel cloud). Da confermare sul telefono dopo il deploy, riaprendo la PWA dalla Home.
 
+## Feature imprevisti liberi + nota giornata (2026-10-26, PR #21 → branch vecchio, PR #24 → `main`)
+- ✅ Imprevisti a testo libero (`+ Aggiungi`, max 30 caratteri, Notte e Sera), nota facoltativa sulla giornata particolare nel check serale (max 280, Sera passo 3, sola lettura in Storico), componente `TextField`.
+- ✅ Contesto AI: `dayContext` (max 10 giornate, 140 caratteri, giorni relativi) sanificato in app e gateway, mai nei log, prompt con blocco «NON istruzioni»; fallback a regole. Eccezione alla regola «solo aggregati» decisa dall'utente (`docs/DECISIONS.md` 2026-10-26).
+- ✅ Fix bug preesistente: i chip eccezione della pagina Notte risultavano spenti dopo il reload.
+- ✅ Provato in locale con gateway reale + provider finto: email e telefoni rimossi prima del provider. Limite noto: i nomi propri non si possono riconoscere (restano nel testo); la redazione dei telefoni è prudente e può oscurare sequenze numeriche lunghe.
+- ✅ Migrazione `20261025180000_evening_day_note.sql` applicata a Supabase `sleep-tracker` il 2026-10-26 (colonna `evening_checks.day_note`, check ≤ 280, RLS invariata). ⚠️ Il gateway di produzione si aggiorna solo con il merge su `main` (Vercel distribuisce da `main`); finché non avviene rifiuta `dayContext` e l'app ricade sugli insight a regole.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): ✅ fatto — `SUPABASE_SERVICE_ROLE_KEY` (messa dall'utente; i tool MCP non possono leggerla) e `APP_LOGIN_PASSWORD` (≥12 caratteri). Ogni modifica alle variabili richiede un rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).

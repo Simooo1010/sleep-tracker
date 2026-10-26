@@ -221,3 +221,35 @@ describe('buildNightView: casi particolari', () => {
     expect(v.clockChangeNote).toContain('1 ora in meno');
   });
 });
+
+describe('buildNightView: chip eccezioni da night_exceptions', () => {
+  const ds = datasetWithTonight();
+  const base = { today: TODAY, nights: ds.nights, events: ds.events, naps: ds.naps, eveningChecks: ds.checks };
+
+  it('activeExceptions accende i chip anche se la notte non ha gli slug in factors', () => {
+    const v = buildNightView({ ...base, activeExceptions: ['alcol'] });
+    expect(v.exceptions.chips.filter((c) => c.active).map((c) => c.slug)).toEqual(['alcol']);
+  });
+
+  it('slug personalizzati: etichetta dai tipi, ordine per uses; quelli ignoti in coda', () => {
+    const v = buildNightView({
+      ...base,
+      exceptionTypes: [
+        { slug: 'trasloco', label: 'Trasloco', uses: 4 },
+        { slug: 'viaggio', label: 'Viaggio', uses: 2 },
+      ],
+      activeExceptions: ['trasloco', 'esame-orale'],
+    });
+    const slugs = v.exceptions.chips.map((c) => c.slug);
+    expect(slugs.slice(0, 2)).toEqual(['trasloco', 'viaggio']);
+    expect(slugs[slugs.length - 1]).toBe('esame-orale');
+    expect(v.exceptions.chips.find((c) => c.slug === 'esame-orale')).toMatchObject({ label: 'Esame orale', active: true });
+    expect(v.exceptions.chips.filter((c) => c.active).map((c) => c.slug)).toEqual(['trasloco', 'esame-orale']);
+  });
+
+  it('senza activeExceptions vale il vecchio schema (isException + factors), come nel seed demo', () => {
+    const nights = ds.nights.map((n) => (n.nightDate === TODAY ? { ...n, isException: true, factors: ['festa'] } : n));
+    const v = buildNightView({ ...base, nights });
+    expect(v.exceptions.chips.filter((c) => c.active).map((c) => c.slug)).toEqual(['festa']);
+  });
+});
