@@ -85,7 +85,7 @@ Progetto `sleep-tracker-app`, ambiente Production:
 
 ## 9. Problemi noti e debito tecnico (candidati alle prime correzioni)
 - `app/src/app/grafici/mapping.ts` rilegge in numeri i **testi** dei view model (la view non espone i valori): fragile se cambiano i formati.
-- `Logo` esiste ma non è usato nelle pagine (il marchio nel guscio è solo testo); l'icona PWA c'è.
+- `Logo` esiste ma non è usato nelle pagine (il marchio nel guscio è solo testo); l'icona PWA c'è, anche in variante scura (`AppIconSync`, vedi `docs/DECISIONS.md` 2026-10-26; su iPhone vale quella scelta al momento di «Aggiungi a Home»).
 - Avviso "segnale in pausa": `alreadyWarned` non è persistito → l'avviso riappare a ogni visita.
 - Annulla della conferma disponibile solo nella stessa sessione (il `previous` resta in memoria client). Annulla del sonnellino ripristina solo lo stato locale.
 - `NightBars` ricostruisce i minuti dalle percentuali; fuori asse 21–11 si perde l'orario reale nel riassunto accessibile.
