@@ -54,7 +54,8 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - ✅ Contesto AI: `dayContext` (max 10 giornate, 140 caratteri, giorni relativi) sanificato in app e gateway, mai nei log, prompt con blocco «NON istruzioni»; fallback a regole. Eccezione alla regola «solo aggregati» decisa dall'utente (`docs/DECISIONS.md` 2026-10-26).
 - ✅ Fix bug preesistente: i chip eccezione della pagina Notte risultavano spenti dopo il reload.
 - ✅ Provato in locale con gateway reale + provider finto: email e telefoni rimossi prima del provider. Limite noto: i nomi propri non si possono riconoscere (restano nel testo); la redazione dei telefoni è prudente e può oscurare sequenze numeriche lunghe.
-- ✅ Migrazione `20261025180000_evening_day_note.sql` applicata a Supabase `sleep-tracker` il 2026-10-26 (colonna `evening_checks.day_note`, check ≤ 280, RLS invariata). ⚠️ Il gateway di produzione si aggiorna solo con il merge su `main` (Vercel distribuisce da `main`); finché non avviene rifiuta `dayContext` e l'app ricade sugli insight a regole.
+- ✅ Migrazione `20261025180000_evening_day_note.sql` applicata a Supabase `sleep-tracker` il 2026-10-26 (colonna `evening_checks.day_note`, check ≤ 280, RLS invariata).
+- ✅ PR #24 unita su `main` (`513eba2`, squash): gateway (`sleep-tracker`) e app (`sleep-tracker-app`) in produzione e READY, nessun errore a runtime. `/v1/health` del gateway richiede il bearer (401 senza). Non verificato in produzione con il segreto reale: il percorso `dayContext` (provato solo in locale con provider finto).
 
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): ✅ fatto — `SUPABASE_SERVICE_ROLE_KEY` (messa dall'utente; i tool MCP non possono leggerla) e `APP_LOGIN_PASSWORD` (≥12 caratteri). Ogni modifica alle variabili richiede un rideploy.
