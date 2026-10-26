@@ -33,7 +33,7 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
 3. Segnali ridondanti per evento. Letto: Full Immersion → check serale → stima. Risveglio: sveglia → prima app aperta al mattino (automazione Comandi, limite superiore) → stima.
 4. Recupero: al primo uso del mattino notte già ricostruita, conferma in 1–2 tap. Se si saltano giorni, si chiedono solo gli ultimi 2–3; i precedenti restano stimati.
 5. Budget domande: 2–3 domande al giorno, rapidissime (1 tap ciascuna), scelte per valore informativo.
-6. Eccezioni come chip one-tap (caffè, alcol, malattia, viaggio, festa, notte in bianco…), lista aperta e personalizzabile, ordinata per frequenza d'uso.
+6. Eccezioni come chip one-tap (caffè, alcol, malattia, viaggio, festa, notte in bianco…), lista aperta e personalizzabile (l'utente può aggiungere imprevisti a testo libero), ordinata per frequenza d'uso. Nel check serale una nota facoltativa descrive la giornata se è stata davvero particolare; imprevisti e nota alimentano anche gli insight AI (`dayContext`).
 7. Statistiche robuste: riferimento = **mediana** 14 giorni; giorni-eccezione visibili ma esclusi dal riferimento; ogni statistica mostra la copertura ("9/14 notti"); insight nascosti sotto soglia dati.
 8. Adattività: se un segnale non viene usato per giorni, l'app smette di attenderlo e avvisa una sola volta, solo se cala la precisione.
 

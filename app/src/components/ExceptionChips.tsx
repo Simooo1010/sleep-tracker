@@ -76,6 +76,30 @@ export function sortExceptions(items: readonly ExceptionItem[]): ExceptionItem[]
   return valid.sort((a, b) => usesOf(b) - usesOf(a));
 }
 
+export type NewExceptionResult =
+  | { kind: 'empty' }
+  | { kind: 'invalid' }
+  | { kind: 'existing'; id: string; active: boolean }
+  | { kind: 'new'; id: string; label: string };
+
+/**
+ * Cosa fare con il testo scritto in "Altro imprevisto": rifiuta vuoti e testi senza lettere o numeri;
+ * se lo slug esiste già non crea un doppione (`existing`: il genitore lo accende se non lo è già).
+ */
+export function resolveNewException(
+  draft: string,
+  items: readonly ExceptionItem[],
+  active: ReadonlySet<string>,
+): NewExceptionResult {
+  const label = normalizeExceptionLabel(draft);
+  if (label === '') return { kind: 'empty' };
+  const id = slugifyExceptionLabel(label);
+  if (id === '') return { kind: 'invalid' };
+  const existing = items.find((item) => item.id === id);
+  if (existing) return { kind: 'existing', id: existing.id, active: active.has(existing.id) };
+  return { kind: 'new', id, label };
+}
+
 export function ExceptionChips({
   exceptions = DEFAULT_EXCEPTIONS,
   active = [],
@@ -117,15 +141,13 @@ export function ExceptionChips({
   };
 
   const submit = () => {
-    const name = normalizeExceptionLabel(draft);
-    if (name === '') return setProblem(ADD_EMPTY_ERROR);
-    const slug = slugifyExceptionLabel(name);
-    if (slug === '') return setProblem(ADD_INVALID_ERROR);
-    const existing = items.find((item) => item.id === slug);
-    if (existing) {
-      if (!activeSet.has(existing.id)) onToggle?.(existing.id, true);
+    const result = resolveNewException(draft, items, activeSet);
+    if (result.kind === 'empty') return setProblem(ADD_EMPTY_ERROR);
+    if (result.kind === 'invalid') return setProblem(ADD_INVALID_ERROR);
+    if (result.kind === 'existing') {
+      if (!result.active) onToggle?.(result.id, true);
     } else {
-      onCreate?.({ id: slug, label: name });
+      onCreate?.({ id: result.id, label: result.label });
     }
     close();
   };

@@ -5,6 +5,7 @@ import {
   DEFAULT_EXCEPTIONS,
   EXCEPTION_NOTE,
   ExceptionChips,
+  resolveNewException,
   sortExceptions,
 } from '../../src/components/ExceptionChips';
 
@@ -45,7 +46,7 @@ describe('ExceptionChips', () => {
     expect(renderToStaticMarkup(<ExceptionChips />)).not.toContain('chip-add');
     const html = renderToStaticMarkup(<ExceptionChips onAdd={noop} />);
     expect(html).toContain('class="chip chip-add"');
-    expect(html).toContain(`aria-label="Aggiungi un&#x27;eccezione"`);
+    expect(html).toContain('aria-label="Aggiungi un altro imprevisto"');
     expect(html).toContain('+ Aggiungi');
   });
 
@@ -89,5 +90,58 @@ describe('ExceptionChips', () => {
 
   it('sortExceptions è stabile a pari uso', () => {
     expect(sortExceptions(DEFAULT_EXCEPTIONS).map((e) => e.id)).toEqual(DEFAULT_EXCEPTIONS.map((e) => e.id));
+  });
+});
+
+describe('ExceptionChips: + Aggiungi con onCreate', () => {
+  it('chiuso: c\'è il chip + Aggiungi (aria-expanded false) e nessun campo', () => {
+    const html = renderToStaticMarkup(<ExceptionChips onCreate={noop} />);
+    expect(html).toContain('chip-add');
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain('<input');
+    noJunk(html);
+  });
+
+  it('senza onCreate né onAdd il chip non c\'è e aria-expanded non compare', () => {
+    expect(renderToStaticMarkup(<ExceptionChips />)).not.toContain('chip-add');
+    expect(renderToStaticMarkup(<ExceptionChips onAdd={noop} />)).not.toContain('aria-expanded');
+  });
+
+  it('solo onCreate e nessun chip: il gruppo resta con + Aggiungi', () => {
+    const html = renderToStaticMarkup(<ExceptionChips exceptions={[]} onCreate={noop} />);
+    expect(html).toContain('chip-add');
+  });
+});
+
+describe('resolveNewException', () => {
+  const items = [
+    { id: 'viaggio', label: 'Viaggio' },
+    { id: 'cena-fuori', label: 'Cena fuori' },
+  ];
+  const none = new Set<string>();
+
+  it('rifiuta vuoti, spazi e testi senza lettere o numeri', () => {
+    expect(resolveNewException('', items, none)).toEqual({ kind: 'empty' });
+    expect(resolveNewException('   ', items, none)).toEqual({ kind: 'empty' });
+    expect(resolveNewException('!!! ???', items, none)).toEqual({ kind: 'invalid' });
+  });
+
+  it('nuovo: slug e etichetta normalizzata (spazi collassati, max 30 caratteri)', () => {
+    expect(resolveNewException('  Mal  di   schiena ', items, none)).toEqual({
+      kind: 'new',
+      id: 'mal-di-schiena',
+      label: 'Mal di schiena',
+    });
+    const long = resolveNewException('a'.repeat(50), items, none);
+    expect(long.kind === 'new' && long.label.length).toBe(30);
+  });
+
+  it('esistente (anche con maiuscole o accenti diversi): nessun doppione, dice se è già attivo', () => {
+    expect(resolveNewException('VIAGGIO', items, none)).toEqual({ kind: 'existing', id: 'viaggio', active: false });
+    expect(resolveNewException('cena  fuori', items, new Set(['cena-fuori']))).toEqual({
+      kind: 'existing',
+      id: 'cena-fuori',
+      active: true,
+    });
   });
 });

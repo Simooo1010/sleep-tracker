@@ -224,6 +224,23 @@ describe('Calendar', () => {
     expect(html).toContain('aria-live="polite"');
   });
 
+  it('nota della giornata in sola lettura, con la parola "Nota" e testo escapato', () => {
+    const withNote: CalendarNight[] = nights.map((n) =>
+      n.date === '2026-10-23'
+        ? { ...n, dayNote: { label: 'Nota · giornata del 22 ottobre', text: 'Cena fuori <b>tardi</b>' } }
+        : n,
+    );
+    const h = renderToStaticMarkup(
+      <Calendar year={2026} month={10} nights={withNote} today="2026-10-24" selectedDate="2026-10-23" />,
+    );
+    expect(h).toContain('>Nota · giornata del 22 ottobre<');
+    expect(h).toContain('Cena fuori &lt;b&gt;tardi&lt;/b&gt;');
+    expect(h).not.toContain('<textarea');
+    expect(h).not.toContain('<b>tardi');
+    // Senza nota non c'è nessuna sezione "Nota".
+    expect(html).not.toContain('>Nota ·');
+  });
+
   it('legenda con parole, non solo colore', () => {
     for (const t of ['Verde 8h+', 'Azzurro 7–8h', 'Pesca meno di 7h', 'Tratteggio = stimata', 'Punti = mancante']) {
       expect(html).toContain(t);
