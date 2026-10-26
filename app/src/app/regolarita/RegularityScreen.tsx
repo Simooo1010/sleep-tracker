@@ -162,18 +162,23 @@ function NightsBlock({ view, title }: { view: RegularityView; title?: string }) 
 
 function TilesBlock({ tiles }: { tiles: StatTileView[] }) {
   return (
-    <div className={styles.tiles}>
-      {tiles.map((t) => (
-        <StatTile
-          key={t.key}
-          label={t.label}
-          value={t.hidden ? null : t.value}
-          note={t.hidden ? (t.hiddenText ?? undefined) : t.note}
-          tone={t.tone}
-          coverage={coverageProps(t.coverage)}
-        />
-      ))}
-    </div>
+    <>
+      <div className={styles.tiles}>
+        {tiles.map((t) => (
+          <StatTile
+            key={t.key}
+            label={t.label}
+            value={t.hidden ? null : t.value}
+            note={t.hidden ? (t.hiddenText ?? undefined) : t.note}
+            tone={t.tone}
+            coverage={coverageProps(t.coverage)}
+          />
+        ))}
+      </div>
+      <p className={`caption muted ${styles.note}`}>
+        Il riferimento esclude stanotte, il social jet lag la include: i conteggi possono differire di una notte.
+      </p>
+    </>
   );
 }
 
