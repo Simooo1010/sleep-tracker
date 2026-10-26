@@ -50,7 +50,7 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Vercel (progetto `sleep-tracker-app`): incollare `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API; i tool MCP non possono leggerla) e scegliere `APP_LOGIN_PASSWORD` (almeno 12 caratteri: è la password di accesso all'app). Poi rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).
 - Opzionale (insight AI): stesso `GATEWAY_SECRET` nuovo su entrambi i progetti Vercel (gateway e app) e rideploy; senza, gli insight sono a regole.
-- iPhone: creare i Comandi/automazioni (guida in `docs/COMANDI_IOS.md`, da scrivere) e aggiungere la PWA alla Home.
+- iPhone: creare i Comandi/automazioni (guida in `docs/COMANDI_IOS.md`, riscritta 2026-10-26 e verificata nel codice; i punti su iOS 27 vanno provati sul telefono) e aggiungere la PWA alla Home. Niente Mac: i Comandi restano a mano; i file firmati e il link iCloud non sono in programma senza Mac.
 - Primo login nell'app.
 - Opzionale: modalità Auto del menu permessi, o `.claude/settings.json` con `permissions.allow` per ridurre i prompt.
 
