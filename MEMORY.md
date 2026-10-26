@@ -44,6 +44,11 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Regole utente per questa chat: attività piccole in parallelo; Sonnet costruisce, Opus solo altissimo livello; sforzo max high (Opus low/medium).
 - Dati reali: Supabase `sleep-tracker` ha lo schema applicato (10 tabelle, RLS senza policy: accesso solo server con service role).
 
+## Fix iPhone: titolo sfocato in cima (2026-10-26, branch claude/fix-ios-status-bar)
+- Causa: da iOS 26/27 nelle PWA installate il sistema sfuma il bordo alto e la sfocatura copre il titolo. `theme-color` e `apple-mobile-web-app-status-bar-style` non hanno più effetto.
+- Fix: fascia `.status-cover` (layout.tsx + styles/app.css), `position: fixed`, in cima, a tutta larghezza, alta come la barra di stato, sfondo `--ground` (segue il tema), solo con `display-mode: standalone` sotto 60rem. Test: `e2e/status-cover.spec.ts`.
+- Limite: provato solo in Chromium (nessun WebKit/iOS nel cloud). Da confermare sul telefono dopo il deploy, riaprendo la PWA dalla Home.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): ✅ fatto — `SUPABASE_SERVICE_ROLE_KEY` (messa dall'utente; i tool MCP non possono leggerla) e `APP_LOGIN_PASSWORD` (≥12 caratteri). Ogni modifica alle variabili richiede un rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).
