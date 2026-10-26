@@ -303,7 +303,7 @@ describe('buildInsightsPayload: dayContext', () => {
     napMinutesToday: { value: null, provenance: 'mancante' },
     ...(dayNote === undefined ? {} : { dayNote }),
   });
-  const build = (checks: EveningCheck[], src = {}) => buildInsightsPayload([], [], checks, TODAY, 450, src);
+  const build = (checks: EveningCheck[], src = {}) => buildInsightsPayload([], [], checks, TODAY, 450, undefined, src);
 
   it('forma esatta: daysAgo, factors, text; nessuna chiave note, nessuna data', () => {
     const p = build([ck(addDays(TODAY, -2), 'Cena fuori, tardi')], {
@@ -360,7 +360,7 @@ describe('buildInsightsPayload: dayContext', () => {
   it('slug non validi esclusi dai factors; il resto del payload non cambia', () => {
     const ds = buildDataset();
     const base = buildInsightsPayload(ds.nights, ds.naps, ds.checks, TODAY);
-    const withCtx = buildInsightsPayload(ds.nights, ds.naps, ds.checks, TODAY, 450, {
+    const withCtx = buildInsightsPayload(ds.nights, ds.naps, ds.checks, TODAY, 450, undefined, {
       nightExceptions: { [TODAY]: ['ok-slug', 'Ho bevuto da Mario'] },
     });
     expect(withCtx.dayContext?.[0]?.factors).toEqual(['ok-slug']);

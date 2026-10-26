@@ -3,6 +3,7 @@
  * riquadro di dettaglio della notte selezionata. Spec: docs/design/system/Schermate.md §Storico,
  * componente Calendar. Funzione pura: `today` e i dati sono parametri.
  */
+import { clockChangeShiftMin, clockChangeText } from '../../domain/clock-change';
 import { durationBand, nightDuration, sleep24h, type DurationBand } from '../../domain/sleep-balance';
 import { DEFAULT_LABELS } from '../../domain/questions';
 import { addDays, isWeekendNight } from '../../domain/time';
@@ -50,6 +51,8 @@ export interface CalendarCellView {
   disabled: boolean;
   selected: boolean;
   isToday: boolean;
+  /** +60 / −60 se in quella notte è cambiata l'ora (anche nei giorni futuri), altrimenti 0. */
+  clockShiftMin: number;
   ariaLabel: string;
 }
 
@@ -71,6 +74,8 @@ export interface NightDetailView {
   bedProvenanceWord: string;
   wakeProvenanceWord: string;
   note: string;
+  /** Frase sul cambio d'ora di quella notte, null se non c'è. */
+  clockChangeNote: string | null;
   tags: string[];
   /** Nota scritta la sera prima nel check (facoltativa); null se assente. */
   dayNote: DayNoteView | null;
@@ -120,6 +125,8 @@ export function buildNightDetail(
   dayNote: DayNoteView | null = null,
 ): NightDetailView {
   const title = `Notte del ${formatDayMonth(date)}`;
+  const shift = clockChangeShiftMin(date);
+  const clockTag = shift === 0 ? [] : [`Cambio d'ora: ${shift > 0 ? '+' : '−'}${Math.abs(shift) / 60} h`];
   const dateLabel = formatLongDate(date);
   const hasTimes = !!night && (night.bedAt.value !== null || night.wakeAt.value !== null);
   if (!night || !hasTimes) {
@@ -133,8 +140,14 @@ export function buildNightDetail(
       statusWord: nightStatusWord('mancante'),
       bedProvenanceWord: provenanceWord('mancante'),
       wakeProvenanceWord: provenanceWord('mancante'),
-      note: 'Nessun segnale ricevuto. Puoi inserire gli orari a mano o lasciare la stima dei giorni vicini.',
-      tags: night?.isException ? ['Eccezione'] : [],
+      note: [
+        'Nessun segnale ricevuto. Puoi inserire gli orari a mano o lasciare la stima dei giorni vicini.',
+        clockChangeText(shift, 'quella'),
+      ]
+        .filter(Boolean)
+        .join(' '),
+      clockChangeNote: clockChangeText(shift, 'quella'),
+      tags: [...(night?.isException ? ['Eccezione'] : []), ...clockTag],
       dayNote,
     };
   }
@@ -153,6 +166,7 @@ export function buildNightDetail(
     if (s24 !== null) tags.push(`Sonno 24 ore ${formatHm(s24)}`);
   }
   if (night.isException) tags.push('Eccezione');
+  tags.push(...clockTag);
   for (const f of night.factors) tags.push(labelOf(f, factorLabels));
   const note =
     status === 'confermata'
@@ -160,6 +174,7 @@ export function buildNightDetail(
       : status === 'stimata'
         ? 'Orari stimati dai segnali. Conferma per renderli definitivi.'
         : 'Dati parziali: il resto della notte manca.';
+  const noteWithClock = [note, clockChangeText(shift, 'quella')].filter(Boolean).join(' ');
   return {
     date,
     title,
@@ -170,7 +185,8 @@ export function buildNightDetail(
     statusWord: nightStatusWord(status),
     bedProvenanceWord: provenanceWord(night.bedAt.value === null ? 'mancante' : night.bedAt.provenance),
     wakeProvenanceWord: provenanceWord(night.wakeAt.value === null ? 'mancante' : night.wakeAt.provenance),
-    note: night.isException ? `${note} Giorno-eccezione: non conta nel riferimento della regolarità.` : note,
+    clockChangeNote: clockChangeText(shift, 'quella'),
+    note: night.isException ? `${noteWithClock} Giorno-eccezione: non conta nel riferimento della regolarità.` : noteWithClock,
     tags,
     dayNote,
   };
@@ -207,6 +223,7 @@ export function buildHistoryView(input: HistoryViewInput): HistoryView {
       disabled: true,
       selected: false,
       isToday: false,
+      clockShiftMin: 0,
       ariaLabel: '',
     });
   }
@@ -229,9 +246,12 @@ export function buildHistoryView(input: HistoryViewInput): HistoryView {
       disabled: future,
       selected: date === selected,
       isToday: date === today,
-      ariaLabel: future
-        ? `Notte del ${formatDayMonth(date)}`
-        : `Notte del ${formatDayMonth(date)}: ${min === null ? 'mancante' : `${formatHm(min)}, ${nightStatusWord(statusOf(n)).toLowerCase()}`}`,
+      clockShiftMin: clockChangeShiftMin(date),
+      ariaLabel:
+        (future
+          ? `Notte del ${formatDayMonth(date)}`
+          : `Notte del ${formatDayMonth(date)}: ${min === null ? 'mancante' : `${formatHm(min)}, ${nightStatusWord(statusOf(n)).toLowerCase()}`}`) +
+        (clockChangeShiftMin(date) === 0 ? '' : ", cambio d'ora"),
     });
   }
 

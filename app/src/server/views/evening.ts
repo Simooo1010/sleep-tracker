@@ -12,6 +12,7 @@ import {
   orderExceptionChips,
   type ChipType,
 } from '../../domain/questions';
+import { clockChangeShiftMin, clockChangeText } from '../../domain/clock-change';
 import type { EveningCheck, Nap } from '../../domain/types';
 import { DASH, formatClockMinutes, formatLongDate, formatMinutes, formatScore } from './format';
 import { NAP_CHOICES } from './night';
@@ -29,6 +30,8 @@ export interface EveningViewInput {
   factorLabels?: Record<string, string>;
   /** Orario della sveglia impostata, minuti dalla mezzanotte (es. 435 = 07:15), se noto. */
   alarmMin?: number | null;
+  /** Notte che sta per iniziare ('YYYY-MM-DD' del risveglio): serve per avvisare del cambio d'ora. */
+  tonightNightDate?: string;
 }
 
 export type EveningStepKey = 'tiredness' | 'mood' | 'factors' | 'nap';
@@ -84,6 +87,8 @@ export interface EveningView {
   title: string;
   kicker: string;
   saved: boolean;
+  /** Avviso se stanotte cambia l'ora, altrimenti null. */
+  clockChangeNotice: string | null;
   steps: EveningStepView[];
   dayNote: EveningDayNoteView;
   summary: {
@@ -231,6 +236,8 @@ export function buildEveningView(input: EveningViewInput): EveningView {
     title: 'Come stai stasera?',
     kicker: 'Check serale',
     saved: check !== null,
+    clockChangeNotice:
+      input.tonightNightDate === undefined ? null : clockChangeText(clockChangeShiftMin(input.tonightNightDate), 'stasera'),
     steps,
     dayNote: { label: DAY_NOTE_LABEL, hint: DAY_NOTE_HINT, placeholder: DAY_NOTE_PLACEHOLDER, max: DAY_NOTE_MAX, value: dayNote },
     summary: { title: 'Riepilogo', rows, sendLabel: 'Vado a dormire', savedText },

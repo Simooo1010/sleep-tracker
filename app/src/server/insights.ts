@@ -1,7 +1,7 @@
 /**
  * Insight testuali della pagina Grafici.
  *
- * 1. `buildInsightsPayload` riduce le ultime 30 notti a statistiche aggregate (contratto
+ * 1. `buildInsightsPayload` riduce le ultime 30 notti (o 7/14, parametro `windowDays`) a statistiche aggregate (contratto
  *    `POST /v1/insights` del gateway, docs/AI_GATEWAY.md §6): numeri, quote, orari 'HH:MM' senza data,
  *    slug brevi. Mai date, timestamp, id o nomi (docs/AI_GATEWAY.md §8).
  *    UNICA eccezione, per decisione esplicita dell'utente (piano "imprevisti liberi"): `dayContext`,
@@ -48,8 +48,10 @@ export interface InsightsResult {
   /** ISO dell'istante di calcolo. */
   updatedAt: string;
   items: InsightItem[];
-  /** Notti con dati nella finestra di 30 giorni. */
+  /** Notti con dati nella finestra (7, 14 o 30 giorni). */
   nightsUsed: number;
+  /** Finestra usata, in giorni (opzionale per retrocompatibilità: assente = 30). */
+  windowDays?: InsightsWindow;
 }
 
 /** Corpo di `POST /v1/insights` (schema `insightStatsSchema` del gateway, campi sconosciuti rifiutati). */
@@ -100,8 +102,16 @@ export interface DayContextSource {
   exceptionLabels?: Record<string, string>;
 }
 
-/** Finestra degli insight: ultimi 30 giorni (la notte di oggi inclusa). */
+/** Finestra di default degli insight: ultimi 30 giorni (la notte di oggi inclusa). */
 export const INSIGHTS_WINDOW_DAYS = 30;
+/** Finestre ammesse (pagina Grafici: 30; pagina Analisi: 7/14/30). Il gateway accetta `windowDays` 1–366. */
+export type InsightsWindow = 7 | 14 | 30;
+export const INSIGHTS_WINDOWS: readonly InsightsWindow[] = [7, 14, 30];
+
+/** Qualsiasi valore fuori da {7, 14, 30} torna al default di 30 giorni. */
+export function normalizeWindow(windowDays: unknown): InsightsWindow {
+  return windowDays === 7 || windowDays === 14 || windowDays === 30 ? windowDays : INSIGHTS_WINDOW_DAYS;
+}
 /** Timeout della chiamata al gateway. */
 export const GATEWAY_TIMEOUT_MS = 6000;
 /** Massimo di insight mostrati. */
@@ -132,8 +142,8 @@ const round2 = (x: number): number => Math.round(x * 100) / 100;
 
 type TimedNight = Night & { bedAt: { value: string }; wakeAt: { value: string } };
 
-function windowNights(nights: Night[], today: string): Night[] {
-  const from = addDays(today, -(INSIGHTS_WINDOW_DAYS - 1));
+function windowNights(nights: Night[], today: string, windowDays: InsightsWindow): Night[] {
+  const from = addDays(today, -(windowDays - 1));
   const byDate = new Map<string, Night>();
   for (const n of nights) {
     if (n.nightDate < from || n.nightDate > today) continue;
@@ -314,6 +324,8 @@ function buildDayContext(checks: EveningCheck[], today: string, source: DayConte
  * Riduce notti, sonnellini e check serali a statistiche aggregate per il gateway.
  * Funzione pura. Nessuna data, nessun timestamp, nessun id: solo numeri, quote, orari 'HH:MM' e slug.
  * `targetMin` (opzionale) è l'obiettivo di sonno personale in minuti.
+ * `windowDays` (opzionale, 7/14/30, default 30) è la finestra; le soglie minime restano le stesse,
+ * quindi con 7 notti molte sezioni restano assenti (è voluto).
  * `dayContextSource` (opzionale): imprevisti per notte + etichette; con le `dayNote` dei check serali
  * produce `dayContext` (sanitizzato, max 10). Senza nulla da dire il campo è omesso.
  */
@@ -323,16 +335,18 @@ export function buildInsightsPayload(
   checks: EveningCheck[],
   today: string,
   targetMin: number = DEFAULT_TARGET_SLEEP_MIN,
+  windowDays: InsightsWindow = INSIGHTS_WINDOW_DAYS,
   dayContextSource: DayContextSource = {},
 ): GatewayInsightsRequest {
-  const inWindow = windowNights(nights, today);
+  const win = normalizeWindow(windowDays);
+  const inWindow = windowNights(nights, today, win);
   const target = Math.max(240, Math.min(720, round(Number.isFinite(targetMin) ? targetMin : DEFAULT_TARGET_SLEEP_MIN)));
   const withData = inWindow.filter((n) => n.status !== 'mancante' && hasTimes(n));
 
   const payload: GatewayInsightsRequest = {
-    windowDays: INSIGHTS_WINDOW_DAYS,
+    windowDays: win,
     nights: {
-      inWindow: INSIGHTS_WINDOW_DAYS,
+      inWindow: win,
       withData: withData.length,
       confirmed: withData.filter((n) => n.status === 'confermata').length,
       estimated: withData.filter((n) => n.status === 'stimata').length,
@@ -350,7 +364,8 @@ export function buildInsightsPayload(
       nights: durations.length,
       medianMinutes: round(med),
       ...(stats.avg7.value !== null ? { mean7Minutes: stats.avg7.value } : {}),
-      ...(stats.avgMonth.value !== null ? { mean30Minutes: stats.avgMonth.value } : {}),
+      // La media "a 30 giorni" ha senso solo se la finestra è di 30 giorni.
+      ...(win === 30 && stats.avgMonth.value !== null ? { mean30Minutes: stats.avgMonth.value } : {}),
     };
   }
 
@@ -431,8 +446,8 @@ export function buildInsightsPayload(
     };
   }
 
-  // Sonnellini (finestra di 30 giorni; i segnaposto del check serale non raddoppiano un sonnellino reale).
-  const from = addDays(today, -(INSIGHTS_WINDOW_DAYS - 1));
+  // Sonnellini (stessa finestra; i segnaposto del check serale non raddoppiano un sonnellino reale).
+  const from = addDays(today, -(win - 1));
   const napsIn = naps.filter(
     (p) => p.date >= from && p.date <= today && p.provenance !== 'mancante' && Number.isFinite(p.minutes) && p.minutes > 0,
   );
@@ -485,12 +500,13 @@ const TARGET_PHRASE = {
 export const LOW_DATA_TITLE = 'Servono ancora alcune notti per darti indizi affidabili.';
 
 function lowDataResult(payload: GatewayInsightsRequest, nowIso: string): InsightsResult {
+  const windowDays = normalizeWindow(payload.windowDays);
   const { withData, inWindow } = payload.nights;
   const body =
     withData === 0
       ? 'Non ho ancora notti con gli orari. Appena ne avrai qualcuna, comparirà il primo indizio. Nessuna fretta.'
       : `Per ora ho dati su ${plural(withData, 'notte', 'notti')} su ${inWindow}. Con qualche notte in più compariranno indizi più solidi. Nessuna fretta.`;
-  return { source: 'rules', updatedAt: nowIso, items: [{ title: LOW_DATA_TITLE, body }], nightsUsed: withData };
+  return { source: 'rules', updatedAt: nowIso, items: [{ title: LOW_DATA_TITLE, body }], nightsUsed: withData, windowDays };
 }
 
 /**
@@ -630,7 +646,13 @@ export function rulesInsights(payload: GatewayInsightsRequest, nowIso: string): 
   }
 
   if (withData < MIN_DURATION_NIGHTS || items.length === 0) return lowDataResult(payload, nowIso);
-  return { source: 'rules', updatedAt: nowIso, items: items.slice(0, MAX_INSIGHTS), nightsUsed: withData };
+  return {
+    source: 'rules',
+    updatedAt: nowIso,
+    items: items.slice(0, MAX_INSIGHTS),
+    nightsUsed: withData,
+    windowDays: normalizeWindow(payload.windowDays),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -668,6 +690,7 @@ async function fetchGatewayInsights(
       updatedAt: nowIso,
       items: parsed.data.insights.slice(0, MAX_INSIGHTS).map((i) => ({ title: i.title, body: i.body })),
       nightsUsed: payload.nights.withData,
+      windowDays: normalizeWindow(payload.windowDays),
     };
   } catch {
     return null;
@@ -675,17 +698,20 @@ async function fetchGatewayInsights(
 }
 
 /**
- * Insight della pagina Grafici: AI via gateway se configurato e raggiungibile, altrimenti regole locali.
+ * Insight delle pagine Grafici (30 giorni) e Analisi (7/14/30): AI via gateway se configurato e
+ * raggiungibile, altrimenti regole locali. `windowDays` fuori da {7, 14, 30} → 30.
  * Risponde sempre con un risultato valido (gli errori del repo, se ci sono, si propagano al chiamante).
  */
 export async function loadInsights(
   repo: Repo,
   now: Date,
   deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv } = {},
+  windowDays: InsightsWindow = INSIGHTS_WINDOW_DAYS,
 ): Promise<InsightsResult> {
   const env = deps.env ?? process.env;
+  const win = normalizeWindow(windowDays);
   const today = todayInRome(now);
-  const from = addDays(today, -(INSIGHTS_WINDOW_DAYS - 1));
+  const from = addDays(today, -(win - 1));
 
   const [nights, naps, checks, target, nightExceptions, exceptionTypes] = await Promise.all([
     repo.listNights(from, today),
@@ -703,6 +729,7 @@ export async function loadInsights(
     checks,
     today,
     typeof target === 'number' && Number.isFinite(target) && target > 0 ? target : DEFAULT_TARGET_SLEEP_MIN,
+    win,
     { nightExceptions, exceptionLabels: Object.fromEntries(exceptionTypes.map((t) => [t.slug, t.label])) },
   );
   const nowIso = now.toISOString();

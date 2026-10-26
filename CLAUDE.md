@@ -1,7 +1,7 @@
 # CLAUDE.md — Sleep Tracker
 
 Regole e istruzioni del progetto. Va letto all'inizio di ogni sessione.
-La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`. Layer AI: `docs/AI_GATEWAY.md`.
+La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.md`. Decisioni: `docs/DECISIONS.md`. Design: `docs/DESIGN.md`. Layer AI: `docs/AI_GATEWAY.md`. **Stato e passaggio di consegne: `docs/HANDOFF.md`.**
 
 ## Principio di prodotto
 - Frizione di inserimento quasi nulla: raccolta passiva/automatica dove possibile, all'utente si chiede solo una conferma.
@@ -24,6 +24,7 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
    Non si scrive codice applicativo prima che design system e UI siano approvati.
 2. Ogni task ha la sua chat/sessione. Le task vanno spezzate nelle unità più piccole possibili.
 3. `MEMORY.md` e `docs/` sono la fonte di verità tra una sessione e l'altra: aggiornarli quando cambia qualcosa.
+   **Regola dell'utente (2026-10-25): la memoria (`MEMORY.md`, `docs/HANDOFF.md`, `docs/DECISIONS.md`) si aggiorna automaticamente, sempre: a ogni chat, a ogni grande azione e a ogni grande cambiamento (feature, merge, deploy, env, decisione), senza che l'utente lo chieda e nello stesso commit/PR del lavoro.**
 
 ## Regole sui subagent
 - **Haiku / Sonnet**: ricerca, lettura, attività read-only, task leggere o a basso rischio; Sonnet esegue quando l'obiettivo è già chiaro.

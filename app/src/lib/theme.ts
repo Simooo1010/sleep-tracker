@@ -1,6 +1,7 @@
 /**
  * Tema dell'app (`chiaro` / `scuro`).
- * Senza scelta manuale si segue il sistema; la scelta manuale è ricordata in localStorage
+ * Di norma è automatico: segue il sistema (modalità `sistema`, anche quando il sistema cambia mentre l'app è aperta).
+ * Chi vuole può forzare chiaro o scuro da Impostazioni; la scelta è ricordata in localStorage
  * (che può mancare, essere vuoto o lanciare: ogni accesso è in try/catch e non rompe mai il render).
  * Le funzioni di questo file non dipendono da React.
  */
@@ -18,6 +19,56 @@ export function isTheme(value: unknown): value is Theme {
 export function resolveTheme(stored: string | null, systemDark: boolean): Theme {
   if (isTheme(stored)) return stored;
   return systemDark ? 'scuro' : 'chiaro';
+}
+
+/** Modalità scelta dall'utente in Impostazioni: `sistema` (predefinita, automatica) oppure un tema fisso. */
+export type ThemeMode = 'sistema' | Theme;
+
+/** Evento interno: avvisa i componenti che la modalità è cambiata (l'evento `storage` arriva solo dalle altre schede). */
+export const THEME_MODE_EVENT = 'sleep-tracker:modalita-tema';
+
+/** Per `useSyncExternalStore`: si avvisa a ogni cambio di modalità, anche da un'altra scheda. */
+export function subscribeThemeMode(onChange: () => void): () => void {
+  if (typeof window === 'undefined') return () => undefined;
+  window.addEventListener(THEME_MODE_EVENT, onChange);
+  window.addEventListener('storage', onChange);
+  return () => {
+    window.removeEventListener(THEME_MODE_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+  };
+}
+
+/** Vero se il sistema chiede il tema scuro; falso se non lo si può sapere. */
+function systemPrefersDark(): boolean {
+  try {
+    return globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
+  } catch {
+    return false;
+  }
+}
+
+/** Modalità salvata; senza scelta valida (o senza localStorage) vale `sistema`. */
+export function readThemeMode(): ThemeMode {
+  return readStoredTheme() ?? 'sistema';
+}
+
+/**
+ * Imposta la modalità e applica subito il tema. `sistema` cancella la scelta salvata e riprende il sistema;
+ * lo script in <head> continua a seguirne i cambi.
+ */
+export function setThemeMode(mode: ThemeMode): void {
+  if (mode === 'sistema') {
+    try {
+      globalThis.localStorage?.removeItem(THEME_STORAGE_KEY);
+    } catch {
+      // localStorage non disponibile: nessuna scelta da cancellare.
+    }
+    applyTheme(resolveTheme(null, systemPrefersDark()));
+  } else {
+    storeTheme(mode);
+    applyTheme(mode);
+  }
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(THEME_MODE_EVENT));
 }
 
 /** L'altro tema. */
@@ -50,13 +101,7 @@ export function appliedTheme(): Theme {
   if (typeof document === 'undefined') return 'chiaro';
   const attr = document.documentElement.getAttribute('data-theme');
   if (isTheme(attr)) return attr;
-  let dark: boolean;
-  try {
-    dark = globalThis.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false;
-  } catch {
-    dark = false;
-  }
-  return resolveTheme(null, dark);
+  return resolveTheme(null, systemPrefersDark());
 }
 
 /** Applica il tema a <html>. */

@@ -2,6 +2,12 @@
  * Stili propri dell'app (layout). Usano solo le variabili di tokens.css; misure in rem.
  * tokens.css e bundle.css sono copie della sorgente in docs/design/: non modificarli qui.
  */
+/* Zone sicure dell'iPhone (isola/barra di stato in alto, indicatore home in basso); 0 dove non esistono. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 html {
   background: var(--ground);
 }
@@ -47,4 +53,16 @@ body {
 
 .home-note {
   margin: 0;
+}
+
+/* Risposta immediata al tocco: niente attesa del doppio tocco, feedback visivo subito. */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:active,
+button:active {
+  opacity: 0.7;
 }

@@ -22,6 +22,8 @@ export interface SessionCardProps {
   wakeTime?: string | null;
   /** Come è stata ricostruita o confermata la notte. */
   explanation?: string | null;
+  /** Nota in più sotto la spiegazione (es. cambio d'ora). */
+  note?: string | null;
   /** Pillola di regolarità (su PC). */
   regularity?: SessionRegularity | null;
   /** Etichetta in alto. Predefinita "Stanotte". */
@@ -63,6 +65,7 @@ export function SessionCard({
   bedtime,
   wakeTime,
   explanation,
+  note,
   regularity,
   title = 'Stanotte',
   size,
@@ -116,6 +119,11 @@ export function SessionCard({
       </div>
 
       {why ? <p className={cx('muted', styles.explanation)}>{why}</p> : null}
+      {present(note) ? (
+        <p className={cx('muted', styles.explanation)} data-clock-change="true">
+          {note}
+        </p>
+      ) : null}
 
       {status === 'stimata' && onConfirm ? (
         <button type="button" className="btn btn-primary btn-lg btn-block" onClick={onConfirm}>

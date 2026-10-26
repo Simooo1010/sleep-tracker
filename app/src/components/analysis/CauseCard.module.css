@@ -1,0 +1,69 @@
+/* CauseCard: indizio con i numeri a supporto. Solo variabili di tokens.css, misure in rem. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.kicker {
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.title {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  margin: 0;
+  max-width: 65ch;
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.375rem;
+  color: var(--ink-muted);
+}
+
+.evidence {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.3125rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.evidenceLabel {
+  font-weight: 600;
+}
+
+.tone-blue {
+  background: var(--blue-soft);
+  color: var(--blue-ink);
+}
+
+.tone-sage {
+  background: var(--sage-soft);
+  color: var(--sage-ink);
+}
+
+.tone-peach {
+  background: var(--peach-soft);
+  color: var(--peach-ink);
+}
+
+.tone-yellow {
+  background: var(--yellow-soft);
+  color: var(--yellow-ink);
+}

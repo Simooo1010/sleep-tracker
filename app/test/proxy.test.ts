@@ -156,6 +156,10 @@ describe('proxy — modo on', () => {
       '/apple-touch-icon.png',
       '/icon-192.png',
       '/icon-512.png',
+      '/apple-touch-icon-dark.png',
+      '/favicon-32-dark.png',
+      '/icon-192-dark.png',
+      '/icon-512-dark.png',
       '/mark.svg',
       '/robots.txt',
     ]) {

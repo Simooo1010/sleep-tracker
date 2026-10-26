@@ -406,6 +406,11 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }
           >
             <fieldset className={styles.fieldset} disabled={locked}>
               <div className={styles.stack}>
+                {stepIndex === 0 && view.clockChangeNotice ? (
+                  <p className={`body-sm ${styles.note}`} data-clock-change="true">
+                    {view.clockChangeNotice}
+                  </p>
+                ) : null}
                 {stepIndex === 0 && view.emptyText ? <p className={`body-sm ${styles.note}`}>{view.emptyText}</p> : null}
                 <StepControl view={view} step={current} answers={answers} exceptions={exceptions} handlers={handlers} layout="phone" />
                 {current.note ? <p className={`caption ${styles.note}`}>{current.note}</p> : null}
@@ -426,6 +431,11 @@ export function EveningScreen({ today, tonightNightDate, view, initialStep = 0 }
           <h2 id={`${deskId}-title`} className={`heading-lg ${styles.headTitle}`}>
             {view.title}
           </h2>
+          {view.clockChangeNotice ? (
+            <p className={`body ${styles.headNote}`} data-clock-change="true">
+              {view.clockChangeNotice}
+            </p>
+          ) : null}
           {view.emptyText ? <p className={`body ${styles.headNote}`}>{view.emptyText}</p> : null}
         </div>
 
