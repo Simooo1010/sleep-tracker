@@ -194,6 +194,17 @@ describe('dayContext via HTTP', () => {
     expect((await note.json()).error.code).toBe('privacy_violation');
   });
 
+  it('il prompt inviato al provider non contiene email né cellulare con spazio', async () => {
+    const { h, f } = handler({ 'https://p1.test/v1': () => completion(validInsightsJson) });
+    const text = 'Compleanno di Marco, scrivimi a marco@esempio.it o 333 1234567.';
+    const res = await h(req('/v1/insights', { method: 'POST', body: body([{ daysAgo: 1, factors: ['festa'], text }]) }));
+    expect(res.status).toBe(200);
+    const sent = JSON.stringify(f.calls[0]!.body.messages);
+    expect(sent).not.toMatch(/marco@esempio|333 ?1234567|1234567/);
+    expect(sent).toContain('[telefono]');
+    expect(sent).toContain('Compleanno di Marco');
+  });
+
   it('il testo non finisce mai nei log né nelle risposte (AI, regole, errore)', async () => {
     const events: unknown[] = [];
     const info = vi.spyOn(console, 'info').mockImplementation(() => {});

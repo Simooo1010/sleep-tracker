@@ -231,6 +231,50 @@ describe('sanitizeDayText', () => {
     expect(out).not.toMatch(/ {2}|^ | $/);
   });
 
+  it('toglie il cellulare con spazio anche a fine frase (bug riprodotto)', () => {
+    const out = sanitizeDayText('Compleanno di Marco, scrivimi a marco@esempio.it o 333 1234567.');
+    expect(out).toBe('Compleanno di Marco, scrivimi a o .');
+    expect(out).not.toMatch(/\d{3}/);
+  });
+
+  it.each([
+    '333 1234567',
+    '333-123-4567',
+    '333.123.45.67',
+    '3331234567',
+    '333 123 4567',
+    '+39 333 1234567',
+    '+39333 1234567',
+    '0039 333 1234567',
+    '+44 20 7946 0958',
+    '+44 (0)20 7946 0958',
+    '06 12345678',
+    '06-1234-5678',
+    '(06) 1234 5678',
+    '02 12345678',
+    '011.1234567',
+  ])('toglie il telefono "%s" (anche con punto finale e virgola)', (num) => {
+    for (const raw of [`chiama ${num} domani`, `chiama ${num}.`, `chiama ${num}, grazie`, `(${num})`]) {
+      const out = sanitizeDayText(raw);
+      expect(out, raw).not.toMatch(/\d{3}|\d{2} \d/);
+    }
+    expect(sanitizeDayText(`tel ${num}.`)).toBe('tel .');
+  });
+
+  it.each([
+    'cena alle 21:30, 3 ore di sonno, 12 persone',
+    'dormito 45 min, 2 ore e 30 minuti',
+    '8 bicchieri d\'acqua e 3 caffè',
+    'nel 2025 ho speso 150 euro e 1.000 passi',
+    'costo 12,50 € e 300.000 visite',
+    'alle 22:30 a letto, sveglia alle 06:45',
+    'versione 1.2.3 e 7.5 ore',
+    'circa 1234567 passi',
+    'ore 22 30 e 45 min',
+  ])('non tocca numeri innocui: "%s"', (t) => {
+    expect(sanitizeDayText(t)).toBe(t);
+  });
+
   it('tronca a 140 caratteri senza spezzare i code point', () => {
     const out = sanitizeDayText('a'.repeat(500));
     expect(out).toHaveLength(DAY_CONTEXT_TEXT_MAX);

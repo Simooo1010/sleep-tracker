@@ -26,10 +26,15 @@ const REDACTIONS: Array<{ re: RegExp; label: string }> = [
     label: '[data]',
   },
   { re: /\b\d{1,2}[/.]\d{1,2}[/.]\d{4}\b/g, label: '[data]' },
-  {
-    re: /(?<![\w.])(?:\+\d{1,3}[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}|3\d{2}[\s-]?\d{6,7}|0\d{1,3}[\s-]?\d{6,8})(?![\w.])/g,
-    label: '[telefono]',
-  },
+  // Phone numbers. Each pattern needs >= 8 digits overall (separators space, dot, dash and
+  // parentheses are ignored) and a phone-shaped start (+, 00, 0x, 3xx), so times (22:30),
+  // durations ("2 ore"), years, short amounts, counts and stats (7.5 8.0, 0.85) stay untouched.
+  // International: +39 / 0039 / +44 ... followed by 8-11 digits in any grouping.
+  { re: /(?<![\w+/:]|\d[ .,-])(?:\+|00)\d{1,3}(?:[ .-]?\(?\d\)?){8,11}(?![\w]|[.,]\d)/g, label: '[telefono]' },
+  // Italian mobile: 3xx + 6-7 digits, optional (333) parentheses.
+  { re: /(?<![\w+/:]|\d[ .,-])\(?3\d{2}\)?[ .-]?(?:\d[ .-]?){5,6}\d(?![\w]|[.,]\d)/g, label: '[telefono]' },
+  // Italian landline: 0x.. (area code optionally in parentheses) + 8-11 digits in total.
+  { re: /(?<![\w+/:]|\d[ .,-])(?:\(0\d{1,3}\)|0\d)[ .-]?(?:\d[ .-]?){5,8}\d(?![\w]|[.,]\d)/g, label: '[telefono]' },
 ];
 
 export function redactText(text: string): { text: string; count: number } {

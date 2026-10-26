@@ -223,8 +223,20 @@ const DAY_TEXT_REDACTIONS: RegExp[] = [
   /\b\d{1,2}[/.]\d{1,2}[/.]\d{4}\b/g, // gg/mm/aaaa
   /\b(?:https?:\/\/|www\.)\S+/gi, // URL
   /\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|it|org|net|io|app|dev|eu|me|co|info|ly)\b(?:\/\S*)?/gi, // domini nudi
-  /(?<![\w.])(?:\+\d{1,3}[\s-]?\d{2,4}[\s-]?\d{3,4}[\s-]?\d{3,4}|3\d{2}[\s-]?\d{6,7}|0\d{1,3}[\s-]?\d{6,8})(?![\w.])/g, // telefono
 ];
+
+/**
+ * Telefoni: candidato = inizia con "+", "(" o una coppia di cifre 0x/3x, poi cifre con separatori
+ * (spazio, punto, trattino, parentesi) in qualunque raggruppamento; è un telefono solo se ha almeno
+ * 8 cifre complessive (separatori ignorati). Orari (22:30), durate, anni, importi brevi e conteggi
+ * restano intatti. Il punto/virgola finale di frase non fa parte del match.
+ */
+const PHONE_CANDIDATE = /(?<![\w.])(?:\+[ \t]?\d|\([ \t]?\+?\d|[03]\d)[\d \t().-]{5,}\d(?!\w)/g;
+const PHONE_MIN_DIGITS = 8;
+
+function redactPhones(text: string): string {
+  return text.replace(PHONE_CANDIDATE, (m) => (m.replace(/\D/g, '').length >= PHONE_MIN_DIGITS ? ' ' : m));
+}
 
 /**
  * Testo libero → testo da inviare all'AI: toglie email, telefoni, URL, date ISO/gg/mm/aaaa e UUID,
@@ -236,6 +248,7 @@ const DAY_TEXT_REDACTIONS: RegExp[] = [
 export function sanitizeDayText(raw: string): string {
   let out = raw;
   for (const re of DAY_TEXT_REDACTIONS) out = out.replace(re, ' ');
+  out = redactPhones(out);
   out = out
     .replace(/\p{Cc}+/gu, ' ')
     .replace(/\s+/g, ' ')

@@ -22,6 +22,51 @@ describe('privacy guard', () => {
     expect(redactText(text)).toEqual({ text, count: 0 });
   });
 
+  it('redacts Italian and international phone numbers in any grouping', () => {
+    const phones = [
+      '333 1234567',
+      '333-123-4567',
+      '333.123.45.67',
+      '3331234567',
+      '333 123 4567',
+      '(333) 123-4567',
+      '06 12345678',
+      '06/12345678'.replace('/', ' '),
+      '02-1234-5678',
+      '(06) 1234 5678',
+      '0721 123456',
+      '+39 333 1234567',
+      '+39 3331234567',
+      '0039 333 1234567',
+      '+39 06 1234 5678',
+      '+44 7911 123456',
+      '+44 (0) 20 7946 0958',
+      '0044 20 7946 0958',
+    ];
+    for (const p of phones) {
+      const r = redactText(`chiamami al ${p} grazie`);
+      expect(r.text, p).toBe('chiamami al [telefono] grazie');
+      expect(r.count, p).toBe(1);
+    }
+    const end = redactText('Compleanno di Marco, scrivimi a marco@esempio.it o 333 1234567.');
+    expect(end.text).toBe('Compleanno di Marco, scrivimi a [email] o [telefono].');
+    expect(end.count).toBe(2);
+    expect(redactText('+39 333 1234567 12 persone').text).toBe('[telefono] 12 persone');
+  });
+
+  it('does not redact innocuous numbers (times, durations, years, amounts, counts)', () => {
+    const texts = [
+      'cena alle 21:30, 3 ore di sonno, 12 persone',
+      'dormito 2 ore e 45 min, 8 bicchieri d\'acqua',
+      'nel 2026 ho speso 1.200 euro, poi 50 euro e 3,5 litri',
+      'sveglia 07:05 e 22:30, 0.85 di efficienza, 7.5 8.0 6.5 7.0 7.2',
+      'caffe alle 15:00, 300 mg, 120 battiti, 2025 2026',
+      'r=-0.42 n=18 mediana 23:40 debito 240 min',
+      'dal 10 al 12 ottobre, camera 305, 18 km, 4 amici',
+    ];
+    for (const t of texts) expect(redactText(t), t).toEqual({ text: t, count: 0 });
+  });
+
   it('chat: identifiers never reach the provider', async () => {
     const f = fakeFetch({ 'https://p1.test/v1': () => completion('ok') });
     const g = createGateway({ env: testEnv, providers: testProviders(), fetch: f.fetch, logger: noopLogger });
