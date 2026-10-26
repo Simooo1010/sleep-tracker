@@ -4,7 +4,7 @@
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: var(--space-8) max(1rem, env(safe-area-inset-left)) var(--space-8) max(1rem, env(safe-area-inset-right));
+  padding: calc(var(--space-8) + env(safe-area-inset-top)) max(1rem, env(safe-area-inset-left)) var(--space-8) max(1rem, env(safe-area-inset-right));
 }
 
 .card {
