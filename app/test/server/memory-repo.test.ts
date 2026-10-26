@@ -187,6 +187,38 @@ describe('MemoryRepo.setNightExceptions', () => {
     expect(t).toEqual({ slug: 'esame-di-stato', label: 'esame di stato', uses: 1 });
   });
 
+  it('slug nuovo con label dalla UI: usa la label normalizzata', async () => {
+    const repo = new MemoryRepo();
+    await repo.setNightExceptions('2026-10-20', ['cena-fuori'], { 'cena-fuori': '  Cena   fuori ' });
+    const t = (await repo.listExceptionTypes()).find((x) => x.slug === 'cena-fuori');
+    expect(t).toEqual({ slug: 'cena-fuori', label: 'Cena fuori', uses: 1 });
+  });
+
+  it('label lunga troncata a 30; vuota o mancante → derivata dallo slug', async () => {
+    const repo = new MemoryRepo();
+    await repo.setNightExceptions('2026-10-20', ['lunga', 'vuota', 'altra-cosa'], {
+      lunga: 'L'.repeat(50),
+      vuota: '  ',
+      'non-presente': 'ignorata',
+    });
+    const types = await repo.listExceptionTypes();
+    expect(types.find((x) => x.slug === 'lunga')?.label).toBe('L'.repeat(30));
+    expect(types.find((x) => x.slug === 'vuota')?.label).toBe('vuota');
+    expect(types.find((x) => x.slug === 'altra-cosa')?.label).toBe('altra cosa');
+    expect(types.some((x) => x.slug === 'non-presente')).toBe(false);
+  });
+
+  it('slug esistente: la label passata non sovrascrive quella del catalogo', async () => {
+    const repo = new MemoryRepo();
+    await repo.setNightExceptions('2026-10-20', ['viaggio'], { viaggio: 'Viaggione' });
+    const t = (await repo.listExceptionTypes()).find((x) => x.slug === 'viaggio');
+    expect(t?.label).toBe('viaggio');
+    expect(t?.uses).toBe(1);
+    await repo.setNightExceptions('2026-10-21', ['nuovo-tipo'], { 'nuovo-tipo': 'Nuovo' });
+    await repo.setNightExceptions('2026-10-22', ['nuovo-tipo'], { 'nuovo-tipo': 'Cambiato' });
+    expect((await repo.listExceptionTypes()).find((x) => x.slug === 'nuovo-tipo')?.label).toBe('Nuovo');
+  });
+
   it('slug non valido: lancia e non cambia nulla', async () => {
     const repo = new MemoryRepo();
     for (const bad of ['Alcol', 'a b', '-x', 'x-', 'a--b', '', 'è']) {
@@ -228,6 +260,37 @@ describe('MemoryRepo.listNightExceptions', () => {
     await repo.setNightExceptions('2026-10-20', ['festa']);
     (await repo.listNightExceptions('2026-10-20', '2026-10-20'))['2026-10-20']!.push('x');
     expect(await repo.listNightExceptions('2026-10-20', '2026-10-20')).toEqual({ '2026-10-20': ['festa'] });
+  });
+});
+
+describe('MemoryRepo: dayNote del check serale', () => {
+  it('salva con trim e rilegge; vuota/null → null; assente resta assente; troncata a 280', async () => {
+    const repo = new MemoryRepo();
+    await repo.saveEveningCheck({ ...check('2026-10-20'), dayNote: '  Giornata in treno.  ' });
+    expect((await repo.getEveningCheck('2026-10-20'))?.dayNote).toBe('Giornata in treno.');
+
+    await repo.saveEveningCheck({ ...check('2026-10-20'), dayNote: '   ' });
+    expect((await repo.getEveningCheck('2026-10-20'))?.dayNote).toBeNull();
+
+    await repo.saveEveningCheck({ ...check('2026-10-21'), dayNote: null });
+    expect((await repo.getEveningCheck('2026-10-21'))?.dayNote).toBeNull();
+
+    await repo.saveEveningCheck(check('2026-10-22'));
+    expect((await repo.getEveningCheck('2026-10-22'))?.dayNote).toBeUndefined();
+
+    await repo.saveEveningCheck({ ...check('2026-10-23'), dayNote: 'z'.repeat(400) });
+    expect((await repo.getEveningCheck('2026-10-23'))?.dayNote).toBe('z'.repeat(280));
+  });
+
+  it('listEveningChecks include dayNote; copie difensive', async () => {
+    const repo = new MemoryRepo();
+    const c = { ...check('2026-10-20'), dayNote: 'Nota' };
+    await repo.saveEveningCheck(c);
+    c.dayNote = 'cambiata';
+    const [out] = await repo.listEveningChecks('2026-10-01', '2026-10-31');
+    expect(out?.dayNote).toBe('Nota');
+    out!.dayNote = 'mutata';
+    expect((await repo.getEveningCheck('2026-10-20'))?.dayNote).toBe('Nota');
   });
 });
 

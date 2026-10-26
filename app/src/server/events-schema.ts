@@ -4,10 +4,11 @@
  * I Comandi iOS compongono il JSON a mano: si è tolleranti sul formato (spazi attorno ai valori,
  * `type` in maiuscolo, numeri inviati come stringhe, campi vuoti o `null` trattati come assenti,
  * `ts` con offset qualsiasi) ma rigorosi sul contenuto (tipi ammessi, range, nessun campo extra,
- * nessun testo libero). I messaggi di errore sono in italiano e non riportano mai il contenuto inviato.
+ * testo libero solo in `check.dayNote`, con lunghezza massima). I messaggi di errore sono in italiano e non riportano mai il contenuto inviato.
  */
 import { z } from 'zod';
 
+import { DAY_NOTE_MAX } from '../domain/questions';
 import type { Score, SignalType } from '../domain/types';
 import type { IncomingEvent } from './types';
 
@@ -53,6 +54,7 @@ const MSG = {
   factorsList: `Il campo "check.factors" deve essere una lista di al massimo ${MAX_FACTORS} elementi.`,
   factorItem: `Ogni elemento di "check.factors" deve essere un'etichetta in minuscolo con trattini (es. schermo-a-letto), lunga al massimo ${MAX_FACTOR_LEN} caratteri.`,
   napMinutes: 'Il campo "check.napMinutesToday" deve essere un numero intero da 0 a 600.',
+  dayNote: `Il campo "check.dayNote" deve essere un testo di al massimo ${DAY_NOTE_MAX} caratteri.`,
 } as const;
 
 // --- Normalizzazioni tolleranti -------------------------------------------------------------
@@ -109,6 +111,7 @@ const checkSchema = z.strictObject(
         .max(MAX_FACTORS, { error: MSG.factorsList }),
     ),
     napMinutesToday: optional(numeric, intInRange(0, 600, MSG.napMinutes)),
+    dayNote: optional(trimmed, z.string({ error: MSG.dayNote }).max(DAY_NOTE_MAX, { error: MSG.dayNote })),
   },
   { error: (iss) => (iss.code === 'unrecognized_keys' ? MSG.checkUnknownField : MSG.checkBody) },
 );
@@ -218,6 +221,7 @@ export function parseIncomingEvent(body: unknown, now: Date): ParseIncomingEvent
     if (check.mood !== undefined) c.mood = check.mood;
     if (check.factors !== undefined) c.factors = check.factors;
     if (check.napMinutesToday !== undefined) c.napMinutesToday = check.napMinutesToday;
+    if (check.dayNote !== undefined) c.dayNote = check.dayNote;
     value.check = c;
   }
   return { ok: true, value };

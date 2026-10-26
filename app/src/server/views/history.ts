@@ -6,7 +6,7 @@
 import { durationBand, nightDuration, sleep24h, type DurationBand } from '../../domain/sleep-balance';
 import { DEFAULT_LABELS } from '../../domain/questions';
 import { addDays, isWeekendNight } from '../../domain/time';
-import type { Nap, Night, NightStatus } from '../../domain/types';
+import type { EveningCheck, Nap, Night, NightStatus } from '../../domain/types';
 import { nightsByDate, statusOf } from './common';
 import {
   DASH,
@@ -34,6 +34,8 @@ export interface HistoryViewInput {
   selectedDate?: string | null;
   /** Etichette di fattori personalizzati. */
   factorLabels?: Record<string, string>;
+  /** Check serali del mese (e della sera prima del primo giorno): servono alla nota sulla giornata. */
+  eveningChecks?: EveningCheck[];
 }
 
 export interface CalendarCellView {
@@ -51,6 +53,13 @@ export interface CalendarCellView {
   ariaLabel: string;
 }
 
+/** Descrizione libera della giornata che ha preceduto la notte, in sola lettura. */
+export interface DayNoteView {
+  /** 'Nota · giornata del 24 ott': la parola "Nota" c'è sempre. */
+  label: string;
+  text: string;
+}
+
 export interface NightDetailView {
   date: string;
   title: string;
@@ -63,6 +72,8 @@ export interface NightDetailView {
   wakeProvenanceWord: string;
   note: string;
   tags: string[];
+  /** Nota scritta la sera prima nel check (facoltativa); null se assente. */
+  dayNote: DayNoteView | null;
 }
 
 export interface HistoryView {
@@ -106,6 +117,7 @@ export function buildNightDetail(
   night: Night | null,
   naps: Nap[],
   factorLabels?: Record<string, string>,
+  dayNote: DayNoteView | null = null,
 ): NightDetailView {
   const title = `Notte del ${formatDayMonth(date)}`;
   const dateLabel = formatLongDate(date);
@@ -123,6 +135,7 @@ export function buildNightDetail(
       wakeProvenanceWord: provenanceWord('mancante'),
       note: 'Nessun segnale ricevuto. Puoi inserire gli orari a mano o lasciare la stima dei giorni vicini.',
       tags: night?.isException ? ['Eccezione'] : [],
+      dayNote,
     };
   }
   const min = nightDuration(night);
@@ -159,7 +172,15 @@ export function buildNightDetail(
     wakeProvenanceWord: provenanceWord(night.wakeAt.value === null ? 'mancante' : night.wakeAt.provenance),
     note: night.isException ? `${note} Giorno-eccezione: non conta nel riferimento della regolarità.` : note,
     tags,
+    dayNote,
   };
+}
+
+/** Nota della giornata che precede la notte `date` (check della sera prima), se esiste. */
+export function dayNoteFor(date: string, checks: readonly EveningCheck[]): DayNoteView | null {
+  const evening = addDays(date, -1);
+  const text = (checks.find((c) => c.date === evening)?.dayNote ?? '').trim();
+  return text === '' ? null : { label: `Nota · giornata del ${formatDayMonth(evening)}`, text };
 }
 
 export function buildHistoryView(input: HistoryViewInput): HistoryView {
@@ -224,7 +245,13 @@ export function buildHistoryView(input: HistoryViewInput): HistoryView {
     weekdays: [...WEEKDAYS_INITIAL],
     cells,
     selectedDate: selected,
-    detail: selected === null ? null : buildNightDetail(selected, byDate.get(selected) ?? null, naps, input.factorLabels),
+    detail: selected === null ? null : buildNightDetail(
+            selected,
+            byDate.get(selected) ?? null,
+            naps,
+            input.factorLabels,
+            dayNoteFor(selected, input.eveningChecks ?? []),
+          ),
     legend: 'Verde 8h+ · Azzurro 7–8h · Pesca meno di 7h · Tratteggio = stimata · Punti = mancante',
     prevMonth: shiftMonth(month, -1),
     nextMonth: next > today.slice(0, 7) ? null : next,

@@ -37,6 +37,7 @@ const sectionLabel: Record<SectionKey, string> = {
   weekdayWeekend: 'feriali vs weekend',
   naps: 'sonnellini',
   correlations: 'correlazioni',
+  dayContext: 'giornate particolari',
 };
 
 export function generateRuleInsights(stats: InsightStats): AiInsights & { hidden: SectionKey[] } {
@@ -167,6 +168,18 @@ export function generateRuleInsights(stats: InsightStats): AiInsights & { hidden
         confidence: confidenceFor(top.n),
       });
     }
+  }
+
+  if (s.dayContext && s.dayContext.length > 0) {
+    const n = s.dayContext.length;
+    const factors = [...new Set(s.dayContext.flatMap((d) => d.factors))].slice(0, 5);
+    items.push({
+      category: 'day_context',
+      severity: 'info',
+      title: n === 1 ? 'Una giornata particolare segnalata' : `${n} giornate particolari segnalate`,
+      body: `Hai segnalato ${n} giorn${n === 1 ? 'ata' : 'ate'} fuori dall'ordinario${factors.length ? ` (${factors.map((f) => `«${f}»`).join(', ')})` : ''}. Le notti vicine a quei giorni possono differire dal solito: leggi le statistiche con prudenza, senza attribuire una causa certa.`,
+      confidence: 'low',
+    });
   }
 
   if (items.length === 0) {

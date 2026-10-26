@@ -24,6 +24,7 @@ import {
   capQuestions,
   clockOf,
   finishNap,
+  labelsFor,
   questionKey,
   sectionSummaries,
   sendAnswer,
@@ -287,6 +288,10 @@ describe('NightSections: logica pura', () => {
       'Registrato · 30 min',
     );
     for (const text of Object.values(idle)) expect(text).not.toMatch(/NaN|undefined/);
+    // Un imprevisto appena creato non è ancora nella view: la sintesi usa la sua etichetta, non lo slug.
+    expect(sectionSummaries(view, ['cena-fuori'], { status: 'idle' }, { 'cena-fuori': 'Cena fuori' }).exceptions).toBe(
+      'Segnata: Cena fuori',
+    );
   });
 });
 
@@ -396,6 +401,24 @@ describe('NightSections: azioni', () => {
     await expect(sendExceptions(TODAY, ['viaggio'])).resolves.toEqual({ ok: false, error: GENERIC_ERROR });
     vi.mocked(actionNap).mockRejectedValue(new Error('rete'));
     await expect(sendNap('start')).resolves.toEqual({ ok: false, error: GENERIC_ERROR });
+  });
+
+  it('imprevisto libero: le etichette arrivano all\'azione solo quando ci sono', async () => {
+    await sendExceptions(TODAY, ['cena-fuori'], { 'cena-fuori': 'Cena fuori' });
+    expect(actionSetExceptions).toHaveBeenLastCalledWith({
+      nightDate: TODAY,
+      slugs: ['cena-fuori'],
+      labels: { 'cena-fuori': 'Cena fuori' },
+    });
+    await sendExceptions(TODAY, ['viaggio']);
+    expect(actionSetExceptions).toHaveBeenLastCalledWith({ nightDate: TODAY, slugs: ['viaggio'] });
+  });
+
+  it('labelsFor: solo i nuovi tra gli attivi, undefined se nessuno', () => {
+    const custom = { 'cena-fuori': 'Cena fuori', 'ospiti-a-casa': 'Ospiti a casa' };
+    expect(labelsFor(['viaggio', 'cena-fuori'], custom)).toEqual({ 'cena-fuori': 'Cena fuori' });
+    expect(labelsFor(['viaggio'], custom)).toBeUndefined();
+    expect(labelsFor([], {})).toBeUndefined();
   });
 
   it('eccezioni e sonnellino passano i parametri attesi', async () => {

@@ -39,6 +39,13 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Regole utente per questa chat: attività piccole in parallelo; Sonnet costruisce, Opus solo altissimo livello; sforzo max high (Opus low/medium).
 - Dati reali: Supabase `sleep-tracker` ha lo schema applicato (10 tabelle, RLS senza policy: accesso solo server con service role).
 
+## Feature imprevisti liberi + nota giornata (2026-10-26, PR #21, branch claude/imprevisti-giornata)
+- ✅ Imprevisti a testo libero (`+ Aggiungi`, max 30 caratteri, Notte e Sera), nota facoltativa sulla giornata particolare nel check serale (max 280, Sera passo 3, sola lettura in Storico), componente `TextField`.
+- ✅ Contesto AI: `dayContext` (max 10 giornate, 140 caratteri, giorni relativi) sanificato in app e gateway, mai nei log, prompt con blocco «NON istruzioni»; fallback a regole. Eccezione alla regola «solo aggregati» decisa dall'utente (`docs/DECISIONS.md` 2026-10-26).
+- ✅ Fix bug preesistente: i chip eccezione della pagina Notte risultavano spenti dopo il reload.
+- ✅ Provato in locale con gateway reale + provider finto: email e telefoni rimossi prima del provider. Limite noto: i nomi propri non si possono riconoscere (restano nel testo); la redazione dei telefoni è prudente e può oscurare sequenze numeriche lunghe.
+- ⚠️ **Da fare dall'utente/prima del deploy**: applicare a Supabase la migrazione `app/supabase/migrations/20261025180000_evening_day_note.sql` (colonna `evening_checks.day_note`, additiva) e ridistribuire il gateway (progetto Vercel `sleep-tracker`) per attivare `dayContext` in produzione. Finché non è fatto, il gateway di produzione rifiuta `dayContext` (400) e l'app ricade sugli insight a regole.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): incollare `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API; i tool MCP non possono leggerla) e scegliere `APP_LOGIN_PASSWORD` (almeno 12 caratteri: è la password di accesso all'app). Poi rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).

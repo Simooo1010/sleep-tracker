@@ -73,3 +73,18 @@ test('PC: calendario a sinistra e dettaglio a destra', async ({ page }, testInfo
   const detail = await page.getByRole('heading', { level: 4 }).boundingBox();
   expect(detail!.x).toBeGreaterThan(grid!.x + grid!.width - 1);
 });
+
+// Nei dati demo la sera del 7 settembre ha una nota (malattia): compare nel dettaglio della notte dell'8, in sola lettura.
+test('la nota della giornata compare nel dettaglio, con la parola "Nota", e non è modificabile', async ({ page }) => {
+  await page.goto('/storico?m=2026-09&d=2026-09-08');
+  await expect(page.getByRole('heading', { level: 4, name: /8 settembre/i })).toBeVisible();
+  await expect(page.getByText('Nota · giornata del 7 settembre')).toBeVisible();
+  await expect(page.getByText(/Febbre dal pomeriggio/)).toBeVisible();
+  await expect(page.getByRole('textbox')).toHaveCount(0);
+});
+
+test('un giorno senza nota non mostra nessuna sezione Nota', async ({ page }) => {
+  await page.goto('/storico?m=2026-09&d=2026-09-10');
+  await expect(page.getByRole('heading', { level: 4, name: /10 settembre/i })).toBeVisible();
+  await expect(page.getByText(/^Nota ·/)).toHaveCount(0);
+});

@@ -28,6 +28,11 @@ export const DEMO_EXCEPTION_SLUGS: readonly string[] = ['malattia', 'viaggio', '
 
 const TARGET_MIN = 450;
 const CHECK_COUNT = 45;
+/** Note della giornata della demo (poche, solo su giornate particolari; slug eccezione → testo). */
+const DEMO_DAY_NOTES: Readonly<Record<string, string>> = {
+  malattia: 'Febbre dal pomeriggio, sono rimasto a casa e sono andato a letto presto.',
+  viaggio: 'Giornata in treno per lavoro, rientrato tardi e un po\u2019 scombussolato.',
+};
 const NAP_COUNT = 14;
 /** Le ultime 10 notti (indici 50–59) hanno anche gli eventi grezzi. */
 const EVENT_FROM_IDX = DEMO_DAYS - 10;
@@ -326,6 +331,14 @@ export function buildDemoSeed(nowIso: string): MemoryRepoSeed {
   const pool = plans.filter((p) => p.idx < EVENT_FROM_IDX && !MISSING_IDX.includes(p.idx)).map((p) => p.idx);
   const extra = shuffled(pool, rng).slice(0, CHECK_COUNT - forcedChecks.size);
   const checkIdx = new Set<number>([...forcedChecks, ...extra]);
+  // Descrizioni libere della giornata: solo sulla prima sera "particolare" di malattia e di viaggio.
+  const noteLeft = new Map<string, string>(Object.entries(DEMO_DAY_NOTES));
+  const takeDayNote = (exception: string | null): { dayNote: string } | Record<string, never> => {
+    const note = exception ? noteLeft.get(exception) : undefined;
+    if (!note || !exception) return {};
+    noteLeft.delete(exception);
+    return { dayNote: note };
+  };
   const checks: EveningCheck[] = plans
     .filter((p) => checkIdx.has(p.idx))
     .map((p): EveningCheck => {
@@ -342,6 +355,7 @@ export function buildDemoSeed(nowIso: string): MemoryRepoSeed {
         mood: tracked(score(3.5 - 0.9 * has(p, 'giornata-stressante') - 0.2 * has(p, 'alcol') + spread(p.d.mood, 0.9)), 'confermato'),
         factors: [...p.factors],
         napMinutesToday,
+        ...takeDayNote(p.exception),
       };
     });
 

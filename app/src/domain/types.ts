@@ -59,6 +59,14 @@ export interface EveningCheck {
   mood: Tracked<Score>;
   factors: string[];
   napMinutesToday: Tracked<number>;
+  /** Descrizione libera della giornata (facoltativa, max DAY_NOTE_MAX caratteri). null/assente = nessuna nota. */
+  dayNote?: string | null;
+}
+
+/** Imprevisto (eccezione) inserito dall'utente: slug stabile + etichetta mostrata. Slug da `slugifyExceptionLabel`. */
+export interface ExceptionInput {
+  slug: string;
+  label: string;
 }
 
 /** Quante notti sono state usate su quante disponibili nella finestra. */

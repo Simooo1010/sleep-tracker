@@ -26,6 +26,8 @@ export interface CalendarNight {
   note?: string;
   /** Tag già scritti, es. "Qualità 4 su 5", "Energia 3 su 5", "Notte del weekend", "Sonnellino 32 min". */
   tags?: readonly string[];
+  /** Descrizione della giornata scritta dall'utente (sola lettura). `label` inizia sempre con "Nota". */
+  dayNote?: { label: string; text: string };
 }
 
 export interface CalendarProps {
@@ -391,6 +393,12 @@ export function Calendar({
                 <p className={cx('body-sm', 'muted', styles.note)}>{selectedNight.note}</p>
               ) : selectedNight.status === 'mancante' ? (
                 <p className={cx('body-sm', 'muted', styles.note)}>Nessun dato per questa notte.</p>
+              ) : null}
+              {selectedNight.dayNote ? (
+                <div>
+                  <p className="eyebrow">{selectedNight.dayNote.label}</p>
+                  <p className={cx('body-sm', styles.note)}>{selectedNight.dayNote.text}</p>
+                </div>
               ) : null}
             </>
           ) : (

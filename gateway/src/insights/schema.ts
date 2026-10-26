@@ -6,6 +6,24 @@ const nonNegInt = z.number().int().min(0).max(10_000);
 const minutes = z.number().min(-1440).max(100_000);
 const share = z.number().min(0).max(1);
 
+export const DAY_CONTEXT_MAX_ITEMS = 10;
+export const DAY_CONTEXT_MAX_DAYS_AGO = 60;
+export const DAY_CONTEXT_MAX_FACTORS = 8;
+export const DAY_CONTEXT_MAX_TEXT = 140;
+
+const factorSlug = z.string().regex(/^[a-z0-9_-]{1,40}$/i, 'factor: etichetta breve (slug), niente testo libero');
+
+/**
+ * User-reported context of a "special" day (free text, UNTRUSTED data). Relative date only
+ * (daysAgo, never an ISO date). The text is redacted by the gateway and never logged.
+ */
+export const dayContextItemSchema = z.strictObject({
+  daysAgo: z.number().int().min(0).max(DAY_CONTEXT_MAX_DAYS_AGO),
+  factors: z.array(factorSlug).max(DAY_CONTEXT_MAX_FACTORS),
+  text: z.string().max(DAY_CONTEXT_MAX_TEXT, `text: massimo ${DAY_CONTEXT_MAX_TEXT} caratteri`),
+});
+export type DayContextItem = z.infer<typeof dayContextItemSchema>;
+
 /** Aggregate stats computed by the app. No raw events, no dates, no identifiers. */
 export const insightStatsSchema = z.strictObject({
   windowDays: z.number().int().min(1).max(366),
@@ -68,7 +86,7 @@ export const insightStatsSchema = z.strictObject({
   correlations: z
     .array(
       z.strictObject({
-        factor: z.string().regex(/^[a-z0-9_-]{1,40}$/i, 'factor: etichetta breve (slug), niente testo libero'),
+        factor: factorSlug,
         target: z.enum(['quality', 'energy', 'mood', 'duration']),
         r: z.number().min(-1).max(1),
         n: nonNegInt,
@@ -76,6 +94,8 @@ export const insightStatsSchema = z.strictObject({
     )
     .max(20)
     .optional(),
+  /** Optional, user-reported context of special days (untrusted text, max 10 entries). */
+  dayContext: z.array(dayContextItemSchema).max(DAY_CONTEXT_MAX_ITEMS).optional(),
 });
 
 export type InsightStats = z.infer<typeof insightStatsSchema>;
@@ -90,6 +110,7 @@ export const insightCategories = [
   'weekday_weekend',
   'naps',
   'correlation',
+  'day_context',
 ] as const;
 export type InsightCategory = (typeof insightCategories)[number];
 

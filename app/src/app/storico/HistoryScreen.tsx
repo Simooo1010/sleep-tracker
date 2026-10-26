@@ -53,6 +53,7 @@ export function toCalendarNights(view: HistoryView): CalendarNight[] {
         ? NO_DATA_TEXT
         : `Letto: ${lower(detail.bedProvenanceWord)}. Sveglia: ${lower(detail.wakeProvenanceWord)}. ${detail.note}`;
       night.tags = detail.tags;
+      if (detail.dayNote) night.dayNote = detail.dayNote;
     }
     out.push(night);
   }

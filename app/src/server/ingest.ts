@@ -59,6 +59,8 @@ async function saveEveningCheck(repo: Repo, ev: ValidatedEvent): Promise<void> {
     factors: c.factors !== undefined ? [...c.factors] : [...(previous?.factors ?? [])],
     napMinutesToday: confirmed<number>(c.napMinutesToday, previous?.napMinutesToday),
   };
+  const note = c.dayNote !== undefined ? c.dayNote : previous?.dayNote;
+  if (note !== undefined) check.dayNote = note;
   await repo.saveEveningCheck(check);
   if (c.napMinutesToday !== undefined && c.napMinutesToday > 0) {
     const nap = napFromCheck(check);

@@ -114,6 +114,46 @@ describe('dettaglio di casi particolari', () => {
   });
 });
 
+describe('nota della giornata nello Storico', () => {
+  const check = (date: string, dayNote: string | null) => ({
+    date,
+    tiredness: { value: 3 as const, provenance: 'confermato' as const },
+    mood: { value: 3 as const, provenance: 'confermato' as const },
+    factors: [],
+    napMinutesToday: { value: null, provenance: 'mancante' as const },
+    dayNote,
+  });
+
+  it('la nota della sera prima compare nel dettaglio, in sola lettura e con la parola Nota', async () => {
+    const r = repo();
+    await r.saveEveningCheck(check('2026-10-09', 'Cena fuori con amici, rientrato tardi'));
+    const { html, view } = await render({ m: '2026-10', d: '2026-10-10' }, r);
+    expect(view.detail?.dayNote).toEqual({
+      label: 'Nota · giornata del 9 ottobre',
+      text: 'Cena fuori con amici, rientrato tardi',
+    });
+    expect(html).toContain('>Nota · giornata del 9 ottobre<');
+    expect(html).toContain('Cena fuori con amici, rientrato tardi');
+    expect(html).not.toContain('<textarea');
+    expect(toCalendarNights(view).find((n) => n.date === '2026-10-10')?.dayNote?.text).toContain('Cena fuori');
+  });
+
+  it('senza nota: nessuna sezione Nota; con nota vuota nemmeno', async () => {
+    const r = repo();
+    await r.saveEveningCheck(check('2026-10-09', '   '));
+    const { html, view } = await render({ m: '2026-10', d: '2026-10-10' }, r);
+    expect(view.detail?.dayNote).toBeNull();
+    expect(html).not.toContain('>Nota ·');
+  });
+
+  it('la nota dell\'ultimo giorno del mese prima compare nella notte del primo', async () => {
+    const r = repo();
+    await r.saveEveningCheck(check('2026-09-30', 'Giornata di lavoro lunga'));
+    const { view } = await render({ m: '2026-10', d: '2026-10-01' }, r);
+    expect(view.detail?.dayNote?.text).toBe('Giornata di lavoro lunga');
+  });
+});
+
 describe('mappatura view → Calendar', () => {
   it('solo giorni passati; durate in minuti; orari solo per il giorno scelto', async () => {
     const { view } = await render({ d: '2026-10-10' });

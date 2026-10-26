@@ -263,3 +263,41 @@ export function orderExceptionChips(types: ChipType[], defaults: readonly string
   }
   return unique;
 }
+
+// --- Imprevisti liberi e descrizione della giornata ---
+
+/** Lunghezza massima dell'etichetta di un imprevisto libero (caratteri, dopo la normalizzazione). */
+export const EXCEPTION_LABEL_MAX = 30;
+/** Lunghezza massima della descrizione della giornata (`EveningCheck.dayNote`). */
+export const DAY_NOTE_MAX = 280;
+/** Lunghezza massima del testo di una giornata inviato all'AI (`dayContext[].text`). */
+export const DAY_CONTEXT_TEXT_MAX = 140;
+/** Numero massimo di giornate "particolari" inviate all'AI. */
+export const DAY_CONTEXT_MAX_DAYS = 10;
+/** Lunghezza massima di uno slug di imprevisto. */
+export const EXCEPTION_SLUG_MAX = 40;
+/** Forma valida di uno slug di imprevisto/fattore. */
+export const EXCEPTION_SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+/**
+ * Etichetta libera → slug kebab-case: minuscolo, senza accenti, non alfanumerici → '-',
+ * trattini collassati e tolti ai bordi, max 40 caratteri senza trattino finale.
+ * Ritorna '' se non resta nulla (es. solo simboli o emoji). Idempotente.
+ */
+export function slugifyExceptionLabel(label: string): string {
+  return label
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{M}+/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, EXCEPTION_SLUG_MAX)
+    .replace(/-+$/, '');
+}
+
+/** Etichetta mostrata: trim, spazi collassati, max EXCEPTION_LABEL_MAX caratteri (per code point). Idempotente. */
+export function normalizeExceptionLabel(label: string): string {
+  const collapsed = label.trim().replace(/\s+/g, ' ');
+  return Array.from(collapsed).slice(0, EXCEPTION_LABEL_MAX).join('').trimEnd();
+}

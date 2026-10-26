@@ -29,13 +29,14 @@ export async function loadNightPage(repo: Repo, now: Date): Promise<NightPageDat
   const toEvents = localToIso(today, WINDOW_END_MIN);
   const recentFrom = addDays(today, -NAP_CHECK_DAYS);
 
-  const [nights, events, naps, eveningChecks, questions, exceptionTypes, target] = await Promise.all([
+  const [nights, events, naps, eveningChecks, questions, exceptionTypes, nightExceptions, target] = await Promise.all([
     repo.listNights(addDays(today, -NIGHT_HISTORY_DAYS), today),
     repo.listEvents(fromEvents, toEvents),
     repo.listNaps(recentFrom, today),
     repo.listEveningChecks(recentFrom, today),
     repo.listQuestions(today, today),
     repo.listExceptionTypes(),
+    repo.listNightExceptions(today, today),
     repo.getSetting<number>('target_sleep_minutes'),
   ]);
 
@@ -55,6 +56,7 @@ export async function loadNightPage(repo: Repo, now: Date): Promise<NightPageDat
     eveningChecks,
     asked,
     exceptionTypes: chipTypes,
+    activeExceptions: nightExceptions[today] ?? [],
     ...(typeof target === 'number' && Number.isFinite(target) && target > 0 ? { targetMin: target } : {}),
   };
   return { today, view: buildNightView(input) };

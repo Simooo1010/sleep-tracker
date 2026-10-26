@@ -318,6 +318,51 @@ describe("setExceptions", () => {
     expect((await repo.getNight("2026-10-24"))?.isException).toBe(false);
   });
 
+  it("passa al repo solo le label degli slug richiesti, normalizzate; ignora vuote e non stringa", async () => {
+    const repo = new MemoryRepo({ nights: [night()] });
+    const spy = vi.spyOn(repo, "setNightExceptions");
+    const r = await setExceptions(repo, {
+      nightDate: "2026-10-24",
+      slugs: ["trasloco", "esame", "vuota"],
+      labels: {
+        trasloco: "  Trasloco   casa  ",
+        vuota: "   ",
+        altro: "Non richiesto",
+        esame: 5 as unknown as string,
+      },
+    });
+    expect(r.ok).toBe(true);
+    expect(spy).toHaveBeenCalledWith(
+      "2026-10-24",
+      ["trasloco", "esame", "vuota"],
+      { trasloco: "Trasloco casa" },
+    );
+  });
+
+  it("senza label (o tutte vuote) chiama il repo con soli slug", async () => {
+    const repo = new MemoryRepo({ nights: [night()] });
+    const spy = vi.spyOn(repo, "setNightExceptions");
+    await setExceptions(repo, { nightDate: "2026-10-24", slugs: ["viaggio"] });
+    await setExceptions(repo, {
+      nightDate: "2026-10-24",
+      slugs: ["viaggio"],
+      labels: { viaggio: "  " },
+    });
+    expect(spy.mock.calls[0]).toEqual(["2026-10-24", ["viaggio"]]);
+    expect(spy.mock.calls[1]).toEqual(["2026-10-24", ["viaggio"]]);
+  });
+
+  it("label troppo lunga: troncata a EXCEPTION_LABEL_MAX", async () => {
+    const repo = new MemoryRepo({ nights: [night()] });
+    const spy = vi.spyOn(repo, "setNightExceptions");
+    await setExceptions(repo, {
+      nightDate: "2026-10-24",
+      slugs: ["lunga"],
+      labels: { lunga: "x".repeat(50) },
+    });
+    expect(spy.mock.calls[0]?.[2]).toEqual({ lunga: "x".repeat(30) });
+  });
+
   it("errore del repo sulla notte: messaggio generico", async () => {
     const repo = new MemoryRepo();
     vi.spyOn(repo, "getNight").mockRejectedValue(new Error("boom"));
@@ -436,6 +481,62 @@ describe("saveEveningCheckFromUi", () => {
         })
       ).ok,
     ).toBe(true);
+  });
+
+  it("dayNote: trim e salvataggio", async () => {
+    const repo = new MemoryRepo();
+    const r = await saveEveningCheckFromUi(repo, {
+      date: "2026-10-24",
+      dayNote: "  Giornata di esami  ",
+    });
+    expect(r.ok).toBe(true);
+    expect((await repo.getEveningCheck("2026-10-24"))?.dayNote).toBe(
+      "Giornata di esami",
+    );
+  });
+
+  it("dayNote: vuota o null diventa null e cancella la nota esistente", async () => {
+    const repo = new MemoryRepo();
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", dayNote: "ciao" });
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", dayNote: "   " });
+    expect((await repo.getEveningCheck("2026-10-24"))?.dayNote).toBeNull();
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", dayNote: "di nuovo" });
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", dayNote: null });
+    expect((await repo.getEveningCheck("2026-10-24"))?.dayNote).toBeNull();
+  });
+
+  it("dayNote assente: la nota esistente resta", async () => {
+    const repo = new MemoryRepo();
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", dayNote: "nota" });
+    await saveEveningCheckFromUi(repo, { date: "2026-10-24", mood: 3 });
+    const c = await repo.getEveningCheck("2026-10-24");
+    expect(c?.dayNote).toBe("nota");
+    expect(c?.mood.value).toBe(3);
+  });
+
+  it("dayNote: limite DAY_NOTE_MAX (dopo il trim) e tipo non valido", async () => {
+    const repo = new MemoryRepo();
+    expect(
+      (
+        await saveEveningCheckFromUi(repo, {
+          date: "2026-10-24",
+          dayNote: ` ${"a".repeat(280)} `,
+        })
+      ).ok,
+    ).toBe(true);
+    expect(
+      await saveEveningCheckFromUi(repo, {
+        date: "2026-10-25",
+        dayNote: "a".repeat(281),
+      }),
+    ).toEqual({ ok: false, error: "Dati non validi." });
+    expect(
+      await saveEveningCheckFromUi(repo, {
+        date: "2026-10-25",
+        dayNote: 5 as unknown as string,
+      }),
+    ).toEqual({ ok: false, error: "Dati non validi." });
+    expect(await repo.getEveningCheck("2026-10-25")).toBeNull();
   });
 
   it("errore del repo: messaggio generico", async () => {

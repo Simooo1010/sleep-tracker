@@ -17,7 +17,7 @@ export const THRESHOLDS = {
   lowCoverageShare: 0.6,
 } as const;
 
-export type SectionKey = 'duration' | 'debt' | 'regularity' | 'drift' | 'weekdayWeekend' | 'naps' | 'correlations';
+export type SectionKey = 'duration' | 'debt' | 'regularity' | 'drift' | 'weekdayWeekend' | 'naps' | 'correlations' | 'dayContext';
 
 export const categoryToSection: Record<InsightCategory, SectionKey | null> = {
   coverage: null,
@@ -28,6 +28,7 @@ export const categoryToSection: Record<InsightCategory, SectionKey | null> = {
   weekday_weekend: 'weekdayWeekend',
   naps: 'naps',
   correlation: 'correlations',
+  day_context: 'dayContext',
 };
 
 export function applyThresholds(stats: InsightStats): { eligible: InsightStats; hidden: SectionKey[] } {
@@ -53,6 +54,8 @@ export function applyThresholds(stats: InsightStats): { eligible: InsightStats; 
     if (ok.length === 0) drop('correlations');
     else e.correlations = ok;
   }
+  // Optional context: never "hidden for thin data"; an empty list is simply absent.
+  if (e.dayContext && e.dayContext.length === 0) delete e.dayContext;
   return { eligible: e, hidden };
 }
 

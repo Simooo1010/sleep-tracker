@@ -53,3 +53,5 @@
 | 2026-10-25 | Insight: gateway con timeout 6 s e riserva a regole locali; al gateway solo statistiche aggregate | confermata |
 | 2026-10-25 | CI GitHub non eseguita sulle PR in bozza (evita email sui WIP) | confermata |
 | 2026-10-25 | Test finale profondo dell'app eseguito dall'utente in un'altra chat | confermata |
+| 2026-10-26 | Imprevisti a testo libero (chip `+ Aggiungi`, etichetta libera, max 30 caratteri) e nota facoltativa sulla giornata particolare (max 280 caratteri) nel check serale, visibile in Storico | confermata |
+| 2026-10-26 | **Eccezione alla regola «solo statistiche aggregate»**, su richiesta esplicita dell'utente: etichette degli imprevisti e nota giornata arrivano all'AI come `dayContext` (max 10 giornate, 140 caratteri a voce, giorni relativi, niente date), sanificate (email, telefoni, URL, date, UUID rimossi) sia nell'app sia nel gateway, mai nei log, trattate nel prompt come contesto non fidato | confermata |
