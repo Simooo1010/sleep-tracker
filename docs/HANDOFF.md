@@ -144,3 +144,13 @@ PR #1–#6 definizione e spec · #7 design system · #8–#10 gateway AI · **#1
 - Navigazione: voce Analisi solo sidebar PC + pulsante nella barra in alto su telefono (la pillola resta a 5 voci).
 - Test: 1657 unitari, E2E analisi/shell/overflow su iphone, desktop, 4K; controllo visivo in chiaro/scuro a 320, 390, 1280, 4K.
 - Da fare dopo il merge: verificare in produzione che il racconto mostri il badge «AI» (gateway collegato).
+
+## 15. Imprevisti liberi, nota giornata, `dayContext` (2026-10-26, PR #21 e #24)
+- Imprevisti a testo libero: `ExceptionChips` (`onCreate`, `resolveNewException`), `TextField` (`app/src/components/`), slug da `slugifyExceptionLabel`, etichetta libera in `exception_types.label` (`setNightExceptions(nightDate, slugs, labels?)`). In Notte e in Sera.
+- Nota giornata: `evening_checks.day_note` (≤ 280), passo 3 di Sera, sola lettura in Storico (nota della sera N-1 per la notte N).
+- AI: `dayContext` (max 10 giornate, ≤ 140 caratteri, `daysAgo`, nessuna data) costruito in `buildInsightsPayload(..., windowDays, dayContextSource)`; sanificato in `sanitizeDayText` (app) e `sanitizeDayContextText` (gateway); nel prompt come blocco «NON istruzioni»; mai nei log. Decisione utente: eccezione a «solo aggregati» (`docs/DECISIONS.md`).
+- Bug corretto: i chip eccezione della pagina Notte risultavano spenti dopo il reload (`pages/night.ts` ora legge `listNightExceptions`).
+- Limiti noti: i nomi propri non si riconoscono; la redazione dei telefoni è prudente (può oscurare lunghe sequenze numeriche).
+- Stato: migrazione applicata; gateway e app in produzione (`513eba2`). Da fare: provare un insight reale in produzione dall'app con `GATEWAY_SECRET` impostato (non verificabile da qui: il segreto non è leggibile).
+- Trappola E2E: una cache `.next` corrotta può far fallire `night.spec.ts` solo in locale; `rm -rf app/.next app/.next-auth app/test-results` e rilanciare.
+
