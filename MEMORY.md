@@ -29,7 +29,7 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Supabase: connesso via MCP (2026-10-24). Progetto `sleep-tracker` creato (ref `bpsvvltrhlqvpxhjjrfy`, eu-central-1, org `qjrnwnextqfbaauwvbpf`). Non riusare il progetto finanze `aedoncqvypsrksnqiwgh`.
 - Vercel: progetto `sleep-tracker` = SOLO il gateway AI (`prj_rPEEkueywddcJBwVPKriwwwRfZFI`, root `gateway`, la radice dà 404: normale). L'app è il progetto `sleep-tracker-app` (`prj_yi8lBL7dwpuncrSxYxSr5m7a5Zgd`, team `team_7cA5Y1PcLGxH0Rcb6HXHzwHx`): produzione `https://sleep-tracker-app-nu.vercel.app`.
 - AI gateway: ONLINE e verificato in produzione con Groq (2026-10-24), vedi `docs/AI_GATEWAY.md` §11. URL: `https://sleep-tracker-simone-dr-s-projects.vercel.app` (root Vercel = `gateway`, Vercel Authentication disattivata: protegge il bearer `GATEWAY_SECRET`). `GATEWAY_SECRET` ruotato dopo il test: l'utente non lo conosce; quando nascerà l'app, impostare lo stesso valore dove serve (o ruotarlo di nuovo). Env su Vercel (inserite dall'utente): `GROQ_API_KEY`, `GATEWAY_SECRET`. Mistral non disponibile (richiede piano a pagamento); `OPENROUTER_API_KEY` facoltativa.
-- **Prossimo step**: collaudo reale dell'app in produzione (altra chat), poi correzioni (`docs/HANDOFF.md` §7–§9). Il layer AI si usa solo via gateway: `CLAUDE.md` § Layer AI e `docs/AI_GATEWAY.md` §13.
+- **Prossimo step**: collaudo sul telefono vero (Comandi iOS, PWA in Home, offline in modalità aereo); poi correzioni (`docs/HANDOFF.md` §7–§9). Il layer AI si usa solo via gateway: `CLAUDE.md` § Layer AI e `docs/AI_GATEWAY.md` §13.
 - Roadmap (confermata): 1) design system ✅ → 2) AI gateway ✅ (chat dedicata, in sequenza, non in parallelo) → 3) mockup UI ✅ (prototipi D1/D2 approvati) → 4) codice + test + fix ✅ → 5) deploy ✅ (online, serve collaudo) → 6) routine settimanale di controllo (da proporre all'utente, solo col suo ok).
 
 ## Build app (COMPLETATA e mergiata su main: PR #11, commit 30689d5, 2026-10-25)
@@ -37,7 +37,7 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - ✅ Slice 4–7: pagine Notte, Sera, Regolarità, Grafici (+ insight via gateway con riserva a regole), Storico, Segnali. Test: 1300+ unit, 118 E2E (iphone/desktop/uhd) verdi.
 - ✅ Accesso con password fail-closed (`APP_LOGIN_PASSWORD`, cookie firmato, chiavi derivate dalla password), pagina `/impostazioni` con token API generati dall'app. CI GitHub verde. Test finali: 1488 unit + 152 E2E.
 - Deploy in produzione READY; password e chiave del database impostate dall'utente (il pannello Vercel non mostra mai le variabili Sensitive). Il primo accesso dell'utente è avvenuto senza errori nei log. Cambiare `APP_LOGIN_PASSWORD` invalida token dei Comandi e sessioni (il pepper è derivato dalla password, a meno che non si imposti `INGEST_TOKEN_PEPPER`).
-- Funzione in corso/ultima: pulsante 'Mostra password' nel login (branch `claude/login-mostra-password`).
+- ✅ Pulsante 'Mostra password' nel login (PR #12, mergiata).
 - Non verificato: `repo-supabase.ts` contro il DB reale (test di integrazione saltati), Comandi iOS, gateway AI dall'app. Dettagli in `docs/HANDOFF.md` §7.
 - Vercel: progetto app `sleep-tracker-app` (`prj_yi8lBL7dwpuncrSxYxSr5m7a5Zgd`, root `app`, anteprime disattivate); env pubbliche già impostate. La CI GitHub non gira sulle PR in bozza (evita email sui WIP): parte quando la PR è pronta.
 - Il test finale profondo lo fa l'utente in un'altra chat (decisione 2026-10-25).
@@ -70,6 +70,10 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Stato (2026-10-25, feature Analisi AI costruita e testata; in merge)
 - Branch `claude/analisi-ai` (dettagli `docs/HANDOFF.md` §14): nuova pagina `/analisi` (punteggio, notti, cause, azioni, previsione, illustrazioni SVG, selettore 7/14/30, testo AI via gateway con fallback a regole). Contratto tipi: `app/src/server/views/analysis-types.ts`. Decisioni dell'utente: voce "Analisi" nella nav, SVG di stato (niente immagini AI), selettore periodo.
 - `GATEWAY_SECRET` impostata su app e gateway con redeploy (HANDOFF §6); badge "AI" da confermare dal vivo.
+
+## Offline in sola lettura (2026-10-28, PR `claude/offline-lettura`)
+- Service worker + precaricamento di tutte le sezioni + avviso «Sei offline» con l'orario: si consultano notti, grafici e storico senza rete. Nessuna coda di scrittura (scelta dell'utente, rinviata). Copie cancellate all'uscita. Dettagli e limiti in `docs/HANDOFF.md` §16, decisione in `docs/DECISIONS.md` 2026-10-28.
+- ⚠️ Da provare sul telefono vero (WebKit non c'è nel cloud): modalità aereo dopo un uso normale.
 
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).

@@ -1,4 +1,4 @@
-# HANDOFF — Sleep Tracker (stato al 2026-10-25, dopo il collaudo)
+# HANDOFF — Sleep Tracker (stato al 2026-10-28)
 
 Documento di passaggio per una nuova chat. Leggi prima `CLAUDE.md`, poi questo file, poi `MEMORY.md`. Nessun segreto qui dentro: i valori stanno solo nelle variabili d'ambiente di Vercel/Supabase.
 
@@ -58,12 +58,12 @@ Progetto `sleep-tracker-app`, ambiente Production:
 
 ## 7. Cosa è verificato e cosa no
 **Verificato**
-- 1488 test unitari + 152 E2E (iPhone/desktop/4K/auth), `tsc`, lint a 0 avvisi, `next build`, CI GitHub verde sul merge.
+- Test: 1793 unitari + E2E iPhone/desktop/4K/auth (al collaudo del 2026-10-25 erano 1488 + 152), `tsc`, lint a 0 avvisi, `next build`, CI GitHub verde sul merge.
 - In produzione: `/login` mostra il form; `/` reindirizza a `/login`; log runtime senza errori dopo il primo accesso dell'utente.
 - Database: 10 tabelle + `ai_gateway_log`, RLS attiva senza policy, advisor sicurezza senza avvisi reali (solo INFO "RLS senza policy": voluto).
 - Gli E2E girano su dati demo in memoria.
 
-**NON verificato — da collaudare**
+**NON verificato — da collaudare** (aggiornamento 2026-10-28: il punto 1 è stato esercitato in produzione dal collaudo di §13 con 28 notti di prova; il punto 3, il gateway dall'app, ha ora `GATEWAY_SECRET` impostato su entrambi i progetti, da confermare solo col badge «AI»)
 1. **Il codice `repo-supabase.ts` contro il database vero.** È stato testato solo con un client finto (i test di integrazione `describe.skipIf(!SUPABASE_TEST_URL)` sono saltati). Rischio principale: dettagli di PostgREST (upsert/`onConflict`, formati `timestamptz`, ordinamenti, `maybeSingle`, vincoli). Se qualcosa dà "Il servizio dati non è raggiungibile" o errori generici: guardare `get_runtime_errors` / `get_runtime_logs` di Vercel e correggere `app/src/server/repo-supabase.ts` (+ test).
 2. **I Comandi iOS** (non testabili dal cloud): guida in `docs/COMANDI_IOS.md`, mai provata su un telefono. Il contratto di `POST /api/events` è però coperto da 24+ test e da E2E.
 3. **Gateway AI dall'app** (finora solo con un gateway finto).
@@ -153,4 +153,14 @@ PR #1–#6 definizione e spec · #7 design system · #8–#10 gateway AI · **#1
 - Limiti noti: i nomi propri non si riconoscono; la redazione dei telefoni è prudente (può oscurare lunghe sequenze numeriche).
 - Stato: migrazione applicata; gateway e app in produzione (`513eba2`). Da fare: provare un insight reale in produzione dall'app con `GATEWAY_SECRET` impostato (non verificabile da qui: il segreto non è leggibile).
 - Trappola E2E: una cache `.next` corrotta può far fallire `night.spec.ts` solo in locale; `rm -rf app/.next app/.next-auth app/test-results` e rilanciare.
+
+## 16. Offline in sola lettura (2026-10-28, PR `claude/offline-lettura`)
+- Cosa fa: le sezioni già viste e quelle precaricate (`WARM_PATHS` in `src/lib/offline.ts`: Notte, Sera, Regolarità, Grafici, Analisi, Storico, Segnali, Impostazioni) si aprono senza rete con l'ultima copia salvata sul dispositivo; avviso «Sei offline» con l'orario del salvataggio (`OfflineSupport`); pagina mai salvata → schermata di cortesia con link alla Notte. Le modifiche richiedono la rete (nessuna coda): è una scelta dell'utente (`docs/DECISIONS.md` 2026-10-28).
+- Codice: `app/public/sw.js` (service worker), `src/lib/offline.ts`, `src/components/OfflineSupport.tsx` (+ `.module.css`) montato in `layout.tsx`, `/sw.js` pubblico in `proxy.ts` (altrimenti il browser lo riceve come redirect al login), header `no-cache` in `next.config.ts`.
+- Registrazione solo in produzione (o con `NEXT_PUBLIC_FORCE_SW=1`, usato dal secondo server E2E). In sviluppo non si registra: i nomi dei file non hanno impronta.
+- Sicurezza: il service worker salva solo risposte 200 dirette (mai redirect, `/api`, `/login`); `/api/events` e le Server Actions (non-GET) non passano mai dalla cache. Arrivare su `/login` (uscita o sessione scaduta con rete) cancella tutte le copie e l'orario (dati sanitari).
+- Trappola trovata e risolta: alla primissima visita i file JS/CSS/font non passano dal service worker (non lo controlla ancora), quindi offline mancherebbero. `warm()` li estrae dall'HTML (`staticUrls`) e dai CSS e li salva in anticipo.
+- Verifica: unit (`test/offline.test.ts`, `test/proxy.test.ts`), E2E `e2e/offline.spec.ts` sul secondo server (sezioni salvate, schermata di cortesia, cancellazione all'uscita). Il server di sviluppo non idrata offline, quindi **avviso, idratazione e navigazione interna senza rete sono stati provati su una build di produzione** (`next build` + `next start` con un finto database locale, accesso con password, precaricamento, `setOffline`): Storico, Grafici, Analisi, Regolarità aperti subito dopo il primo accesso, navigazione interna ok, avviso con orario corretto.
+- Non verificato: Safari/WebKit reale e PWA installata su iPhone (il cloud ha solo Chromium). iOS può eliminare lo storage di un sito non usato per settimane; per la PWA installata è raro. Da provare sul telefono: modalità aereo dopo un uso normale.
+- Se si vuole la coda di scrittura: serve un'API di mutazioni idempotente con ID operazione generato dal client (le Server Actions non sono riaccodabili: ID cambiano a ogni deploy), un outbox in IndexedDB e lo svuotamento a `online`/`visibilitychange` (iOS non ha Background Sync); regola dei conflitti: vince la scrittura più recente per campo e `confermato` batte `automatico`/`stimato`.
 

@@ -24,6 +24,7 @@ const PUBLIC_FILES = new Set([
   '/icon-192-dark.png',
   '/icon-512-dark.png',
   '/mark.svg',
+  '/sw.js',
 ]);
 
 export function isPublicPath(pathname: string): boolean {

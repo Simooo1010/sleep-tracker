@@ -213,3 +213,10 @@ describe('config.matcher', () => {
     expect(re.test('/_next/image')).toBe(false);
   });
 });
+
+describe('service worker', () => {
+  it('/sw.js è pubblico (altrimenti il browser lo riceverebbe come redirect al login)', () => {
+    expect(isPublicPath('/sw.js')).toBe(true);
+    expect(isPublicPath('/sw.js/extra')).toBe(false);
+  });
+});

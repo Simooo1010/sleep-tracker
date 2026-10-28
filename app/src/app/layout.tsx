@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { AppShell } from '@/components/AppShell';
 import { AppIconSync } from '@/components/AppIconSync';
+import { OfflineSupport } from '@/components/OfflineSupport';
 import { FAVICON_ID, TOUCH_ICON_ID } from '@/lib/app-icon';
 import { themeInitScript } from '@/lib/theme';
 
@@ -45,6 +46,8 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         {/* Variante scura delle icone quando il sistema è in modalità scura, dopo l'idratazione: vedi lib/app-icon.ts. */}
         <AppIconSync />
         <AppShell>{children}</AppShell>
+        {/* Lettura offline: service worker, precaricamento delle sezioni e avviso «Sei offline». */}
+        <OfflineSupport />
       </body>
     </html>
   );

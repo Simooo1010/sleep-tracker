@@ -1,0 +1,35 @@
+/* Avviso offline: fascia fissa in basso sopra la pillola, solo variabili di tokens.css, misure in rem.
+   Testo esplicito («Sei offline»): il significato non dipende dal colore. */
+
+.banner {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--safe-bottom) + 5.5rem);
+  z-index: 35;
+  width: min(32rem, calc(100% - 2rem));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--peach-soft);
+  color: var(--peach-ink);
+  border: var(--hairline) solid var(--peach-edge);
+  box-shadow: var(--shadow-float);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.label {
+  font-weight: 600;
+}
+
+@media (min-width: 60rem) {
+  .banner {
+    left: auto;
+    right: var(--space-5);
+    bottom: var(--space-5);
+    transform: none;
+  }
+}

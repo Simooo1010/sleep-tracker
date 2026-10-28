@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Il service worker non va mai tenuto in cache dal browser: gli aggiornamenti devono arrivare subito.
+        source: '/sw.js',
+        headers: [
+          { key: 'Content-Type', value: 'text/javascript; charset=utf-8' },
+          { key: 'Cache-Control', value: 'no-cache, no-store, must-revalidate' },
+        ],
+      },
+      {
         source: '/manifest.webmanifest',
         headers: [{ key: 'Content-Type', value: 'application/manifest+json' }],
       },

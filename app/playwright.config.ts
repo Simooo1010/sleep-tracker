@@ -51,6 +51,7 @@ const AUTH_ENV = {
   APP_LOGIN_PASSWORD: E2E_AUTH_PASSWORD,
   INGEST_TOKEN_PEPPER: '',
   NEXT_DIST_DIR: '.next-auth',
+  NEXT_PUBLIC_FORCE_SW: '1', // service worker attivo anche in sviluppo: serve a e2e/offline.spec.ts
 };
 
 export default defineConfig({
@@ -73,7 +74,7 @@ export default defineConfig({
   projects: [
     {
       name: 'iphone',
-      testIgnore: /auth\.spec\.ts$/,
+      testIgnore: /(auth|offline)\.spec\.ts$/,
       use: {
         // iPhone 13: user agent iOS e schermo 390×844; il viewport è forzato a tutta l'altezza dello schermo.
         ...devices['iPhone 13'],
@@ -86,7 +87,7 @@ export default defineConfig({
     },
     {
       name: 'desktop',
-      testIgnore: /auth\.spec\.ts$/,
+      testIgnore: /(auth|offline)\.spec\.ts$/,
       use: {
         browserName: 'chromium',
         viewport: { width: 1280, height: 800 },
@@ -95,7 +96,7 @@ export default defineConfig({
     },
     {
       name: 'uhd',
-      testIgnore: /auth\.spec\.ts$/,
+      testIgnore: /(auth|offline)\.spec\.ts$/,
       use: {
         browserName: 'chromium',
         viewport: { width: 3840, height: 2160 },
@@ -104,7 +105,7 @@ export default defineConfig({
     },
     {
       name: 'auth',
-      testMatch: /auth\.spec\.ts$/,
+      testMatch: /(auth|offline)\.spec\.ts$/,
       use: {
         ...devices['iPhone 13'],
         browserName: webkitAvailable ? 'webkit' : 'chromium',
