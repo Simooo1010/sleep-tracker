@@ -59,6 +59,15 @@ export interface FloatingNavProps {
   onNavigate?: (href: string) => void;
 }
 
+/**
+ * Precaricamento completo di ogni sezione, tranne Grafici e Analisi: le loro pagine chiamano il gateway AI, e
+ * precaricarle a ogni apertura consumerebbe la quota del provider anche senza aprirle. Restano sul comportamento
+ * predefinito (scheletro di `loading.tsx` subito, dati dopo).
+ */
+function prefetchFor(href: string): true | undefined {
+  return href === '/grafici' || href === '/analisi' ? undefined : true;
+}
+
 function normalize(path: string): string {
   const p = path.split(/[?#]/)[0] ?? '';
   return p.length > 1 ? p.replace(/\/+$/, '') : p || '/';
@@ -93,6 +102,7 @@ export function FloatingNav({ pathname, today = [], onNavigate }: FloatingNavPro
               <Link
                 key={item.key}
                 href={item.href}
+                prefetch={prefetchFor(item.href)}
                 className={styles.pillLink}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => onNavigate?.(item.href)}
@@ -114,6 +124,7 @@ export function FloatingNav({ pathname, today = [], onNavigate }: FloatingNavPro
               <Link
                 key={item.key}
                 href={item.href}
+                prefetch={prefetchFor(item.href)}
                 className={styles.sideLink}
                 aria-current={active ? 'page' : undefined}
                 onClick={() => onNavigate?.(item.href)}
