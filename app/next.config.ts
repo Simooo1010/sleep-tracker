@@ -7,9 +7,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // L'app vive in `app/` dentro un repo con altri progetti (gateway/): la root di tracciamento resta questa cartella.
   outputFileTracingRoot: import.meta.dirname,
-  // Cache del router lato client: tornare su una sezione appena vista è istantaneo. Le Server Actions invalidano con revalidatePath.
-  experimental: { staleTimes: { dynamic: 30, static: 180 } },
   turbopack: { root: import.meta.dirname },
+  // Cache del router lato client: tornare su una sezione appena vista è istantaneo. Le pagine sono tutte dinamiche
+  // (dati dal database): i link di navigazione le precaricano per intero (`prefetch`, tranne Grafici e Analisi) e il
+  // router le tiene 30 secondi (`static` vale per i link con `prefetch`: 30 s, come `dynamic`, non di più). Le scritture dell'app invalidano la cache da sole
+  // (`revalidatePath` in actions.ts); solo i segnali che arrivano da fuori (Comandi iPhone) possono apparire
+  // fino a 30 secondi dopo. Vedi docs/DECISIONS.md.
+  experimental: { staleTimes: { dynamic: 30, static: 30 } },
   async headers() {
     return [
       {

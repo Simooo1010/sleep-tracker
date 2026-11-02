@@ -6,12 +6,14 @@ import { addDays } from '../../src/domain/time';
 import type { EveningCheck, Night } from '../../src/domain/types';
 import {
   GATEWAY_TIMEOUT_MS,
+  INSIGHTS_CACHE_TTL_MS,
   LOW_DATA_TITLE,
   buildInsightsPayload,
   loadInsights,
   rulesInsights,
   sanitizeDayText,
   type GatewayInsightsRequest,
+  type InsightsCache,
   type InsightsResult,
 } from '../../src/server/insights';
 import { MemoryRepo } from '../../src/server/memory-repo';
@@ -500,6 +502,79 @@ describe('rulesInsights', () => {
     const p = buildInsightsPayload(seed.nights ?? [], seed.naps ?? [], seed.checks ?? [], TODAY);
     expect(gatewaySchema.safeParse(JSON.parse(JSON.stringify(p))).success).toBe(true);
     assertValidResult(rulesInsights(p, NOW_ISO), 'rules');
+  });
+});
+
+describe('loadInsights: cache', () => {
+  const asFetch = (fn: unknown) => fn as unknown as typeof fetch;
+
+  it('stessi dati: una sola chiamata al gateway, anche se le richieste arrivano insieme', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => jsonResponse(GOOD_BODY));
+    const [a, b] = await Promise.all([
+      loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache }),
+      loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache }),
+    ]);
+    const later = await loadInsights(demoRepo(), new Date(NOW.getTime() + 60_000), { fetch: asFetch(fetchFn), env: ENV, cache });
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(a.source).toBe('ai');
+    expect(b.items).toEqual(a.items);
+    expect(later.items).toEqual(a.items);
+    expect(later.updatedAt).toBe(NOW_ISO);
+  });
+
+  it('dati diversi: nuova chiamata (mai un testo vecchio per dati nuovi)', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => jsonResponse(GOOD_BODY));
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    const repo = demoRepo();
+    await repo.setNightExceptions('2026-10-24', ['cena-fuori'], { 'cena-fuori': 'Cena fuori' });
+    await loadInsights(repo, NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('dopo 30 minuti la risposta scade', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => jsonResponse(GOOD_BODY));
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    await loadInsights(demoRepo(), new Date(NOW.getTime() + INSIGHTS_CACHE_TTL_MS + 1), { fetch: asFetch(fetchFn), env: ENV, cache });
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('un fallimento non resta in cache: il prossimo accesso riprova', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => new Response('{}', { status: 502 }));
+    const r1 = await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    const r2 = await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    expect(r1.source).toBe('rules');
+    expect(r2.source).toBe('rules');
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(cache.size).toBe(0);
+  });
+
+  it('la riserva a regole del gateway (source: rules) non resta in cache', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => jsonResponse({ ...GOOD_BODY, source: 'rules' }));
+    const r1 = await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache });
+    expect(r1.source).toBe('rules');
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+    expect(cache.size).toBe(0);
+  });
+
+  it('finestre diverse (Analisi 7/14/30): chiavi diverse, nessuna risposta scambiata', async () => {
+    const cache: InsightsCache = new Map();
+    const fetchFn = vi.fn(async () => jsonResponse(GOOD_BODY));
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache }, 7);
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache }, 14);
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(fetchFn), env: ENV, cache }, 7);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('la chiave non contiene il corpo inviato', async () => {
+    const cache: InsightsCache = new Map();
+    await loadInsights(demoRepo(), NOW, { fetch: asFetch(vi.fn(async () => jsonResponse(GOOD_BODY))), env: ENV, cache });
+    for (const key of cache.keys()) expect(key).toMatch(/^[0-9a-f]{64}$/);
   });
 });
 

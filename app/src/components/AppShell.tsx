@@ -60,6 +60,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Analisi
           </Link>
           <Link
+            prefetch
             href="/segnali"
             className={`btn btn-secondary ${styles.action}`}
             aria-current={segnaliActive ? 'page' : undefined}
@@ -68,6 +69,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             Segnali
           </Link>
           <Link
+            prefetch
             href="/impostazioni"
             className={`btn btn-secondary ${styles.action}`}
             aria-current={impostazioniActive ? 'page' : undefined}

@@ -17,6 +17,8 @@
  *
  * I calcoli stanno nel dominio (`src/domain`): qui si assemblano soltanto.
  */
+import { createHash } from 'node:crypto';
+
 import { z } from 'zod';
 
 import { computeBaseline } from '@/domain/baseline';
@@ -697,6 +699,43 @@ async function fetchGatewayInsights(
   }
 }
 
+/** Per quanto tempo si riusa una risposta AI già ottenuta per gli stessi identici dati (30 minuti). */
+export const INSIGHTS_CACHE_TTL_MS = 30 * 60 * 1000;
+const INSIGHTS_CACHE_MAX = 8;
+
+/** Cache in memoria del processo (best effort su serverless): chiave = hash del corpo inviato, mai il corpo. */
+export type InsightsCache = Map<string, { at: number; promise: Promise<InsightsResult | null> }>;
+const sharedInsightsCache: InsightsCache = new Map();
+
+/**
+ * Chiamata al gateway con cache: stessi dati inviati → stessa risposta AI per 30 minuti (e una sola chiamata se
+ * più richieste arrivano insieme, es. precaricamento + visita). Se i dati cambiano cambia la chiave, quindi non
+ * si mostra mai un testo vecchio per dati nuovi. Solo le risposte AI riuscite (`source: 'ai'`) restano in cache: un fallimento
+ * o la riserva a regole del gateway vengono dimenticati subito e il prossimo accesso riprova.
+ */
+function cachedGatewayInsights(
+  cache: InsightsCache,
+  payload: GatewayInsightsRequest,
+  nowMs: number,
+  call: () => Promise<InsightsResult | null>,
+): Promise<InsightsResult | null> {
+  const key = createHash('sha256').update(JSON.stringify(payload)).digest('hex');
+  const hit = cache.get(key);
+  if (hit && nowMs - hit.at < INSIGHTS_CACHE_TTL_MS) return hit.promise;
+  const promise = call().then((r) => {
+    // Restano solo le risposte AI vere: null (errore) e `rules` (riserva del gateway) si dimenticano subito.
+    if ((r === null || r.source !== 'ai') && cache.get(key)?.promise === promise) cache.delete(key);
+    return r;
+  });
+  cache.set(key, { at: nowMs, promise });
+  while (cache.size > INSIGHTS_CACHE_MAX) {
+    const oldest = cache.keys().next().value;
+    if (oldest === undefined) break;
+    cache.delete(oldest);
+  }
+  return promise;
+}
+
 /**
  * Insight delle pagine Grafici (30 giorni) e Analisi (7/14/30): AI via gateway se configurato e
  * raggiungibile, altrimenti regole locali. `windowDays` fuori da {7, 14, 30} → 30.
@@ -705,10 +744,12 @@ async function fetchGatewayInsights(
 export async function loadInsights(
   repo: Repo,
   now: Date,
-  deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv } = {},
+  deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv; cache?: InsightsCache } = {},
   windowDays: InsightsWindow = INSIGHTS_WINDOW_DAYS,
 ): Promise<InsightsResult> {
   const env = deps.env ?? process.env;
+  // Con un `fetch` iniettato (test) la cache condivisa resta spenta, salvo ne venga data una propria.
+  const cache = deps.cache ?? (deps.fetch ? undefined : sharedInsightsCache);
   const win = normalizeWindow(windowDays);
   const today = todayInRome(now);
   const from = addDays(today, -(win - 1));
@@ -738,7 +779,8 @@ export async function loadInsights(
   const secret = env.GATEWAY_SECRET?.trim();
   const fetchImpl = deps.fetch ?? globalThis.fetch;
   if (baseUrl && secret && typeof fetchImpl === 'function') {
-    const remote = await fetchGatewayInsights(payload, nowIso, fetchImpl, baseUrl, secret);
+    const call = () => fetchGatewayInsights(payload, nowIso, fetchImpl, baseUrl, secret);
+    const remote = cache ? await cachedGatewayInsights(cache, payload, now.getTime(), call) : await call();
     if (remote) return remote;
   }
   return rulesInsights(payload, nowIso);
