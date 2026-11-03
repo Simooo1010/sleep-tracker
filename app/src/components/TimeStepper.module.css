@@ -17,6 +17,63 @@
   min-width: 0;
 }
 
+.rowWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* Spazio fisso per cifre o campo: passare da uno all'altro non sposta i pulsanti */
+.timeSlot {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: center;
+  width: 4.5rem;
+}
+
+/* Le cifre sono un pulsante (tocca per scrivere): sottolineatura tratteggiata, non solo colore */
+.timeButton {
+  appearance: none;
+  background: none;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1);
+  min-height: 2.75rem;
+  cursor: text;
+  font-family: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 0.3em;
+  text-decoration-thickness: 1px;
+}
+
+.input {
+  width: 100%;
+  min-height: 2.75rem;
+  box-sizing: border-box;
+  padding: 0 var(--space-2);
+  text-align: center;
+  font-family: inherit;
+  /* 16px: niente zoom automatico su iPhone */
+  font-size: 1rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.error {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
 .time {
   flex: 0 0 auto;
   min-width: 3.5rem;

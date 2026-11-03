@@ -57,6 +57,9 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - ✅ Migrazione `20261025180000_evening_day_note.sql` applicata a Supabase `sleep-tracker` il 2026-10-26 (colonna `evening_checks.day_note`, check ≤ 280, RLS invariata).
 - ✅ PR #24 unita su `main` (`513eba2`, squash): gateway (`sleep-tracker`) e app (`sleep-tracker-app`) in produzione e READY, nessun errore a runtime. `/v1/health` del gateway richiede il bearer (401 senza). Non verificato in produzione con il segreto reale: il percorso `dayContext` (provato solo in locale con provider finto).
 
+## Orari scrivibili nel TimeStepper (2026-11-03, branch claude/orari-digitabili)
+- ✅ Oltre a `−`/`+` (5 min), l'orario di letto/sveglia si scrive: tocco sulle cifre → campo, Invio/uscita conferma, Esc annulla. Formati liberi (`2345`, `23:45`, `23.45`, `730`, `7`), minuto esatto (21:47 ok, i `±` ripartono da lì). Orario non valido: torna il valore di prima + frase «Orario non valido. Prova per esempio 23:45.». Logica in `parseTypedTime`, doc in `docs/design/system/components/TimeStepper/README.md`. Nessuna migrazione.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): ✅ fatto — `SUPABASE_SERVICE_ROLE_KEY` (messa dall'utente; i tool MCP non possono leggerla) e `APP_LOGIN_PASSWORD` (≥12 caratteri). Ogni modifica alle variabili richiede un rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).

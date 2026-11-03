@@ -107,6 +107,45 @@ test('Correggi orari: +5 minuti cambia l’orario mostrato e la conferma lo regi
   await expect(card(page).getByText('Stimata', { exact: true })).toBeVisible();
 });
 
+test('Correggi orari: scrivere l’orario a mano, formati liberi e orario non valido', async ({ page }, testInfo) => {
+  test.skip(!isDesktop(testInfo.project.name), 'apre il pannello: solo desktop');
+  await page.goto('/');
+  const c = card(page);
+
+  await c.getByRole('button', { name: 'Correggi orari' }).click();
+  const bedRow = c.getByRole('group', { name: 'Sono andato a letto' });
+  const bedTime = bedRow.locator('[aria-live]');
+  const original = (await bedTime.textContent())!;
+
+  // Orario valido in formato compatto: 2147 → 21:47, e i ± ripartono da lì (+5 → 21:52).
+  await bedRow.getByRole('button', { name: /Tocca per scrivere/ }).click();
+  const field = bedRow.getByRole('textbox');
+  await expect(field).toBeFocused();
+  await field.fill('2147');
+  await field.press('Enter');
+  await expect(bedTime).toHaveText('21:47');
+  await bedRow.getByRole('button', { name: 'Posticipa di 5 minuti' }).click();
+  await expect(bedTime).toHaveText('21:52');
+
+  // Orario non valido: torna il valore di prima, con una frase.
+  await bedRow.getByRole('button', { name: /Tocca per scrivere/ }).click();
+  await bedRow.getByRole('textbox').fill('25:99');
+  await bedRow.getByRole('textbox').press('Enter');
+  await expect(bedTime).toHaveText('21:52');
+  await expect(c.getByRole('alert').filter({ hasText: 'Orario non valido' })).toBeVisible();
+
+  // Esc annulla senza cambiare nulla; il messaggio sparisce.
+  await bedRow.getByRole('button', { name: /Tocca per scrivere/ }).click();
+  await bedRow.getByRole('textbox').fill('1000');
+  await bedRow.getByRole('textbox').press('Escape');
+  await expect(bedTime).toHaveText('21:52');
+  await expect(c.getByRole('alert').filter({ hasText: 'Orario non valido' })).toHaveCount(0);
+
+  // Chiudi: nulla viene scritto sul repo condiviso.
+  await c.getByRole('button', { name: 'Chiudi', exact: true }).click();
+  await expect(c.getByText(`Letto ${original},`)).toBeAttached();
+});
+
 test('Chiudi lascia la notte com’è, senza scrivere nulla', async ({ page }, testInfo) => {
   test.skip(!isDesktop(testInfo.project.name), 'apre il pannello: solo desktop');
   await page.goto('/');
