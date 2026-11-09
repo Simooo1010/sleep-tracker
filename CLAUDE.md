@@ -37,3 +37,7 @@ La memoria (contesto utente, stato) sta in `MEMORY.md`. Prodotto: `docs/PROJECT.
 - Obiettivo: zero azioni manuali per l'utente su GitHub, Vercel, Supabase.
 - Sicurezza: mai segreti nel repo; chiavi solo in env Vercel/Supabase. Azioni distruttive (drop tabelle, delete progetti) sempre confermate.
 - Branch → PR draft → merge. Niente push diretti su `main`.
+
+## Language
+
+Chat with me in Italian. Write all code, comments, commit messages, docs, config files, skills and subagent prompts in English. Exception: deliverables explicitly meant for Italian readers stay in Italian.
