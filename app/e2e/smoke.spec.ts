@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 
 const THEMES = [
-  { scheme: 'light', theme: 'chiaro', ground: 'rgb(238, 242, 246)' },
-  { scheme: 'dark', theme: 'scuro', ground: 'rgb(22, 26, 34)' },
+  { scheme: 'light', theme: 'chiaro', ground: 'rgb(238, 241, 251)' },
+  { scheme: 'dark', theme: 'scuro', ground: 'rgb(16, 18, 51)' },
 ] as const;
 
 for (const { scheme, theme, ground } of THEMES) {
@@ -45,8 +45,8 @@ for (const { scheme, theme, ground } of THEMES) {
       await document.fonts.ready;
       return [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/["']/g, ''));
     });
-    expect(loadedFamilies).toContain('Newsreader');
-    expect(loadedFamilies).toContain('Instrument Sans');
+    expect(loadedFamilies).toContain('Instrument Serif');
+    expect(loadedFamilies).toContain('DM Sans');
 
     // Nessuno scorrimento orizzontale.
     const overflow = await page.evaluate(() => ({

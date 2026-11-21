@@ -78,6 +78,9 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - Service worker + precaricamento di tutte le sezioni + avviso «Sei offline» con l'orario: si consultano notti, grafici e storico senza rete. Nessuna coda di scrittura (scelta dell'utente, rinviata). Copie cancellate all'uscita. Dettagli e limiti in `docs/HANDOFF.md` §16, decisione in `docs/DECISIONS.md` 2026-10-28.
 - ⚠️ Da provare sul telefono vero (WebKit non c'è nel cloud): modalità aereo dopo un uso normale.
 
+## Redesign «Orizzonte» (2026-11-21, branch claude/task-orizzonte-tokens-cover)
+- Passo 1 fatto: token (notte/alba), font Instrument Serif + DM Sans, nuova `Cover` ad arco (`app/src/components/Cover.tsx`, `coverGeometry.ts`). Non ancora montata nelle pagine. Prossimi passi (ordine in spec §B6): SessionCard/TimeStepper/MoonRating → Notte → NightBars/Timeline → Regolarità → Sera → grafici → Storico → Segnali/Impostazioni → Login → desktop → tema chiaro. La palette «Nebbia» pastello qui sotto è superata dai token nuovi.
+
 ## Design
 - Direzione approvata: calma, pastello, serif leggero (Newsreader), accenti azzurro/salvia/pesca + giallo pastello per energia e sonno diurno (solo tema chiaro).
 - Telefono: un dato per volta, navigazione a pillola flottante. PC: viste larghe. Alta risoluzione e 4K.
