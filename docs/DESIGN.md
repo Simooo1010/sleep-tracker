@@ -28,6 +28,8 @@ Calma, pastello, serif leggero. Base grigio-azzurra (`chiaro`) e blu-notte (`scu
 | Riferimento di regolarità | Mediana mobile a 14 giorni; i giorni-eccezione sono visibili ma esclusi; ogni statistica mostra la copertura (`9 su 14 notti`) |
 | Imprevedibilità | Nessun dato obbligatorio, niente serie né rimproveri, chip delle eccezioni a un tocco, 2–3 domande rapide al giorno (principio in `docs/PROJECT.md` §3c) |
 
+> **2026-11-21:** la palette e i font di questo documento sono sostituiti da «Orizzonte» (token notte/alba, Instrument Serif + DM Sans). Fonte: `docs/design/tokens.json`; vedi `docs/DECISIONS.md`.
+
 ## Cosa usare nel codice
 
 - `docs/design/tokens.json`: i token (colori per tema, tipografia, spaziatura, raggi, dimensioni, ombre). È il sorgente.

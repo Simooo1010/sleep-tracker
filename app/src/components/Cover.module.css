@@ -1,73 +1,234 @@
-/* Cover: solo variabili di tokens.css, misure in rem e unità del contenitore. Proporzione 960×340. */
+/* Cover (Orizzonte arc scene): only variables from tokens.css, sizes in rem and container units. Reference width 350. */
 .cover {
   position: relative;
+  margin: 0 auto;
   width: 100%;
-  aspect-ratio: 960 / 340;
-  min-height: 10rem;
-  overflow: hidden;
-  background: var(--ground);
+  max-width: 28rem;
   container-type: inline-size;
-}
-
-.art {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-
-.block {
-  rx: var(--radius-xl);
-}
-
-.blue {
-  fill: var(--blue);
-}
-
-.peach {
-  fill: var(--peach);
-}
-
-.sage {
-  fill: var(--sage);
-}
-
-.yellow {
-  fill: var(--yellow);
-}
-
-.moonOut {
-  fill: none;
-  stroke: var(--ground);
-  stroke-width: 2;
-}
-
-.moonLit {
-  fill: var(--ground);
-}
-
-.name {
-  position: absolute;
-  left: 4.1667cqi;
-  bottom: 12.9412%;
-  width: 43.75cqi;
-}
-
-.title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-weight: 300;
-  font-size: 10cqi;
-  line-height: 0.95;
-  letter-spacing: -0.01em;
-  font-optical-sizing: auto;
   color: var(--ink);
 }
 
-.tagline {
-  margin: 1.4583cqi 0 0;
+.scene {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.horizon {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.track {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 6;
+  stroke-linecap: round;
+  opacity: 0.6;
+}
+
+.arc,
+.arcDashed {
+  fill: none;
+  stroke: var(--moon);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.arcDashed {
+  stroke-dasharray: 1 11;
+}
+
+.bedPoint,
+.wakePoint {
+  stroke-width: 2;
+}
+
+.bedPoint {
+  stroke: var(--moon);
+  fill: var(--ground);
+}
+
+.wakePoint {
+  stroke: var(--dawn);
+  fill: var(--dawn);
+}
+
+/* Provenance line styles for the two end points (a word is always written next to them). */
+.bedPoint.filled {
+  fill: var(--moon);
+}
+
+.wakePoint.dashed,
+.wakePoint.dotted {
+  fill: var(--ground);
+}
+
+.dashed {
+  stroke-dasharray: 3 3;
+}
+
+.dotted {
+  stroke-dasharray: 0.5 3.5;
+  stroke-linecap: round;
+}
+
+.solid {
+  stroke-dasharray: none;
+}
+
+.star {
+  fill: var(--ink);
+  opacity: 0.7;
+}
+
+.glow {
+  fill: var(--dawn);
+  opacity: 0.22;
+  transform-origin: 50% 100%;
+  transform-box: fill-box;
+  pointer-events: none;
+}
+
+.moon {
+  offset-distance: 100%;
+  offset-rotate: 0deg;
+}
+
+.moonDisc {
+  fill: var(--moon);
+}
+
+.moonShade {
+  fill: var(--moon-shade);
+}
+
+/* Centre of the arc: duration in serif, units in italic serif at ~37% of the number. */
+.centre {
+  position: absolute;
+  left: 24cqi;
+  right: 24cqi;
+  top: 22cqi;
+  text-align: center;
+}
+
+.duration {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26.3cqi;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.unit {
+  font-style: italic;
+  font-size: 9.7cqi;
+}
+
+.delta {
+  margin: 1.2cqi 0 0;
   font-family: var(--font-sans);
-  font-size: max(0.75rem, 1.4583cqi);
-  line-height: 1.43;
+  font-size: max(0.8125rem, 3.7cqi);
+  line-height: 1.4;
   color: var(--ink-muted);
+}
+
+/* Below the horizon: words only. */
+.ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 calc(20 / 350 * 100% - 0.25rem);
+  margin-top: 0.5rem;
+}
+
+.end {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: max(0.8125rem, 3.7cqi);
+  line-height: 1.4;
+  color: var(--ink-muted);
+}
+
+.endRight {
+  text-align: right;
+}
+
+.endTime {
+  font-family: var(--font-display);
+  font-size: max(1.25rem, 8.6cqi);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.endWord {
+  font-style: normal;
+}
+
+.prov {
+  display: block;
+  font-size: max(0.75rem, 3.4cqi);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Motion: things rise along curves, once, on open. Reduced motion shows the final position. */
+@media (prefers-reduced-motion: no-preference) {
+  .animate .arc {
+    stroke-dasharray: 1;
+    animation: draw 2.2s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  }
+
+  .animate .moon {
+    animation: travel 2.6s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+  }
+
+  .animate .star {
+    animation: twinkle 4s ease-in-out infinite alternate;
+  }
+
+  .animate .glow {
+    animation: rise 2.4s ease-out 1.4s both;
+  }
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes travel {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: scaleY(0.2);
+  }
+  to {
+    opacity: 0.22;
+    transform: scaleY(1);
+  }
 }

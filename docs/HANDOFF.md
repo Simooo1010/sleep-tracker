@@ -164,3 +164,6 @@ PR #1–#6 definizione e spec · #7 design system · #8–#10 gateway AI · **#1
 - Non verificato: Safari/WebKit reale e PWA installata su iPhone (il cloud ha solo Chromium). iOS può eliminare lo storage di un sito non usato per settimane; per la PWA installata è raro. Da provare sul telefono: modalità aereo dopo un uso normale.
 - Se si vuole la coda di scrittura: serve un'API di mutazioni idempotente con ID operazione generato dal client (le Server Actions non sono riaccodabili: ID cambiano a ogni deploy), un outbox in IndexedDB e lo svuotamento a `online`/`visibilitychange` (iOS non ha Background Sync); regola dei conflitti: vince la scrittura più recente per campo e `confermato` batte `automatico`/`stimato`.
 
+
+## 17. Redesign «Orizzonte», passo 1 (2026-11-21)
+Token rigenerati con alias dei nomi storici, font nuovi (`app/src/styles/fonts.css`), `Cover` ad arco con test (`test/components/Cover.test.tsx`, `coverGeometry.test.ts`). Gli E2E su colore di sfondo sono aggiornati. Le altre schermate usano ancora i componenti vecchi con i colori nuovi: da ridisegnare uno alla volta.
