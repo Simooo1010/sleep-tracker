@@ -115,6 +115,19 @@ describe('loadHistoryPage', () => {
     expect(past.filter((c) => c.status !== 'mancante').length).toBeGreaterThan(15);
   });
 
+  it('todo: ultimi 14 giorni da ieri, indipendente dal mese mostrato', async () => {
+    for (const params of [{}, { m: '2026-08' }]) {
+      const { view } = await loadHistoryPage(repo(), NOW, params);
+      expect(view.todo.length).toBeGreaterThan(0);
+      expect(view.todo.length).toBeLessThanOrEqual(14);
+      for (const t of view.todo) {
+        expect(t.date >= '2026-10-10' && t.date <= '2026-10-23').toBe(true);
+        expect(['mancante', 'stimata']).toContain(t.status);
+        expect(t.href).toBe(`/storico/${t.date}`);
+      }
+    }
+  });
+
   it('mese passato: settembre 2026, ultimo giorno scelto per default, mese successivo disponibile', async () => {
     const { view } = await loadHistoryPage(repo(), NOW, { m: '2026-09' });
     expect(view.month).toBe('2026-09');

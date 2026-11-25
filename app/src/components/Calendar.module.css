@@ -187,3 +187,9 @@
 .note {
   margin: 0;
 }
+
+/* Pulsante «Modifica notte» sotto il dettaglio. */
+.edit {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}

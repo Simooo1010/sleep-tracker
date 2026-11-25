@@ -267,3 +267,25 @@ describe('Calendar', () => {
     expect(h).toContain('Febbraio 2024');
   });
 });
+
+describe('Calendar: pulsante di modifica', () => {
+  it('con editHref: Modifica notte (btn-primary); per le mancanti: Aggiungi i dati della notte', () => {
+    const base = { year: 2026, month: 10, today: '2026-10-24' } as const;
+    const ok = renderToStaticMarkup(
+      <Calendar {...base} selectedDate="2026-10-23" nights={[{ date: '2026-10-23', minutes: 452, status: 'confermata', editHref: '/storico/2026-10-23' }]} />,
+    );
+    expect(ok).toMatch(/<a[^>]*class="[^"]*btn btn-primary[^"]*"[^>]*href="\/storico\/2026-10-23"[^>]*>Modifica notte<\/a>|<a[^>]*href="\/storico\/2026-10-23"[^>]*class="[^"]*btn btn-primary[^"]*"[^>]*>Modifica notte<\/a>/);
+    const miss = renderToStaticMarkup(
+      <Calendar {...base} selectedDate="2026-10-07" nights={[{ date: '2026-10-07', minutes: null, status: 'mancante', editHref: '/storico/2026-10-07' }]} />,
+    );
+    expect(miss).toContain('Aggiungi i dati della notte');
+    expect(miss).not.toContain('>Modifica notte<');
+  });
+
+  it('senza editHref nessun pulsante', () => {
+    const html = renderToStaticMarkup(
+      <Calendar year={2026} month={10} today="2026-10-24" selectedDate="2026-10-23" nights={[{ date: '2026-10-23', minutes: 452, status: 'confermata' }]} />,
+    );
+    expect(html).not.toContain('btn-primary');
+  });
+});

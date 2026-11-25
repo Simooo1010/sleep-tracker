@@ -6,6 +6,7 @@
 import { addDays } from '@/domain/time';
 import { todayInRome } from '@/lib/clock';
 import type { Repo } from '@/server/types';
+import { HISTORY_TODO_DAYS } from '@/server/night-edit-contract';
 import { buildHistoryView, type HistoryView, type HistoryViewInput } from '@/server/views';
 
 /** Parametri grezzi dell'URL: `m` = mese 'YYYY-MM', `d` = giorno 'YYYY-MM-DD'. */
@@ -79,11 +80,12 @@ export async function loadHistoryPage(repo: Repo, now: Date, params: HistoryPara
   const to = last < today ? last : today;
 
   // La nota di una notte è nel check della sera prima: si parte dal giorno prima del primo del mese.
-  const [nights, naps, exceptionTypes, eveningChecks] = await Promise.all([
+  const [nights, naps, exceptionTypes, eveningChecks, todoNights] = await Promise.all([
     repo.listNights(first, to),
     repo.listNaps(first, to),
     repo.listExceptionTypes(),
     repo.listEveningChecks(addDays(first, -1), to),
+    repo.listNights(addDays(today, -HISTORY_TODO_DAYS), addDays(today, -1)),
   ]);
 
   // Le eccezioni sono già in `Night.isException` e in `Night.factors`: i tipi servono solo per le etichette.
@@ -97,6 +99,7 @@ export async function loadHistoryPage(repo: Repo, now: Date, params: HistoryPara
     month,
     factorLabels,
     eveningChecks,
+    todoNights,
     ...(selectedDate !== undefined ? { selectedDate } : {}),
   };
   return { today, view: buildHistoryView(input) };

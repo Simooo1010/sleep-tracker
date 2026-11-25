@@ -53,6 +53,7 @@ export function toCalendarNights(view: HistoryView): CalendarNight[] {
         ? NO_DATA_TEXT
         : `Letto: ${lower(detail.bedProvenanceWord)}. Sveglia: ${lower(detail.wakeProvenanceWord)}. ${detail.note}`;
       night.tags = detail.tags;
+      if (detail.editHref) night.editHref = detail.editHref;
       if (detail.dayNote) night.dayNote = detail.dayNote;
     }
     out.push(night);
@@ -139,6 +140,30 @@ export function HistoryScreen({ view, today }: HistoryScreenProps) {
       {view.empty && view.emptyText ? <p className={`body muted ${styles.note}`}>{view.emptyText}</p> : null}
       {marks.length > 0 ? (
         <Coverage used={0} total={marks.length} marks={marks} prefix="Notti con dati nel mese:" />
+      ) : null}
+
+      {view.todo.length > 0 ? (
+        <section className={styles.todo} aria-labelledby="storico-da-sistemare">
+          <h2 id="storico-da-sistemare" className="serif">
+            Da sistemare
+          </h2>
+          <p className="body muted">Notti recenti senza orari confermati. Aprine una per completarla.</p>
+          <ul className={styles.todoList}>
+            {view.todo.map((item) => (
+              <li key={item.date}>
+                <Link href={item.href} className={`list-row ${styles.todoLink}`}>
+                  <span className="tx">
+                    <span className="tt">{item.label}</span>
+                  </span>
+                  <span className={`badge ${item.status === 'mancante' ? 'badge-missing' : 'badge-estimated'}`}>
+                    {item.status === 'mancante' ? 'Mancante' : 'Stimata'}
+                  </span>
+                  <Chevron direction="right" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       ) : null}
     </div>
   );

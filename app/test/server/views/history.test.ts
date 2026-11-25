@@ -40,6 +40,7 @@ describe('buildHistoryView: ottobre 2026', () => {
       note: 'Orari stimati dai segnali. Conferma per renderli definitivi.',
       tags: ['Notte del weekend'],
       dayNote: null,
+      editHref: '/storico/2026-10-24',
     });
   });
 
@@ -104,6 +105,42 @@ describe('buildHistoryView: ottobre 2026', () => {
 
   it('serializzabile', () => {
     expectSerializable(v);
+  });
+});
+
+describe('buildHistoryView: Da sistemare', () => {
+  const nights = [
+    makeNight('2026-10-23', '23:30', '07:30'), // confermata: esclusa
+    makeNight('2026-10-22', '23:30', '07:30', { status: 'stimata', prov: 'automatico' }),
+    makeNight('2026-10-21', null, null), // mancante esplicita
+    makeNight('2026-10-20', '23:30', '07:30'),
+    makeNight('2026-10-10', '23:30', '07:30', { status: 'stimata', prov: 'automatico' }), // 14 giorni indietro
+    makeNight('2026-10-09', '23:30', '07:30', { status: 'stimata', prov: 'automatico' }), // oltre la finestra
+  ];
+
+  it('da ieri indietro di 14 giorni, solo mancanti/stimate, dal più vecchio al più recente', () => {
+    const todo = buildHistoryView({ today: TODAY, nights: [], todoNights: nights }).todo;
+    expect(todo[0]).toEqual({ date: '2026-10-10', label: 'sabato 10 ottobre', status: 'stimata', href: '/storico/2026-10-10' });
+    expect(todo.map((t) => t.date)).not.toContain('2026-10-09');
+    expect(todo.map((t) => t.date)).not.toContain('2026-10-24');
+    expect(todo.map((t) => t.date)).not.toContain('2026-10-23');
+    expect(todo.map((t) => t.date)).not.toContain('2026-10-20');
+    expect(todo.find((t) => t.date === '2026-10-22')).toEqual({ date: '2026-10-22', label: 'giovedì 22 ottobre', status: 'stimata', href: '/storico/2026-10-22' });
+    expect(todo.find((t) => t.date === '2026-10-21')?.status).toBe('mancante');
+    // giorni senza record: mancanti
+    expect(todo.find((t) => t.date === '2026-10-11')?.status).toBe('mancante');
+    expect([...todo].map((t) => t.date)).toEqual([...todo].map((t) => t.date).sort());
+  });
+
+  it('tutto confermato: elenco vuoto; senza todoNights ogni giorno è mancante', () => {
+    const all = Array.from({ length: 14 }, (_, i) => makeNight(`2026-10-${String(10 + i).padStart(2, '0')}`, '23:30', '07:30'));
+    expect(buildHistoryView({ today: TODAY, nights: [], todoNights: all }).todo).toEqual([]);
+    expect(buildHistoryView({ today: TODAY, nights: [] }).todo).toHaveLength(14);
+  });
+
+  it('editHref nel dettaglio, anche per la notte mancante', () => {
+    const v = buildHistoryView({ today: TODAY, nights: [], selectedDate: '2026-10-14' });
+    expect(v.detail?.editHref).toBe('/storico/2026-10-14');
   });
 });
 
