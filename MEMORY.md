@@ -46,6 +46,11 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 - ✅ Provato in locale con gateway reale + provider finto: email e telefoni rimossi prima del provider. Limite noto: i nomi propri non si possono riconoscere (restano nel testo); la redazione dei telefoni è prudente e può oscurare sequenze numeriche lunghe.
 - ⚠️ **Da fare dall'utente/prima del deploy**: applicare a Supabase la migrazione `app/supabase/migrations/20261025180000_evening_day_note.sql` (colonna `evening_checks.day_note`, additiva) e ridistribuire il gateway (progetto Vercel `sleep-tracker`) per attivare `dayContext` in produzione. Finché non è fatto, il gateway di produzione rifiuta `dayContext` (400) e l'app ricade sugli insight a regole.
 
+## Feature modifica notte dallo Storico (2026-11-25, branch claude/peaceful-albattani-dvj79l)
+- ✅ Schermata `/storico/[date]` per modificare orari, qualità, energia, imprevisti, fattori/umore/nota della sera prima di qualsiasi notte passata; sezione «Da sistemare» nello Storico (14 giorni). Spec: `docs/NIGHT_EDIT.md`. Nessuna migrazione DB. 1685 unit + 187 E2E verdi.
+- Preview/merge: l'utente ha autorizzato (2026-11-25) il passaggio a production/merge su main in autonomia SOLO dopo verifica assoluta dell'integrazione, assenza di danni in production e preview funzionante.
+- Nota: `next dev` (Next 16.4.3) stampa un avviso di vulnerabilità e al primo avvio si ferma (basta rilanciare); valutare l'upgrade di Next come task separato.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): incollare `SUPABASE_SERVICE_ROLE_KEY` (Supabase → Project Settings → API; i tool MCP non possono leggerla) e scegliere `APP_LOGIN_PASSWORD` (almeno 12 caratteri: è la password di accesso all'app). Poi rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).

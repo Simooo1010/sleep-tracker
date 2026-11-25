@@ -1,6 +1,6 @@
 # Modifica notte dallo Storico
 
-Stato: in costruzione (2026-11-25). Contratto di tipi: `app/src/server/night-edit-contract.ts`.
+Stato: implementata e verificata in locale (2026-11-25): 1685 test unitari, 187 E2E (iphone/desktop/uhd/auth) verdi. Contratto di tipi: `app/src/server/night-edit-contract.ts`.
 
 ## Perché
 Oggi la correzione di una notte esiste solo per **stanotte** (pagina Notte). Se per più giorni di fila non si apre il tracker, quelle notti restano `stimata` o `mancante` e non si possono più sistemare. La funzione permette di aprire **qualsiasi notte passata** dallo Storico e completarla o correggerla in una schermata dedicata, anche a distanza di più notti. Principio di prodotto: nessun campo obbligatorio, si cambia solo ciò che si vuole.
@@ -44,3 +44,9 @@ Oggi la correzione di una notte esiste solo per **stanotte** (pagina Notte). Se 
 | Schermata | `app/src/app/storico/[date]/page.tsx`, `NightEditScreen.tsx`, `.module.css` |
 | Storico | `HistoryScreen.tsx` (pulsante, «Da sistemare»), `views/history.ts`, `pages/history.ts` |
 | Test | `app/test/…` (unit) e `app/e2e/night-edit.spec.ts` |
+
+## Note di implementazione
+- `MoonRating` ha la nuova prop facoltativa `subject` (etichette delle singole lune, es. «Qualità 3 di 5»).
+- `TimeInput` è un'aggiunta al design system: campo orario nativo 24 h con parola «Mancante» e pulsante `Usa HH:MM` col valore suggerito. Serve a compilare notti lontane senza premere cinquanta volte `+` del `TimeStepper` (che resta nella pagina Notte).
+- Nessuna migrazione di database: usa le tabelle esistenti (`nights`, `evening_checks`, `night_exceptions`).
+- E2E: i campi orario si riempiono solo dopo l'idratazione di React (`fillTime` in `e2e/night-edit.spec.ts`).

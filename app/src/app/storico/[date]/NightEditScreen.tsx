@@ -361,6 +361,7 @@ function NightEditForm({ initialView }: { initialView: NightEditView }) {
               <MoonRating
                 kind="tired"
                 label="Qualità del sonno"
+                subject="Qualità"
                 scaleLabels={['Pessima', 'Ottima']}
                 value={draft.quality}
                 onChange={(quality) => update({ quality })}
