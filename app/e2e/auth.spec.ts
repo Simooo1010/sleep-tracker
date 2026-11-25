@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 const PASSWORD = 'prova-password-12345';
 
 async function signIn(page: Page, password = PASSWORD): Promise<void> {
-  await page.getByLabel('Password').fill(password);
+  await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: 'Entra' }).click();
 }
 
@@ -15,8 +15,8 @@ test('senza cookie la home reindirizza a /login?next=/ e la pagina non ha naviga
   await page.goto('/');
   await expect(page).toHaveURL(/\/login\?next=%2F$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Accesso' })).toBeVisible();
-  await expect(page.getByLabel('Password')).toHaveAttribute('autocomplete', 'current-password');
-  await expect(page.getByLabel('Password')).toHaveAttribute('type', 'password');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('autocomplete', 'current-password');
+  await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   await expect(page.getByRole('button', { name: 'Entra' })).toBeVisible();
   // Nessun guscio: niente navigazione, niente tema, niente link di salto.
   await expect(page.locator('nav')).toHaveCount(0);
@@ -101,3 +101,80 @@ for (const next of ['https://evil.com', '//evil.com', '/\\evil.com', 'javascript
     expect(new URL(page.url()).pathname).toBe('/');
   });
 }
+
+test.describe('Mostra/Nascondi password', () => {
+  test('alterna type senza perdere il valore e permette l\'accesso con la password mostrata', async ({ page }) => {
+    await page.goto('/login');
+    const field = page.getByLabel('Password', { exact: true });
+    await field.fill(PASSWORD);
+    await expect(field).toHaveAttribute('type', 'password');
+
+    const show = page.getByRole('button', { name: 'Mostra password' });
+    await expect(show).toHaveText('Mostra');
+    await expect(show).toHaveAttribute('aria-pressed', 'false');
+    await expect(show).toHaveAttribute('aria-controls', 'password');
+    await show.click();
+
+    await expect(field).toHaveAttribute('type', 'text');
+    await expect(field).toHaveValue(PASSWORD);
+    const hide = page.getByRole('button', { name: 'Nascondi password' });
+    await expect(hide).toHaveText('Nascondi');
+    await expect(hide).toHaveAttribute('aria-pressed', 'true');
+
+    await hide.click();
+    await expect(field).toHaveAttribute('type', 'password');
+    await expect(field).toHaveValue(PASSWORD);
+    await expect(page.getByRole('button', { name: 'Mostra password' })).toHaveAttribute('aria-pressed', 'false');
+
+    // Accesso riuscito con la password mostrata.
+    await page.getByRole('button', { name: 'Mostra password' }).click();
+    await expect(field).toHaveAttribute('type', 'text');
+    await page.getByRole('button', { name: 'Entra' }).click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { level: 1, name: /^Notte di / })).toBeVisible();
+  });
+
+  test('Invio nel campo invia il form', async ({ page }) => {
+    await page.goto('/login');
+    await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+    await page.getByLabel('Password', { exact: true }).press('Enter');
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole('heading', { level: 1, name: /^Notte di / })).toBeVisible();
+  });
+
+  test('il pulsante è secondario, toccabile (>= 44px) e dopo il campo nell\'ordine di tab', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.locator('.btn-primary')).toHaveCount(1);
+    const box = await page.getByRole('button', { name: 'Mostra password' }).boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThanOrEqual(44);
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
+    await page.getByLabel('Password', { exact: true }).focus();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Mostra password' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Entra' })).toBeFocused();
+  });
+
+  for (const width of [320, 390]) {
+    test.describe(`a ${width}px`, () => {
+      test.use({ viewport: { width, height: 844 } });
+
+      test('nessuno scroll orizzontale, anche con la password mostrata', async ({ page }) => {
+        await page.goto('/login');
+        await page.getByLabel('Password', { exact: true }).fill(PASSWORD);
+        await page.getByRole('button', { name: 'Mostra password' }).click();
+        await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'text');
+        const { scrollWidth, innerWidth } = await page.evaluate(() => ({
+          scrollWidth: document.documentElement.scrollWidth,
+          innerWidth: window.innerWidth,
+        }));
+        expect(scrollWidth).toBeLessThanOrEqual(innerWidth);
+        // Il pulsante sta tutto dentro lo schermo e non copre il campo.
+        const field = await page.getByLabel('Password', { exact: true }).boundingBox();
+        const toggle = await page.getByRole('button', { name: 'Nascondi password' }).boundingBox();
+        expect((toggle?.x ?? 0) + (toggle?.width ?? 0)).toBeLessThanOrEqual(innerWidth);
+        expect((field?.x ?? 0) + (field?.width ?? 0)).toBeLessThanOrEqual(toggle?.x ?? 0);
+      });
+    });
+  }
+});

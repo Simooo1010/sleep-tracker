@@ -19,12 +19,17 @@ describe('FloatingNav', () => {
     expect(html.match(/aria-label="Principale"/g)).toHaveLength(2);
   });
 
-  it('ha cinque voci sul telefono e sette sul PC, come link', () => {
+  it('ha cinque voci sul telefono e otto sul PC, come link', () => {
     expect(pill.match(/<a /g)).toHaveLength(5);
-    expect(side.match(/<a /g)).toHaveLength(7);
+    expect(side.match(/<a /g)).toHaveLength(8);
     expect(text(pill)).toBe('NotteRegolaritàGraficiStoricoSera');
     expect(text(side)).toContain('Segnali');
     expect(text(side)).toContain('Impostazioni');
+    expect(text(side)).toContain('Analisi');
+    expect(pill).not.toContain('Analisi');
+    expect(side).toContain('href="/analisi"');
+    expect(text(side).indexOf('Analisi')).toBeGreaterThan(text(side).indexOf('Grafici'));
+    expect(text(side).indexOf('Analisi')).toBeLessThan(text(side).indexOf('Storico'));
     expect(pill).not.toContain('Segnali');
     expect(pill).not.toContain('Impostazioni');
     expect(pill).toContain('href="/"');
@@ -39,24 +44,22 @@ describe('FloatingNav', () => {
     expect(pill).toMatch(/<a [^>]*aria-current="page"[^>]*href="\/regolarita"/);
   });
 
-  it('mostra marchio, riepilogo di oggi e interruttore del tema su PC', () => {
+  it('mostra marchio e riepilogo di oggi su PC, senza interruttore del tema', () => {
     expect(side).toContain('class="brand">Sleep Tracker</div>');
     expect(text(side)).toContain('Oggi');
     expect(text(side)).toContain('Riposo attivato alle 23:48');
-    expect(side).toContain('class="btn btn-secondary');
-    expect(side).toContain('aria-label="Tema chiaro, passa al tema scuro"');
-    expect(text(side)).toContain('Tema chiaro');
+    expect(side).not.toContain('<button');
+    expect(text(side)).not.toContain('Tema');
   });
 
   it('nasconde le icone ai lettori di schermo', () => {
-    expect(html.match(/<svg/g)).toHaveLength(12);
-    expect(html.match(/aria-hidden="true"/g)).toHaveLength(12);
+    expect(html.match(/<svg/g)).toHaveLength(13);
+    expect(html.match(/aria-hidden="true"/g)).toHaveLength(13);
   });
 
   it('senza riepilogo scrive una frase e mai valori vuoti', () => {
-    const empty = renderToStaticMarkup(<FloatingNav pathname="/segnali" theme="scuro" />);
+    const empty = renderToStaticMarkup(<FloatingNav pathname="/segnali" />);
     expect(text(empty)).toContain('Ancora nessun segnale.');
-    expect(text(empty)).toContain('Tema scuro');
     expect(empty).not.toMatch(/NaN|undefined|null/);
     const [p = '', s = ''] = navs(empty);
     expect(p).not.toContain('aria-current');
@@ -85,7 +88,7 @@ describe('isNavActive', () => {
     expect(isNavActive('/', '')).toBe(true);
   });
 
-  it('ha sette voci con chiavi uniche', () => {
-    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(7);
+  it('ha otto voci con chiavi uniche', () => {
+    expect(new Set(NAV_ITEMS.map((i) => i.key)).size).toBe(8);
   });
 });

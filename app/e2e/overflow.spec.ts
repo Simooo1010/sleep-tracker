@@ -4,7 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 // e con ogni voce dell'elenco aperta (le sezioni a tutto schermo contengono i grafici più larghi).
 // Solo progetto "iphone": su PC il contenuto è centrato con larghezza massima.
 
-const PAGES = ['/', '/sera', '/grafici', '/storico', '/segnali', '/regolarita'] as const;
+const PAGES = ['/', '/sera', '/grafici', '/storico', '/segnali', '/regolarita', '/analisi'] as const;
 const WIDTHS = [390, 320] as const;
 
 // Il viewport si fissa alla creazione del contesto (test.use), non con page.setViewportSize: nell'emulazione

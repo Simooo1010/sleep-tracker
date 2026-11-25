@@ -147,6 +147,11 @@ function NightsBlock({ view, title }: { view: RegularityView; title?: string }) 
             : `${names.join(', ')} sono visibili nel grafico ma escluse dal riferimento.`}
         </p>
       )}
+      {view.clockChangeNote && (
+        <p className={`body-sm ${styles.note}`} data-clock-change="true">
+          {view.clockChangeNote}
+        </p>
+      )}
       <p className={`caption muted ${styles.note}`}>
         Riferimento: letto {baseline.bedText}, sveglia {baseline.wakeText}. Mediana delle ultime 14 notti, senza i giorni-eccezione.
       </p>
@@ -157,18 +162,23 @@ function NightsBlock({ view, title }: { view: RegularityView; title?: string }) 
 
 function TilesBlock({ tiles }: { tiles: StatTileView[] }) {
   return (
-    <div className={styles.tiles}>
-      {tiles.map((t) => (
-        <StatTile
-          key={t.key}
-          label={t.label}
-          value={t.hidden ? null : t.value}
-          note={t.hidden ? (t.hiddenText ?? undefined) : t.note}
-          tone={t.tone}
-          coverage={coverageProps(t.coverage)}
-        />
-      ))}
-    </div>
+    <>
+      <div className={styles.tiles}>
+        {tiles.map((t) => (
+          <StatTile
+            key={t.key}
+            label={t.label}
+            value={t.hidden ? null : t.value}
+            note={t.hidden ? (t.hiddenText ?? undefined) : t.note}
+            tone={t.tone}
+            coverage={coverageProps(t.coverage)}
+          />
+        ))}
+      </div>
+      <p className={`caption muted ${styles.note}`}>
+        Il riferimento esclude stanotte, il social jet lag la include: i conteggi possono differire di una notte.
+      </p>
+    </>
   );
 }
 

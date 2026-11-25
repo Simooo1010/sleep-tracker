@@ -6,14 +6,16 @@ import { actionCreateApiToken, actionRevokeApiToken } from '@/app/actions';
 import { actionLogout } from '@/app/login/actions';
 import { Badge } from '@/components/Badge';
 import { Button } from '@/components/Button';
+import { Chip } from '@/components/Chip';
 import { ListRow } from '@/components/ListRow';
+import { readThemeMode, setThemeMode, subscribeThemeMode, type ThemeMode } from '@/lib/theme';
 import { createdText, lastUsedText, tokensSummary } from '@/server/pages/settings';
 import type { ApiTokenInfo } from '@/server/types';
 
 import styles from './ImpostazioniScreen.module.css';
 
 /**
- * Schermata Impostazioni: token per i Comandi dell'iPhone e sessione.
+ * Schermata Impostazioni: token per i Comandi dell'iPhone, aspetto (tema) e sessione.
  * Telefono: un dato per volta (due voci `ListRow` che aprono la sezione, con "Indietro"). Da 60rem: sezioni affiancate.
  * Il token in chiaro vive solo nello stato di questo componente: non va in console, URL, storage né nella cache.
  * L'unico pulsante pieno della schermata è "Crea token".
@@ -25,7 +27,16 @@ export const COPY_DONE = 'Copiato.';
 export const COPY_FAILED = 'Non riesco a copiare da qui. Tieni premuto sul token, selezionalo e copialo a mano.';
 const GENERIC_ERROR = 'Operazione non riuscita. Riprova.';
 
-type SectionKey = 'tokens' | 'session';
+type SectionKey = 'tokens' | 'appearance' | 'session';
+
+/** Modalità del tema: l'automatica (sistema) è quella predefinita. */
+export const THEME_OPTIONS: ReadonlyArray<{ mode: ThemeMode; label: string; summary: string }> = [
+  { mode: 'sistema', label: 'Automatico', summary: 'Automatico, segue il sistema' },
+  { mode: 'chiaro', label: 'Chiaro', summary: 'Sempre chiaro' },
+  { mode: 'scuro', label: 'Scuro', summary: 'Sempre scuro' },
+];
+
+const serverThemeMode = (): ThemeMode => 'sistema';
 
 interface Created {
   token: string;
@@ -100,10 +111,12 @@ export function ImpostazioniScreen({ initialTokens }: { initialTokens: readonly 
   const [pending, startTransition] = useTransition();
 
   const origin = useSyncExternalStore(noopSubscribe, browserOrigin, serverOrigin);
+  const themeMode = useSyncExternalStore(subscribeThemeMode, readThemeMode, serverThemeMode);
 
   const ids = useId();
   const tokensTitleId = `${ids}-tokens`;
   const sessionTitleId = `${ids}-session`;
+  const appearanceTitleId = `${ids}-appearance`;
   const labelId = `${ids}-label`;
 
   const backRefs = useRef<Partial<Record<SectionKey, HTMLButtonElement | null>>>({});
@@ -192,6 +205,12 @@ export function ImpostazioniScreen({ initialTokens }: { initialTokens: readonly 
 
       <div className={styles.list} ref={listRef} tabIndex={-1} data-hidden={openSection !== null ? 'true' : 'false'}>
         <ListRow title="Token per i Comandi" summary={tokensSummary(tokens)} accent="blue" onOpen={open('tokens')} />
+        <ListRow
+          title="Aspetto"
+          summary={THEME_OPTIONS.find((o) => o.mode === themeMode)?.summary ?? THEME_OPTIONS[0]!.summary}
+          accent="peach"
+          onOpen={open('appearance')}
+        />
         <ListRow title="Sessione" summary="Esci da questo dispositivo" accent="sage" onOpen={open('session')} />
       </div>
 
@@ -295,6 +314,25 @@ export function ImpostazioniScreen({ initialTokens }: { initialTokens: readonly 
                 Crea token
               </Button>
             </form>
+          </section>
+        </div>
+
+        <div className={styles.section} {...sectionProps('appearance')}>
+          {back('appearance')}
+          <section aria-labelledby={appearanceTitleId} className={cx('card', styles.card)}>
+            <h2 id={appearanceTitleId} className={cx('title', styles.heading)}>
+              Aspetto
+            </h2>
+            <p className={cx('body', 'muted', styles.text)}>
+              Di solito è automatico: l&apos;app passa da sola tra chiaro e scuro come il tuo telefono. Se preferisci, scegli un tema fisso.
+            </p>
+            <div className={styles.row} role="group" aria-label="Tema">
+              {THEME_OPTIONS.map((o) => (
+                <Chip key={o.mode} pressed={themeMode === o.mode} onPressedChange={() => setThemeMode(o.mode)}>
+                  {o.label}
+                </Chip>
+              ))}
+            </div>
           </section>
         </div>
 

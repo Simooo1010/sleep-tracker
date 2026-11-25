@@ -38,6 +38,7 @@ export async function loadEveningPage(repo: Repo, now: Date): Promise<EveningPag
     naps,
     exceptionTypes: chipTypes,
     activeExceptions: nightExceptions[tonightNightDate] ?? [],
+    tonightNightDate,
   });
   return { today, tonightNightDate, view };
 }

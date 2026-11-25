@@ -150,3 +150,24 @@ describe('buildEveningView: descrizione della giornata', () => {
     }
   });
 });
+
+describe('buildEveningView: avviso del cambio d’ora', () => {
+  it('la sera prima del ritorno all’ora solare avvisa con una frase calma', () => {
+    const v = buildEveningView({ today: '2026-10-24', tonightNightDate: '2026-10-25' });
+    expect(v.clockChangeNotice).toBe(
+      "Stanotte cambia l'ora: le lancette tornano indietro di 1 ora, quindi la notte dura 1 ora in più di quanto dicono gli orari. L'app lo tiene in conto da sola.",
+    );
+    expectSerializable(v);
+  });
+
+  it('la sera prima del passaggio all’ora legale dice che la notte è più corta', () => {
+    const v = buildEveningView({ today: '2026-03-28', tonightNightDate: '2026-03-29' });
+    expect(v.clockChangeNotice).toContain('vanno avanti di 1 ora');
+    expect(v.clockChangeNotice).toContain('1 ora in meno');
+  });
+
+  it('in una sera normale, o senza la notte indicata, non c’è nessun avviso', () => {
+    expect(buildEveningView({ today: TODAY, tonightNightDate: '2026-10-25'.replace('25', '26') }).clockChangeNotice).toBeNull();
+    expect(buildEveningView({ today: TODAY }).clockChangeNotice).toBeNull();
+  });
+});

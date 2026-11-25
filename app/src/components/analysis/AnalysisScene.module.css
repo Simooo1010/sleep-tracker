@@ -1,0 +1,238 @@
+/* AnalysisScene: illustrazione SVG. Solo variabili di tokens.css, misure in rem. Movimento solo transform/opacity. */
+.root {
+  width: 100%;
+  max-width: 30rem;
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+/* Cieli */
+.sky {
+  fill: var(--blue-soft);
+}
+
+.skyDawn {
+  fill: var(--peach-soft);
+}
+
+.skyDim {
+  fill: var(--surface-sunken);
+}
+
+.skyFaint {
+  fill: var(--surface-sunken);
+  opacity: 0.7;
+}
+
+/* Colline */
+.hill {
+  fill: var(--sage-soft);
+  stroke: var(--sage-edge);
+  stroke-width: 1;
+}
+
+.hillFaint {
+  fill: var(--surface);
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+/* Luna e sole */
+.moon,
+.moonFull,
+.moonLow {
+  fill: var(--surface);
+  stroke: var(--blue-edge);
+  stroke-width: 1.5;
+}
+
+.moonLow {
+  opacity: 0.8;
+}
+
+.crater {
+  fill: var(--blue-soft);
+  stroke: none;
+}
+
+.sun {
+  fill: var(--peach);
+  stroke: var(--peach-edge);
+  stroke-width: 1.5;
+}
+
+.rays {
+  fill: none;
+  stroke: var(--peach-edge);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+/* Stelle */
+.star {
+  fill: var(--blue-edge);
+}
+
+.faded .star {
+  opacity: 0.35;
+}
+
+/* Nuvole */
+.cloud,
+.cloudHeavy {
+  fill: var(--surface);
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
+}
+
+.cloudHeavy {
+  fill: var(--line);
+}
+
+/* Deriva */
+.trail {
+  fill: none;
+  stroke: var(--blue-edge);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-dasharray: 2 6;
+  opacity: 0.7;
+}
+
+.clock {
+  fill: var(--surface);
+  stroke: var(--ink-muted);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.clock path {
+  fill: none;
+}
+
+/* Pochi dati: punti vuoti, contorno punteggiato */
+.emptyDot {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 1.5 3;
+  stroke-linecap: round;
+}
+
+/* Movimento */
+.star,
+.sunRise,
+.drift,
+.cloudSlow,
+.cloudSlower,
+.fadeIn {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.tw1 {
+  animation: twinkle 5s ease-in-out infinite alternate;
+}
+
+.tw2 {
+  animation: twinkle 6s ease-in-out 1.2s infinite alternate;
+}
+
+.tw3 {
+  animation: twinkle 7s ease-in-out 2.4s infinite alternate;
+}
+
+.faded .star {
+  animation: none;
+}
+
+.sunRise {
+  animation: rise 600ms ease-out both;
+}
+
+.drift {
+  animation: drift 600ms ease-out both;
+}
+
+.cloudSlow {
+  animation: cloud 18s ease-in-out infinite alternate;
+}
+
+.cloudSlower {
+  animation: cloud 24s ease-in-out infinite alternate-reverse;
+}
+
+.fadeIn {
+  animation: fade 600ms ease-out both;
+}
+
+@keyframes twinkle {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.55;
+  }
+}
+
+@keyframes rise {
+  from {
+    transform: translateY(30%);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateX(-12%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes cloud {
+  from {
+    transform: translateX(-6%);
+  }
+  to {
+    transform: translateX(6%);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tw1,
+  .tw2,
+  .tw3,
+  .sunRise,
+  .drift,
+  .cloudSlow,
+  .cloudSlower,
+  .fadeIn {
+    animation: none;
+  }
+}

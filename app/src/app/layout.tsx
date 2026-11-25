@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 
 import { AppShell } from '@/components/AppShell';
+import { AppIconSync } from '@/components/AppIconSync';
+import { OfflineSupport } from '@/components/OfflineSupport';
+import { FAVICON_ID, TOUCH_ICON_ID } from '@/lib/app-icon';
 import { themeInitScript } from '@/lib/theme';
 
 import '@/styles/fonts.css';
@@ -27,16 +30,24 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
         {/* Imposta data-theme (scelta salvata o sistema) prima del primo paint: vedi lib/theme.ts. */}
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
         {/* Tag PWA esatti di docs/DESIGN.md §Logo */}
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+        <link id={TOUCH_ICON_ID} rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        <link id={FAVICON_ID} rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="Sleep Tracker" />
+        {/* Barra di stato iOS trasparente: la pagina parte dal bordo vero dello schermo e .status-cover la tinge come lo sfondo. Senza, iOS la lascia bianca sopra l'app. */}
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="theme-color" content="#eef2f6" media="(prefers-color-scheme: light)" />
         <meta name="theme-color" content="#161a22" media="(prefers-color-scheme: dark)" />
       </head>
       <body>
+        {/* Fascia fissa sotto la barra di stato dell'iPhone (app installata): vedi .status-cover in styles/app.css */}
+        <div className="status-cover" aria-hidden="true" />
+        {/* Variante scura delle icone quando il sistema è in modalità scura, dopo l'idratazione: vedi lib/app-icon.ts. */}
+        <AppIconSync />
         <AppShell>{children}</AppShell>
+        {/* Lettura offline: service worker, precaricamento delle sezioni e avviso «Sei offline». */}
+        <OfflineSupport />
       </body>
     </html>
   );

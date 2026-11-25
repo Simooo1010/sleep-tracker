@@ -11,7 +11,7 @@ Il telefono non è usato come ultima/prima cosa della giornata. Quindi la cattur
 |---|---|---|---|
 | 0 | Apple Watch / dati Salute (HealthKit) letti in automatico | nullo | Il più affidabile se c'è un Watch o un'app che scrive in Salute |
 | 1 | Automazioni iOS Comandi (Shortcuts): sveglia disattivata, Focus "Sonno" on/off, iPhone in carica/scollegato a una certa ora | nullo | Inviano un evento all'API senza aprire l'app |
-| 2 | Tag NFC (comodino / porta camera / caffettiera) | un tocco | Shortcut "tocca tag → registra" |
+| 2 | Tag NFC (comodino / porta camera / caffettiera) — **escluso dalla v1** (`docs/DECISIONS.md`) | un tocco | Shortcut "tocca tag → registra" |
 | 3 | Widget / Live Activity / Action Button | un tocco | |
 | 4 | Recupero retroattivo: l'app propone l'orario stimato, l'utente conferma con un tap | 1 tap | Rete di sicurezza contro i buchi |
 | 5 | Inserimento manuale | alto | Solo fallback |
@@ -42,6 +42,9 @@ Principio: **stimare automaticamente, chiedere solo conferma**. Un buco nei dati
   - Pro: niente Apple Developer Program, niente App Store, deploy automatizzabile.
   - Contro: nessun accesso diretto a HealthKit dalla PWA (mitigato da Comandi).
 - **AI**: statistiche calcolate in codice (gratis); insight testuali via LLM. Decisione aperta: provider free tier vs Claude (costo stimato pochi centesimi/mese con analisi settimanale).
+
+## 4a. Offline (v1: sola lettura)
+Le sezioni si consultano senza rete dalle copie salvate sul dispositivo (service worker); le modifiche richiedono la connessione. La coda di scrittura è rinviata. Dettagli: `docs/HANDOFF.md` §16.
 
 ## 4b. AI gateway (progetto separato) — **costruito e online** (2026-10-24)
 Documentazione completa in `docs/AI_GATEWAY.md`; codice in `gateway/`; stato in `MEMORY.md`.

@@ -22,6 +22,7 @@ const CASES = [
   { path: '/', title: 'Notte', href: '/' },
   { path: '/regolarita', title: 'Regolarità', href: '/regolarita' },
   { path: '/grafici', title: 'Grafici', href: '/grafici' },
+  { path: '/analisi', title: 'Analisi', href: '/analisi' },
   { path: '/storico', title: 'Storico', href: '/storico' },
   { path: '/sera', title: 'Sera', href: '/sera' },
   { path: '/segnali', title: 'Segnali', href: '/segnali' },
@@ -29,7 +30,7 @@ const CASES = [
 ] as const;
 
 /** Voci solo PC: su telefono si aprono da un pulsante in alto, non dalla pillola. */
-const TOP_ONLY: readonly string[] = ['/segnali', '/impostazioni'];
+const TOP_ONLY: readonly string[] = ['/analisi', '/segnali', '/impostazioni'];
 
 beforeEach(() => {
   nav.pathname = '/';
@@ -74,9 +75,10 @@ describe('AppShell', () => {
     expect(html).toMatch(/<main id="contenuto" tabindex="-1"[^>]*><p>Contenuto di prova<\/p><\/main>/);
   });
 
-  it('ha due nav con aria-label e i pulsanti Segnali e Impostazioni in alto', () => {
+  it('ha due nav con aria-label e i pulsanti Analisi, Segnali e Impostazioni in alto', () => {
     const html = render('/');
     expect(html.match(/<nav [^>]*aria-label="Principale"/g)).toHaveLength(2);
+    expect(html).toMatch(/<a [^>]*href="\/analisi"[^>]*>Analisi<\/a>/);
     expect(html).toMatch(/<a [^>]*href="\/segnali"[^>]*>Segnali<\/a>/);
     expect(html).toMatch(/<a [^>]*href="\/impostazioni"[^>]*>Impostazioni<\/a>/);
     // Nessuna voce attiva in alto se non si è su quelle pagine.
@@ -90,12 +92,21 @@ describe('AppShell', () => {
     expect(top.match(/aria-current="page"/g)).toHaveLength(1);
     expect(top).toMatch(/<a [^>]*aria-current="page"[^>]*href="\/impostazioni"/);
     expect(top).not.toMatch(/aria-current="page"[^>]*href="\/segnali"/);
+    expect(top).not.toMatch(/aria-current="page"[^>]*href="\/analisi"/);
   });
 
-  it('ha l\'interruttore del tema, chiaro sul server, che nomina l\'altro tema', () => {
+  it('il pulsante Analisi in alto è attivo su /analisi e precede Segnali', () => {
+    const html = render('/analisi');
+    const top = html.slice(0, html.indexOf('<nav'));
+    expect(top.match(/aria-current="page"/g)).toHaveLength(1);
+    expect(top).toMatch(/<a [^>]*aria-current="page"[^>]*href="\/analisi"[^>]*>Analisi<\/a>/);
+    expect(top.indexOf('>Analisi</a>')).toBeLessThan(top.indexOf('>Segnali</a>'));
+  });
+
+  it('non ha più l\'interruttore del tema (sta in Impostazioni): il tema è automatico', () => {
     const html = render('/');
-    const buttons = html.match(/<button [^>]*aria-label="Tema chiaro, passa al tema scuro"[^>]*>Tema chiaro<\/button>/g);
-    expect(buttons).toHaveLength(2); // riga in alto (telefono) e barra laterale (PC)
+    expect(html).not.toContain('Tema ');
+    expect(html).not.toContain('<button');
   });
 
   it('mette il titolo e i comandi prima della navigazione e questa prima del contenuto', () => {

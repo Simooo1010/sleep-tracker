@@ -238,6 +238,7 @@ export function NightScreen({ view, todayDate }: NightScreenProps) {
           bedtime={shown.bedText}
           wakeTime={shown.wakeText}
           explanation={shown.explanation}
+          note={view.clockChangeNote}
           regularity={regularity}
           onConfirm={editing ? undefined : confirm}
           onCorrect={editing ? undefined : openEditor}

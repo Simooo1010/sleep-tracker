@@ -2,9 +2,10 @@
  * Tipi e helper condivisi dai view model delle schermate.
  * Ogni view model è serializzabile: solo numeri, stringhe, boolean, array, oggetti semplici e null.
  */
+import { clockChangesBetween } from '../../domain/clock-change';
 import { addDays, bedAxisMinutes, wakeAxisMinutes } from '../../domain/time';
 import type { Coverage, Night, NightStatus, Stat } from '../../domain/types';
-import { DASH, formatCoverage, formatCoverageShort, type CoverageUnit } from './format';
+import { DASH, formatCoverage, formatCoverageShort, formatDayMonth, type CoverageUnit } from './format';
 
 /** Accento del dato (StatTile, chip, barre). */
 export type Tone = 'blue' | 'sage' | 'peach' | 'yellow';
@@ -152,4 +153,19 @@ export function tile(spec: TileSpec): StatTileView {
     hiddenText: hidden ? (spec.hiddenText ?? 'Dati insufficienti.') : null,
     coverage: spec.coverage,
   };
+}
+
+/**
+ * Frase sui cambi d'ora fra le date date (grafici su più notti), oppure null se non ce ne sono.
+ * Le barre mostrano gli orari dell'orologio, le durate sono reali.
+ */
+export function clockChangeRangeNote(from: string, to: string): string | null {
+  const changes = clockChangesBetween(from, to);
+  if (changes.length === 0) return null;
+  const parts = changes.map((c) => {
+    const h = Math.abs(c.shiftMin) / 60;
+    const hours = h === 1 ? '1 ora' : `${h} ore`;
+    return `Il ${formatDayMonth(c.date)} l'ora è ${c.shiftMin > 0 ? 'tornata indietro' : 'andata avanti'} di ${hours}`;
+  });
+  return `${parts.join('. ')}. Cambio applicato: gli orari sono quelli dell'orologio, le durate sono reali.`;
 }

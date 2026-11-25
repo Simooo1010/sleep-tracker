@@ -1,12 +1,13 @@
 /* FloatingNav: posizionamento e voci come link. Solo variabili di tokens.css, misure in rem.
    Le regole di bundle.css per `.navpill button` e `.side button` sono riportate qui per i link (`a`). */
 
-/* Telefono: pillola flottante a 14px dai lati e 16px dal fondo */
+/* Telefono: pillola flottante a 14px dai lati e dal fondo */
 .pillWrap {
   position: fixed;
   left: max(var(--nav-inset), env(safe-area-inset-left));
   right: max(var(--nav-inset), env(safe-area-inset-right));
-  bottom: calc(1rem + env(safe-area-inset-bottom));
+  /* Stesso margine dei lati (14px): la pillola segue la curva degli angoli dell'iPhone senza coprire l'indicatore home. */
+  bottom: max(var(--nav-inset), calc(var(--safe-bottom) - 1.25rem));
   z-index: 10;
   display: flex;
   justify-content: center;
@@ -94,10 +95,6 @@
 
 .todayLine {
   color: var(--ink-muted);
-}
-
-.theme {
-  align-self: flex-start;
 }
 
 @media (min-width: 60rem) {

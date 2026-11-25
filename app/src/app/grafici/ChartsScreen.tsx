@@ -64,6 +64,11 @@ function DurationSection({ view }: { view: ChartsView }) {
   return (
     <div className={styles.block}>
       <DurationChart {...toDurationChartProps(d)} />
+      {d.clockChangeNote ? (
+        <p className="body-sm muted" data-clock-change="true">
+          {d.clockChangeNote}
+        </p>
+      ) : null}
       <Coverage used={d.coverage.used} total={d.coverage.window} marks={d.coverage.marks} />
     </div>
   );

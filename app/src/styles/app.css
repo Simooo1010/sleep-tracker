@@ -2,8 +2,39 @@
  * Stili propri dell'app (layout). Usano solo le variabili di tokens.css; misure in rem.
  * tokens.css e bundle.css sono copie della sorgente in docs/design/: non modificarli qui.
  */
+/* Zone sicure dell'iPhone (isola/barra di stato in alto, indicatore home in basso); 0 dove non esistono. */
+:root {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 html {
   background: var(--ground);
+}
+
+/*
+ * iPhone, app installata (Home): da iOS 26 il sistema sfuma il bordo alto dello schermo e quella sfocatura copre
+ * il titolo in cima. `theme-color` e `apple-mobile-web-app-status-bar-style` non hanno più effetto. L'unico modo che
+ * lascia la barra di stato a tinta unita è un elemento fixed con sfondo pieno, alto almeno 6px, largo almeno l'80%,
+ * entro 4px dal bordo alto. Qui: tutta la larghezza, alta quanto la barra di stato, stesso colore della pagina
+ * (segue il tema). Solo nell'app installata e sul telefono: altrove non serve e coprirebbe il contenuto.
+ */
+.status-cover {
+  display: none;
+}
+
+@media (display-mode: standalone) and (max-width: 59.99rem) {
+  .status-cover {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: max(var(--safe-top), 0.5rem);
+    background: var(--ground);
+    pointer-events: none;
+    z-index: 30;
+  }
 }
 
 body {
@@ -47,4 +78,16 @@ body {
 
 .home-note {
   margin: 0;
+}
+
+/* Risposta immediata al tocco: niente attesa del doppio tocco, feedback visivo subito. */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:active,
+button:active {
+  opacity: 0.7;
 }

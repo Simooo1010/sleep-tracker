@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { TimeStepper, formatTime, parseTime, stepTime } from '../../src/components/TimeStepper';
+import { TimeStepper, formatTime, parseTime, parseTypedTime, stepTime } from '../../src/components/TimeStepper';
 
 const noop = () => {};
 
@@ -39,6 +39,37 @@ describe('TimeStepper: logica pura', () => {
   });
 });
 
+describe('TimeStepper: orario scritto a mano', () => {
+  it('accetta i formati più comuni', () => {
+    const ok: Array<[string, string]> = [
+      ['2345', '23:45'],
+      ['23:45', '23:45'],
+      ['23.45', '23:45'],
+      ['23,45', '23:45'],
+      ['23 45', '23:45'],
+      ['23h45', '23:45'],
+      ['730', '07:30'],
+      ['7:30', '07:30'],
+      ['0730', '07:30'],
+      ['7', '07:00'],
+      ['07', '07:00'],
+      ['7h', '07:00'],
+      ['23', '23:00'],
+      ['0', '00:00'],
+      ['000', '00:00'],
+      ['  21:47 ', '21:47'],
+      ['2147', '21:47'],
+    ];
+    for (const [input, out] of ok) expect(parseTypedTime(input), input).toBe(out);
+  });
+
+  it('rifiuta ciò che non è un orario, senza inventare nulla', () => {
+    for (const v of ['', '   ', 'abc', '24:00', '2400', '12:60', '1260', '7:5', '23:456', '12345', '-5', '7:30pm', null, undefined]) {
+      expect(parseTypedTime(v as string | null | undefined), String(v)).toBeNull();
+    }
+  });
+});
+
 describe('TimeStepper: markup', () => {
   const html = renderToStaticMarkup(<TimeStepper bedTime="23:48" wakeTime="07:20" onChange={noop} />);
 
@@ -61,6 +92,13 @@ describe('TimeStepper: markup', () => {
     expect(html).toContain('type="button"');
     expect(html).toContain('−');
     expect(html).not.toContain('disabled');
+  });
+
+  it('le cifre sono un pulsante che apre la scrittura, con nome accessibile', () => {
+    expect(html.match(/aria-label="Sono andato a letto: 23:48\. Tocca per scrivere l’orario"/g)).toHaveLength(1);
+    expect(html.match(/aria-label="Mi sono svegliato: 07:20\. Tocca per scrivere l’orario"/g)).toHaveLength(1);
+    expect(html).not.toContain('<input');
+    expect(html).not.toContain('role="alert"');
   });
 
   it('orario annunciato con aria-live', () => {

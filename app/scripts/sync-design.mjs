@@ -15,6 +15,10 @@ export const DESIGN_FILES = [
   ['logo/favicon-32.png', 'public/favicon-32.png'],
   ['logo/icon-192.png', 'public/icon-192.png'],
   ['logo/icon-512.png', 'public/icon-512.png'],
+  ['logo/apple-touch-icon-dark.png', 'public/apple-touch-icon-dark.png'],
+  ['logo/favicon-32-dark.png', 'public/favicon-32-dark.png'],
+  ['logo/icon-192-dark.png', 'public/icon-192-dark.png'],
+  ['logo/icon-512-dark.png', 'public/icon-512-dark.png'],
   ['logo/mark.svg', 'public/mark.svg'],
 ];
 
