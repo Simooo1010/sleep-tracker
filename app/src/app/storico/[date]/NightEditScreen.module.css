@@ -1,0 +1,201 @@
+/* NightEditScreen: layout di «Modifica notte». Solo variabili di tokens.css, misure in rem.
+   Telefono: una colonna. PC (da 60rem): due colonne, contenuto centrato con larghezza massima. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.back {
+  margin-inline-start: calc(var(--space-3) * -1);
+  gap: var(--space-1);
+  text-decoration: none;
+}
+
+.chevron {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pageTitle {
+  margin: 0;
+  color: var(--ink);
+}
+
+.nightTitle {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-3);
+  color: var(--ink);
+}
+
+.dateLabel {
+  font-family: var(--font-sans);
+}
+
+.duration {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.heading {
+  margin: 0;
+  color: var(--ink);
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.block > :global(.row) {
+  align-self: stretch;
+}
+
+.text {
+  margin: 0;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+
+.problem {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.saveArea {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.feedback {
+  margin: 0;
+}
+
+.inlineLink {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+
+.dialog:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.nightNav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  /* Telefono: lascia spazio alla barra flottante */
+  padding-bottom: var(--space-8);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 60rem) {
+  .columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: var(--space-6);
+  }
+
+  .column {
+    gap: var(--space-6);
+  }
+
+  .section {
+    padding: var(--space-6);
+  }
+
+  .saveArea {
+    max-width: 24rem;
+  }
+}
+
+.navLink {
+  text-decoration: none;
+  gap: var(--space-1);
+}
