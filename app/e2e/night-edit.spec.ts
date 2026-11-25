@@ -35,10 +35,11 @@ test('nessuno scroll orizzontale', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test('date future o malformate danno 404', async ({ page }) => {
+test('date future o malformate mostrano un messaggio chiaro e il ritorno allo Storico', async ({ page }) => {
   for (const d of ['2026-10-30', '2099-01-01', 'abc', '2026-02-30']) {
-    const res = await page.goto(`/storico/${d}`);
-    expect(res?.status()).toBe(404);
+    await page.goto(`/storico/${d}`);
+    await expect(page.getByRole('heading', { level: 1, name: 'Notte non trovata' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Torna allo Storico' })).toHaveAttribute('href', '/storico');
   }
 });
 
