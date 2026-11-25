@@ -1,0 +1,59 @@
+/* TimeInput: solo variabili di tokens.css, misure in rem. Stesso aspetto di TextField. */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.label {
+  margin: 0;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* Campo da 16px minimo (niente zoom su iPhone), altezza toccabile */
+.control {
+  flex: 0 1 12rem;
+  width: 12rem;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-md);
+  border: var(--hairline) solid var(--line-strong);
+  background: var(--surface-sunken);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+  color-scheme: light dark;
+}
+
+.control:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.control:disabled {
+  opacity: 0.6;
+}
+
+.missing,
+.hint {
+  margin: 0;
+  color: var(--ink-muted);
+}
+
+.hint {
+  font-size: 0.75rem;
+}
