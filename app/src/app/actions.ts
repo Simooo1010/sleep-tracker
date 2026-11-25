@@ -14,6 +14,7 @@ import { DAY_NOTE_MAX, EXCEPTION_LABEL_MAX } from '@/domain/questions';
 import type { Night } from '@/domain/types';
 import { getPepper } from '@/lib/auth';
 import { isAuthorized } from '@/lib/auth-server';
+import { getNow, todayInRome } from '@/lib/clock';
 import { getRepo } from '@/server/repo-factory';
 import {
   confirmNight,
@@ -27,6 +28,7 @@ import {
   undoConfirmNight,
   type MutationResult,
 } from '@/server/mutations';
+import { saveNightDetails } from '@/server/night-edit';
 import type { ApiTokenInfo, Repo } from '@/server/types';
 
 export type ActionResult<T = undefined> = { ok: true; value?: T } | { ok: false; error: string };
@@ -106,6 +108,25 @@ const eveningSchema = z.strictObject({
   dayNote: dayNoteSchema.optional(),
 });
 
+/** Modifica notte dallo Storico: tutti i campi facoltativi (undefined = non toccato, null = rimuovi). */
+const nightEditSchema = z.strictObject({
+  nightDate: dateSchema,
+  times: z.strictObject({ bedAt: isoSchema, wakeAt: isoSchema }).optional(),
+  quality: scoreSchema.nullable().optional(),
+  energy: scoreSchema.nullable().optional(),
+  exceptions: z
+    .strictObject({ slugs: slugsSchema, labels: labelsSchema.optional() })
+    .optional(),
+  evening: z
+    .strictObject({
+      tiredness: scoreSchema.nullable().optional(),
+      mood: scoreSchema.nullable().optional(),
+      factors: slugsSchema.optional(),
+      dayNote: dayNoteSchema.optional(),
+    })
+    .optional(),
+});
+
 const questionSchema = z.strictObject({
   date: dateSchema,
   kind: z.enum(['confirm_night', 'energy', 'quality', 'nap_today', 'exception', 'factors']),
@@ -178,6 +199,23 @@ export async function actionSetExceptions(input: unknown): Promise<ActionResult>
 
 export async function actionSaveEveningCheck(input: unknown): Promise<ActionResult> {
   return run(eveningSchema, input, (repo, d) => saveEveningCheckFromUi(repo, compact(d)));
+}
+
+export async function actionSaveNightDetails(input: unknown): Promise<ActionResult<{ night: Night }>> {
+  return run(nightEditSchema, input, (repo, d) =>
+    saveNightDetails(
+      repo,
+      compact({
+        nightDate: d.nightDate,
+        times: d.times,
+        quality: d.quality,
+        energy: d.energy,
+        exceptions: d.exceptions && compact(d.exceptions),
+        evening: d.evening && compact(d.evening),
+      }),
+      todayInRome(getNow()),
+    ),
+  );
 }
 
 export async function actionRecordQuestion(input: unknown): Promise<ActionResult> {

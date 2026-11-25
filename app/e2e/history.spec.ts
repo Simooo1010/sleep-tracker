@@ -89,6 +89,28 @@ test('un giorno senza nota non mostra nessuna sezione Nota', async ({ page }) =>
   await expect(page.getByText(/^Nota ·/)).toHaveCount(0);
 });
 
+test('Da sistemare e Modifica notte', async ({ page }) => {
+  await page.goto('/storico');
+  // Dettaglio di oggi: link alla schermata di modifica.
+  const edit = page.getByRole('link', { name: 'Modifica notte' });
+  await expect(edit).toBeVisible();
+  await expect(edit).toHaveAttribute('href', '/storico/2026-10-24');
+
+  // Sezione «Da sistemare»: solo notti degli ultimi 14 giorni (da ieri), ognuna un link alla sua modifica.
+  const heading = page.getByRole('heading', { level: 2, name: 'Da sistemare' });
+  await expect(heading).toBeVisible();
+  const section = page.locator('section', { has: heading });
+  const links = section.getByRole('link');
+  expect(await links.count()).toBeGreaterThan(0);
+  expect(await links.count()).toBeLessThanOrEqual(14);
+  for (const link of await links.all()) {
+    const href = await link.getAttribute('href');
+    expect(href).toMatch(/^\/storico\/2026-10-(1[0-9]|2[0-3])$/);
+    await expect(link).toContainText(/Mancante|Stimata/);
+  }
+  await expect(section.getByRole('button')).toHaveCount(0);
+});
+
 test('il giorno del cambio d’ora è segnato nel calendario (anche se futuro) e nella legenda', async ({ page }) => {
   await page.goto('/storico');
   // Domenica 25 ottobre 2026: l'ora torna indietro. È un giorno futuro (oggi è sabato 24).

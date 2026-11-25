@@ -24,7 +24,11 @@ Sei `InsightCard`, `DurationChart` (14 notti, linea obiettivo, debito), `Heatmap
 
 ## Storico (D2)
 
-`Calendar` del mese con la durata per giorno (su telefono solo il giorno) e riquadro dettaglio della notte selezionata: durata, orari, stato, qualità, energia, tag.
+`Calendar` del mese con la durata per giorno (su telefono solo il giorno) e riquadro dettaglio della notte selezionata: durata, orari, stato, qualità, energia, tag. Il dettaglio ha il pulsante `Modifica notte` (peach) che apre `/storico/YYYY-MM-DD`; sotto il calendario la sezione `Da sistemare` elenca le notti mancanti o stimate degli ultimi 14 giorni. Dettagli in `docs/NIGHT_EDIT.md`.
+
+## Modifica notte (da Storico)
+
+Schermata dedicata a una notte passata: orari (`TimeInput`), qualità ed energia (`MoonRating`), imprevisti (`ExceptionChips`), sera prima (stanchezza, umore, fattori, nota), sonnellino in sola lettura. Un solo pulsante pieno `Salva notte`; frecce `Notte prima`/`Notte dopo` con conferma se ci sono modifiche non salvate. Telefono: una colonna; PC: due colonne centrate (max 64rem).
 
 ## Sera (check serale)
 

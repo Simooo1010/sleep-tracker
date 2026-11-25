@@ -20,6 +20,8 @@ vi.mock('@/server/mutations', () => ({
 
 import { revalidatePath } from 'next/cache';
 
+vi.mock('@/server/night-edit', () => ({ saveNightDetails: vi.fn() }));
+
 import {
   actionConfirmNight,
   actionCreateApiToken,
@@ -28,12 +30,14 @@ import {
   actionRecordQuestion,
   actionRevokeApiToken,
   actionSaveEveningCheck,
+  actionSaveNightDetails,
   actionSetExceptions,
   actionUndoConfirmNight,
 } from '@/app/actions';
 import { getPepper } from '@/lib/auth';
 import { isAuthorized } from '@/lib/auth-server';
 import * as mutations from '@/server/mutations';
+import { saveNightDetails } from '@/server/night-edit';
 import { getRepo } from '@/server/repo-factory';
 
 const fakeRepo = { fake: true };
@@ -417,5 +421,52 @@ describe('actionCreateApiToken', () => {
     const res = await actionCreateApiToken({ label: 'iPhone' });
     expect(res).toEqual({ ok: false, error: 'Operazione non riuscita.' });
     expect(JSON.stringify(res)).not.toContain('segreto');
+  });
+});
+
+describe('actionSaveNightDetails', () => {
+  it('valida, compatta le chiavi e passa la data di oggi a Roma', async () => {
+    vi.mocked(saveNightDetails).mockResolvedValue({ ok: true, value: { night } });
+    const res = await actionSaveNightDetails({
+      nightDate: '2026-10-24',
+      quality: null,
+      evening: { mood: 3, dayNote: '  ' },
+    });
+    expect(res).toEqual({ ok: true, value: { night } });
+    const call = vi.mocked(saveNightDetails).mock.calls[0];
+    expect(call?.[0]).toBe(fakeRepo);
+    expect(call?.[1]).toStrictEqual({ nightDate: '2026-10-24', quality: null, evening: { mood: 3, dayNote: null } });
+    expect(call?.[2]).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(revalidatePath).toHaveBeenCalled();
+  });
+
+  it('input invalido: "Dati non validi." senza chiamare la mutation', async () => {
+    for (const bad of [
+      null,
+      {},
+      { nightDate: '24/10/2026' },
+      { nightDate: '2026-10-24', extra: 1 },
+      { nightDate: '2026-10-24', times: { bedAt: '2026-10-23T21:00:00Z' } },
+      { nightDate: '2026-10-24', quality: 6 },
+      { nightDate: '2026-10-24', evening: { tiredness: 0 } },
+    ]) {
+      expect(await actionSaveNightDetails(bad)).toEqual(INVALID);
+    }
+    expect(saveNightDetails).not.toHaveBeenCalled();
+  });
+
+  it('non autorizzato: "Accesso richiesto." e nessuna scrittura', async () => {
+    vi.mocked(isAuthorized).mockResolvedValue(false);
+    expect(await actionSaveNightDetails({ nightDate: '2026-10-24' })).toEqual(UNAUTHORIZED);
+    expect(saveNightDetails).not.toHaveBeenCalled();
+  });
+
+  it('errore della mutation: messaggio invariato, nessuna invalidazione', async () => {
+    vi.mocked(saveNightDetails).mockResolvedValue({ ok: false, error: 'Gli orari non sono coerenti.' });
+    expect(await actionSaveNightDetails({ nightDate: '2026-10-24' })).toEqual({
+      ok: false,
+      error: 'Gli orari non sono coerenti.',
+    });
+    expect(revalidatePath).not.toHaveBeenCalled();
   });
 });

@@ -7,6 +7,7 @@ export * from './charts';
 export * from './history';
 export * from './evening';
 export * from './signals';
+export * from './night-edit';
 export * from './analysis';
 export * from './analysis-types';
 // `ForecastView` e `ScoreView` esistono sia in charts/night sia nel contratto di /analisi:

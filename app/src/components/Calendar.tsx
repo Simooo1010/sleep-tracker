@@ -28,6 +28,8 @@ export interface CalendarNight {
   tags?: readonly string[];
   /** Descrizione della giornata scritta dall'utente (sola lettura). `label` inizia sempre con "Nota". */
   dayNote?: { label: string; text: string };
+  /** Indirizzo della modifica della notte: se presente compare il pulsante sotto il dettaglio. */
+  editHref?: string;
 }
 
 export interface CalendarProps {
@@ -416,6 +418,11 @@ export function Calendar({
                   <p className="eyebrow">{selectedNight.dayNote.label}</p>
                   <p className={cx('body-sm', styles.note)}>{selectedNight.dayNote.text}</p>
                 </div>
+              ) : null}
+              {selectedNight.editHref ? (
+                <a className={cx('btn', 'btn-primary', styles.edit)} href={selectedNight.editHref}>
+                  {selectedNight.status === 'mancante' ? 'Aggiungi i dati della notte' : 'Modifica notte'}
+                </a>
               ) : null}
             </>
           ) : (

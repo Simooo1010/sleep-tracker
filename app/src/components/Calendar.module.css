@@ -189,6 +189,12 @@
   margin: 0;
 }
 
+/* Pulsante «Modifica notte» sotto il dettaglio. */
+.edit {
+  align-self: flex-start;
+  margin-top: var(--space-2);
+}
+
 /* Segno del giorno del cambio d'ora: piccolo orologio vettoriale nell'angolo della cella */
 .clockMark {
   position: absolute;

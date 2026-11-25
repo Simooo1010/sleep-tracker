@@ -168,3 +168,40 @@ describe('mappatura view → Calendar', () => {
     expect(coverageMarks(view)).toHaveLength(24);
   });
 });
+
+describe('HistoryScreen, Modifica notte e Da sistemare', () => {
+  it('il dettaglio ha il link Modifica notte (o Aggiungi i dati) verso /storico/<data>', async () => {
+    const { html, view } = await render({});
+    expect(html).toContain('href="/storico/2026-10-24"');
+    expect(html).toContain('Modifica notte');
+    expect(view.detail?.editHref).toBe('/storico/2026-10-24');
+    const missing = view.todo.find((t) => t.status === 'mancante');
+    expect(missing).toBeDefined();
+    const m = await render({ d: missing!.date });
+    expect(m.html).toContain('Aggiungi i dati della notte');
+    expect(m.html).toContain(`href="/storico/${missing!.date}"`);
+  });
+
+  it('sezione Da sistemare: frase calma, link con parola di stato e badge, un solo pulsante pieno', async () => {
+    const { html, view } = await render({});
+    expect(view.todo.length).toBeGreaterThan(0);
+    expect(html).toContain('>Da sistemare</h2>');
+    expect(html).toContain('Notti recenti senza orari confermati. Aprine una per completarla.');
+    for (const t of view.todo) expect(html).toContain(`href="${t.href}"`);
+    expect(html).toMatch(/badge badge-missing">Mancante</);
+    expect(html.match(/btn-primary/g)).toHaveLength(1);
+  });
+
+  it('senza notti da sistemare la sezione non compare', async () => {
+    const { view } = await render({});
+    const html = renderToStaticMarkup(<HistoryScreen view={{ ...view, todo: [] }} today="2026-10-24" />);
+    expect(html).not.toContain('Da sistemare');
+  });
+
+  it('toCalendarNights passa editHref solo per la notte selezionata', async () => {
+    const { view } = await render({});
+    const nights = toCalendarNights(view);
+    expect(nights.find((n) => n.date === '2026-10-24')?.editHref).toBe('/storico/2026-10-24');
+    expect(nights.filter((n) => n.editHref)).toHaveLength(1);
+  });
+});

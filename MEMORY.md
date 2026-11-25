@@ -60,6 +60,12 @@ Il design system li include già, vedi `docs/DESIGN.md`:
 ## Orari scrivibili nel TimeStepper (2026-11-03, branch claude/orari-digitabili)
 - ✅ Oltre a `−`/`+` (5 min), l'orario di letto/sveglia si scrive: tocco sulle cifre → campo, Invio/uscita conferma, Esc annulla. Formati liberi (`2345`, `23:45`, `23.45`, `730`, `7`), minuto esatto (21:47 ok, i `±` ripartono da lì). Orario non valido: torna il valore di prima + frase «Orario non valido. Prova per esempio 23:45.». Logica in `parseTypedTime`, doc in `docs/design/system/components/TimeStepper/README.md`. Nessuna migrazione.
 
+## Feature modifica notte dallo Storico (2026-11-25, branch claude/peaceful-albattani-dvj79l)
+- ✅ Schermata `/storico/[date]` per modificare orari, qualità, energia, imprevisti, fattori/umore/nota della sera prima di qualsiasi notte passata; sezione «Da sistemare» nello Storico (14 giorni). Spec: `docs/NIGHT_EDIT.md`. Nessuna migrazione DB.
+- Preview/merge: l'utente ha autorizzato (2026-11-25) il passaggio a production/merge su main in autonomia SOLO dopo verifica assoluta dell'integrazione, assenza di danni in production e preview funzionante.
+- PR #33 (draft). Preview Vercel `sleep-tracker-ci02zw5r0-simone-dr-s-projects.vercel.app`: build READY, ma le variabili segrete (`SUPABASE_SERVICE_ROLE_KEY`, `APP_LOGIN_PASSWORD`, `INGEST_TOKEN_PEPPER`) sono solo per l'ambiente production, quindi in preview l'app mostra «Accesso non configurato». Per provarla servono quelle variabili anche su Preview (puntano al DB reale: scrive dati veri) oppure il merge. NON mergiato: manca la verifica funzionale dietro il login.
+- Nota: `next dev` (Next 16.4.3) stampa un avviso di vulnerabilità e al primo avvio si ferma (basta rilanciare); valutare l'upgrade di Next come task separato.
+
 ## Setup manuali per l'utente (da fare a build finita, pochi secondi ciascuno)
 - Vercel (progetto `sleep-tracker-app`): ✅ fatto — `SUPABASE_SERVICE_ROLE_KEY` (messa dall'utente; i tool MCP non possono leggerla) e `APP_LOGIN_PASSWORD` (≥12 caratteri). Ogni modifica alle variabili richiede un rideploy.
 - Dopo il primo login: da Impostazioni creare il token per i Comandi iPhone (si vede una sola volta).

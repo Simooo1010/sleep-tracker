@@ -8,6 +8,7 @@ import { durationBand, nightDuration, sleep24h, type DurationBand } from '../../
 import { DEFAULT_LABELS } from '../../domain/questions';
 import { addDays, isWeekendNight } from '../../domain/time';
 import type { EveningCheck, Nap, Night, NightStatus } from '../../domain/types';
+import { HISTORY_TODO_DAYS, nightEditHref, type HistoryTodoItem } from '../night-edit-contract';
 import { nightsByDate, statusOf } from './common';
 import {
   DASH,
@@ -37,6 +38,8 @@ export interface HistoryViewInput {
   factorLabels?: Record<string, string>;
   /** Check serali del mese (e della sera prima del primo giorno): servono alla nota sulla giornata. */
   eveningChecks?: EveningCheck[];
+  /** Notti degli ultimi HISTORY_TODO_DAYS giorni fino a ieri, indipendenti dal mese mostrato (per «Da sistemare»). */
+  todoNights?: Night[];
 }
 
 export interface CalendarCellView {
@@ -79,6 +82,8 @@ export interface NightDetailView {
   tags: string[];
   /** Nota scritta la sera prima nel check (facoltativa); null se assente. */
   dayNote: DayNoteView | null;
+  /** Indirizzo della schermata di modifica della notte. */
+  editHref: string | null;
 }
 
 export interface HistoryView {
@@ -95,6 +100,8 @@ export interface HistoryView {
   prevMonth: string;
   /** null se il mese successivo è nel futuro. */
   nextMonth: string | null;
+  /** Notti recenti mancanti o stimate (dalla più vecchia alla più recente); vuoto se non ce ne sono. */
+  todo: HistoryTodoItem[];
 }
 
 export const HISTORY_EMPTY_TEXT = 'Nessuna notte registrata in questo mese.';
@@ -149,6 +156,7 @@ export function buildNightDetail(
       clockChangeNote: clockChangeText(shift, 'quella'),
       tags: [...(night?.isException ? ['Eccezione'] : []), ...clockTag],
       dayNote,
+      editHref: nightEditHref(date),
     };
   }
   const min = nightDuration(night);
@@ -189,6 +197,7 @@ export function buildNightDetail(
     note: night.isException ? `${noteWithClock} Giorno-eccezione: non conta nel riferimento della regolarità.` : noteWithClock,
     tags,
     dayNote,
+    editHref: nightEditHref(date),
   };
 }
 
@@ -197,6 +206,21 @@ export function dayNoteFor(date: string, checks: readonly EveningCheck[]): DayNo
   const evening = addDays(date, -1);
   const text = (checks.find((c) => c.date === evening)?.dayNote ?? '').trim();
   return text === '' ? null : { label: `Nota · giornata del ${formatDayMonth(evening)}`, text };
+}
+
+/** Notti da sistemare: da ieri indietro per HISTORY_TODO_DAYS giorni, escluse le confermate. */
+export function buildTodo(today: string, nights: readonly Night[]): HistoryTodoItem[] {
+  const byDate = nightsByDate([...nights]);
+  const out: HistoryTodoItem[] = [];
+  for (let i = HISTORY_TODO_DAYS; i >= 1; i--) {
+    const date = addDays(today, -i);
+    const n = byDate.get(date);
+    const hasTimes = !!n && (n.bedAt.value !== null || n.wakeAt.value !== null);
+    const status: NightStatus = !n || !hasTimes ? 'mancante' : n.status;
+    if (status !== 'mancante' && status !== 'stimata') continue;
+    out.push({ date, label: formatLongDate(date), status, href: nightEditHref(date) });
+  }
+  return out;
 }
 
 export function buildHistoryView(input: HistoryViewInput): HistoryView {
@@ -275,5 +299,6 @@ export function buildHistoryView(input: HistoryViewInput): HistoryView {
     legend: 'Verde 8h+ · Azzurro 7–8h · Pesca meno di 7h · Tratteggio = stimata · Punti = mancante',
     prevMonth: shiftMonth(month, -1),
     nextMonth: next > today.slice(0, 7) ? null : next,
+    todo: buildTodo(today, input.todoNights ?? []),
   };
 }

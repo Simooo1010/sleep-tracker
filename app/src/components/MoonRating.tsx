@@ -89,8 +89,8 @@ const ON_CLASS: Record<MoonRatingKind, string> = {
 };
 
 /** Etichetta accessibile di una luna: "Energia 3 di 5". */
-export function moonAriaLabel(kind: MoonRatingKind, score: Score): string {
-  return `${SUBJECT[kind]} ${score} di 5`;
+export function moonAriaLabel(kind: MoonRatingKind, score: Score, subject?: string): string {
+  return `${subject ?? SUBJECT[kind]} ${score} di 5`;
 }
 
 export interface MoonRatingProps {
@@ -101,6 +101,8 @@ export interface MoonRatingProps {
   onChange?: (score: Score) => void;
   /** Nome accessibile del gruppo. Predefinito per tipo, es. "Energia di questa mattina". */
   label?: string;
+  /** Soggetto delle etichette delle singole lune (es. "Qualità" → "Qualità 3 di 5"). Predefinito per tipo. */
+  subject?: string;
   /** Estremi scritti sotto la scala. Predefinito solo per `tired`: "Per niente" e "Esausto". */
   scaleLabels?: readonly [string, string] | null;
   /** `lg` = 52px, per il check serale su telefono. Predefinito 48px. */
@@ -131,6 +133,7 @@ export function MoonRating({
   value,
   onChange,
   label,
+  subject,
   scaleLabels,
   size = 'md',
   spread = false,
@@ -172,7 +175,7 @@ export function MoonRating({
               type="button"
               role="radio"
               aria-checked={s === selected}
-              aria-label={moonAriaLabel(kind, s)}
+              aria-label={moonAriaLabel(kind, s, subject)}
               tabIndex={s === tabStop ? 0 : -1}
               data-score={s}
               className={moonClass(s)}
